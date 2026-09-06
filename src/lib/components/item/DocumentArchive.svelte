@@ -6,10 +6,13 @@
     import ConfirmModal from "$lib/components/ConfirmModal.svelte";
     import { getFileInfo } from "$lib/client/utils";
     import { isPdf, isEpub, isMarkdown, isHtml, isVideo, isImage } from "$lib/shared/fileutils";
+    import ItemSelectorModal from "$lib/components/ItemSelectorModal.svelte";
 
     export let documents: any[] = [];
     const dispatch = createEventDispatcher();
     let confirmModal: ConfirmModal;
+    let itemSelector: ItemSelectorModal;
+    let movingDocId: number | null = null;
 
     function alterSummary(txt: string) {
         if(!txt) return "";
@@ -34,7 +37,14 @@
 						<i class="bi {info.icon} {info.color} text-lg"></i>
 					</div>
                 {/if}
-				<span class="truncate flex-1 min-w-0" title={doc.title}>{doc.title}</span>
+                <span class="truncate flex-1 min-w-0 flex items-center gap-2" title={doc.title}>
+                    {#if doc.title}
+                        <span class="truncate">{doc.title}</span>
+                    {:else}
+                        <span class="text-gray-400 italic">Processing document...</span>
+                        <span class="loading loading-spinner loading-xs text-primary"></span>
+                    {/if}
+                </span>
 				<div class="shrink-0 flex items-center gap-1.5 bg-base-200/50 px-2 py-0.5 rounded border border-base-300 shadow-sm text-base-content/70">
 					<i class="bi {info.icon} text-[10px] {info.color}"></i>
 					<span class="text-[9px] uppercase font-bold tracking-wider">{info.label}</span>
@@ -89,12 +99,21 @@
                         {/if}
                     </div>
 
-                    <form method="POST" action="?/deleteDocument" use:enhance={() => { return async ({ update }) => { await update(); notify('success', 'Document deleted.'); }; }}>
-                        <input type="hidden" name="docId" value={doc.id}>
-                        <button type="button" class="btn btn-sm btn-ghost text-error hover:bg-error/10 rounded-xl" title="Delete Document" on:click={async (e) => { const form = e.currentTarget.closest('form'); const res = await confirmModal.ask('Delete Document?', `Are you sure you want to permanently delete "${doc.title}"?`, 'Delete', 'Cancel', true); if (res) form.requestSubmit(); }}>
-                            <i class="bi bi-trash3"></i>
+                    <div class="flex items-center gap-1 shrink-0">
+                        <form id="move-doc-form-{doc.id}" action="?/moveDocument" method="POST" class="hidden" use:enhance={() => { return async ({ update }) => { await update(); notify('success', 'Document moved to new item.'); }; }}>
+                            <input type="hidden" name="docId" value={doc.id}>
+                            <input type="hidden" name="targetItemId" value="">
+                        </form>
+                        <button type="button" class="btn btn-sm btn-ghost text-base-content hover:bg-base-200 rounded-xl" title="Move Document" on:click={() => { movingDocId = doc.id; itemSelector.showModal(); }}>
+                            <i class="bi bi-box-arrow-right"></i>
                         </button>
-                    </form>
+                        <form method="POST" action="?/deleteDocument" use:enhance={() => { return async ({ update }) => { await update(); notify('success', 'Document deleted.'); }; }}>
+                            <input type="hidden" name="docId" value={doc.id}>
+                            <button type="button" class="btn btn-sm btn-ghost text-error hover:bg-error/10 rounded-xl" title="Delete Document" on:click={async (e) => { const form = e.currentTarget.closest('form'); const res = await confirmModal.ask('Delete Document?', `Are you sure you want to permanently delete "${doc.title}"?`, 'Delete', 'Cancel', true); if (res) form.requestSubmit(); }}>
+                                <i class="bi bi-trash3"></i>
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
@@ -102,3 +121,13 @@
 </div>
 
 <ConfirmModal bind:this={confirmModal} />
+<ItemSelectorModal bind:this={itemSelector} title="Move Document" subtitle="Select the item to move this document to" on:select={(e) => {
+    if (movingDocId) {
+        const form = document.getElementById(`move-doc-form-${movingDocId}`) as HTMLFormElement;
+        if (form) {
+            const input = form.querySelector('input[name="targetItemId"]') as HTMLInputElement;
+            if (input) input.value = e.detail.id;
+            form.requestSubmit();
+        }
+    }
+}} />

@@ -329,6 +329,32 @@ export const actions = {
             await db.item.update({ where: { id: Number(params.id) }, data: { amount: newAmount } });
         }
         return { success: true };
+    },
+
+    moveDocument: async ({ request, locals }) => {
+        if (!locals.user) return fail(401, { error: 'Unauthorized' });
+        if (locals.role !== 'EDITOR' && locals.role !== 'OWNER' && !locals.user.isAdmin) return fail(403, { error: 'Forbidden' });
+        
+        const data = await request.formData();
+        const docId = Number(data.get('docId'));
+        const targetItemId = Number(data.get('targetItemId'));
+        
+        if (docId && targetItemId) {
+            const targetItem = await db.item.findFirst({ where: { id: targetItemId, inventoryId: locals.activeInventoryId } });
+            if (!targetItem) return fail(404, { error: 'Target item not found' });
+            
+            await db.document.updateMany({ 
+                where: { 
+                    id: docId,
+                    OR: [
+                        { item: { inventoryId: locals.activeInventoryId } },
+                        { timelineNote: { inventoryId: locals.activeInventoryId } }
+                    ]
+                },
+                data: { itemId: targetItemId, timelineNoteId: null }
+            });
+        }
+        return { success: true };
     }
 
 } satisfies Actions;

@@ -59,7 +59,7 @@ export async function downloadAndStoreDocuments(target: { itemId?: number, timel
 			const githubMatch = line.match(/^https?:\/\/(?:www\.)?github\.com\/([^\/]+)\/([^\/]+)\/?$/i);
             let customTitle: string | null = null;
 			if (githubMatch) {
-				line = `https://github.com/${githubMatch[1]}/${githubMatch[2]}/archive/refs/heads/main.zip`;
+                line = `https://github.com/${githubMatch[1]}/${githubMatch[2]}/archive/HEAD.zip`;
                 customTitle = `GitHub Repo: ${githubMatch[1]}/${githubMatch[2]} (${new Date().toISOString().split('T')[0]})`;
 			}
 
@@ -474,7 +474,12 @@ async function handleGenericFileDownload(url: string, target: { itemId?: number,
 		
 		await db.document.update({
 			where: { id: Number(documentId) },
-			data: { title, path: `${webFolder}/${docFilename}.${ext}`, extracts: "[]" }
+            data: { 
+                title, 
+                path: `${webFolder}/${docFilename}.${ext}`, 
+                extracts: "[]",
+                type: ext === 'zip' ? 'zip' : 'document'
+            }
 		});
 	});
 }
