@@ -230,7 +230,7 @@
                     {@const localBlob = item.clientId ? ghostUrls.get(item.clientId) : null}
                     {@const isLoaded = serverSrc ? loadedUrls.has(serverSrc) : false}
 
-                    <tr animate:flip={{ duration: 300 }} in:fade={{ duration: 200 }} class="hover:bg-base-200/50 transition-all duration-200 border-b border-base-200/50 last:border-none relative {isNavigatingToThis ? 'opacity-50 pointer-events-none scale-[0.98]' : ''} {item.isGhost ? 'opacity-80 grayscale-[50%] pointer-events-none animate-pulse duration-1000' : ''}" style="content-visibility: auto; contain-intrinsic-size: 80px;">
+                    <tr animate:flip={{ duration: 300 }} in:fade={{ duration: 200 }} class="hover:bg-base-200/50 transition-all duration-200 border-b border-base-200/50 last:border-none relative {isNavigatingToThis ? 'opacity-50 pointer-events-none scale-[0.98]' : ''} {item.isGhost ? 'opacity-80 grayscale-[50%] pointer-events-none animate-pulse duration-1000' : ''}">
                        <td class="w-16 sm:w-20 min-w-[4rem] sm:min-w-[5rem] shrink-0 py-3">
                             <div class="flex items-center gap-3">
                                 <div class="avatar">
@@ -369,7 +369,7 @@
                 {@const localBlob = item.clientId ? ghostUrls.get(item.clientId) : null}
                 {@const isLoaded = serverSrc ? loadedUrls.has(serverSrc) : false}
                 
-                <div animate:flip={{ duration: 300 }} in:fade={{ duration: 200 }} class="card group bg-base-100 shadow-sm border border-base-200 hover:border-primary/50 transition-all duration-200 relative {isNavigatingToThis ? 'opacity-50 pointer-events-none scale-[0.98]' : ''} {item.isGhost ? 'opacity-80 grayscale-[50%] pointer-events-none animate-pulse duration-1000' : ''}" style="content-visibility: auto; contain-intrinsic-size: 300px;">
+                <div animate:flip={{ duration: 300 }} in:fade={{ duration: 200 }} class="card group bg-base-100 shadow-sm border border-base-200 hover:border-primary/50 transition-all duration-200 relative flex flex-col h-full {isNavigatingToThis ? 'opacity-50 pointer-events-none scale-[0.98]' : ''} {item.isGhost ? 'opacity-80 grayscale-[50%] pointer-events-none animate-pulse duration-1000' : ''}">
                     <!-- Overlay Link: Restores right-click / middle-click while letting SvelteKit intercept normal clicks -->
                     {#if !item.isGhost}
                         <a href="/{item.id}/{item.slug}" class="absolute inset-0 z-10" aria-label={item.title}></a>
@@ -424,7 +424,7 @@
                             </div>
                         {/if}
                     </figure>
-                    <div class="card-body p-3 gap-1">
+                    <div class="card-body p-3 gap-1 flex-1 flex-col justify-start">
                         <h3 class="font-bold text-sm leading-tight line-clamp-2">{item.title}</h3>
                         <div class="flex flex-wrap gap-1 mt-1 relative z-20">
                             {#if item.locations}
