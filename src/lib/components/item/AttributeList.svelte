@@ -44,8 +44,9 @@
                     {#if attrib.key === 'color_mix'}
                         <div class="sm:w-1/2 mt-1 sm:mt-0"><ColorMixBar colorMixStr={attrib.value} /></div>
                     {:else if attrib.value.startsWith('/images/')}
-                        <button type="button" class="text-sm font-bold text-primary hover:underline break-all text-left sm:text-right line-clamp-1" on:click={() => dispatch('zoom', attrib.value)}>
-                            {attrib.value}
+                        {@const ext = attrib.value.split('.').pop()?.toUpperCase()?.split('?')[0] || 'FILE'}
+                        <button type="button" class="text-sm font-bold text-primary hover:underline break-all text-left sm:text-right line-clamp-1 flex items-center justify-start sm:justify-end gap-1.5" on:click={() => dispatch('zoom', attrib.value)}>
+                            <i class="bi bi-image"></i> Original File ({ext})
                         </button>
                     {:else}
                         <span class="text-sm font-bold text-base-content break-words text-left sm:text-right">{displayVal}</span>
