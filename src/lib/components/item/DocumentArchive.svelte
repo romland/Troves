@@ -41,8 +41,8 @@
                     {#if doc.title}
                         <span class="truncate">{doc.title}</span>
                     {:else}
-                        <span class="text-gray-400 italic">Processing document...</span>
-                        <span class="loading loading-spinner loading-xs text-primary"></span>
+                    <span class="text-base-content/50 font-normal text-sm tracking-normal">Processing document...</span>
+                    <span class="loading loading-spinner loading-xs text-base-content/40"></span>
                     {/if}
                 </span>
 				<div class="shrink-0 flex items-center gap-1.5 bg-base-200/50 px-2 py-0.5 rounded border border-base-300 shadow-sm text-base-content/70">
