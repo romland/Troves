@@ -5,7 +5,7 @@ import { ioQueue } from '$lib/server/queue/index';
 import slugify from 'slugify';
 import { taskManager } from '$lib/server/taskManager';
 import { getTagIds } from '$lib/server/services';
-import { extractBoundingBox } from '$lib/server/imageProcessor';
+  import { cropPolygon } from '$lib/server/vision/polygonCrop';
 import { assertCanMutate } from '$lib/server/security';
 
 export const POST: RequestHandler = async ({ request, locals }) => {
@@ -76,7 +76,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
                 let cropWebPath = draftPath;
                 if (item.box) {
-                    const extracted = await extractBoundingBox(localDraftPath, item.box, slugify(item.title || 'item', { lower: true, strict: true }));
+                    const extracted = await cropPolygon(localDraftPath, item.box, slugify(item.title || 'item', { lower: true, strict: true }));
                     if (extracted) cropWebPath = extracted;
                 }
 

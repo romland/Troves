@@ -144,6 +144,7 @@ model Container {
   description String
   location    String?
   photoPath   String?
+  spatialMap  String? // JSON storing [ [x1,y1], [x2,y2], [x3,y3], [x4,y4] ] + deskew matrix
 
   inventory   Inventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
   inventoryId Int
@@ -243,6 +244,7 @@ model ItemsInContainer {
   itemId      Int       
   container   Container @relation(fields: [containerId], references: [id], onDelete: Cascade)
   containerId Int
+  spatialMap  String? // JSON storing [ [x1,y1], [x2,y2], [x3,y3], [x4,y4] ] for fluid items (clothes/books)
 
   // Replaced string references with strict Integer IDs
   @@id([itemId, containerId])

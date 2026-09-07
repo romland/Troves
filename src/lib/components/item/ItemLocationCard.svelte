@@ -3,6 +3,7 @@
     import { notify } from '$lib/client/notifications';
     import ContainerSelector from '$lib/components/ContainerSelector.svelte';
     import { ambientLocation } from '$lib/client/ambientContext';
+    import Modal from "$lib/components/Modal.svelte";
 
     export let item: any;
     export let canEdit: boolean = false;
@@ -12,6 +13,10 @@
     let isMoving = false;
     let globalContainers: any[] = [];
     let isLoadingContainers = false;
+
+    let mapModal: Modal;
+    let activeMapLoc: any = null;
+    let activePolyMap: number[][] | null = null;
 
     async function openMoveModal() {
         if (!moveModal) return;
@@ -44,6 +49,13 @@
         } catch (e) { notify('error', 'Network error.'); } 
         finally { isMoving = false; moveModal.close(); }
     }
+
+    function openMapModal(loc: any) {
+        activeMapLoc = loc;
+        activePolyMap = loc.spatialMap ? JSON.parse(loc.spatialMap) : (loc.container?.spatialMap && loc.container.parentId ? JSON.parse(loc.container.spatialMap) : null);
+        mapModal.showModal();
+    }
+
 </script>
 
 <form id="incStockForm" method="POST" action="?/incStock" style="display: none;" use:enhance={() => {
@@ -87,12 +99,19 @@
 
         {#if item.locations?.[0]}
             {@const loc = item.locations[0]}
+            {@const polyMap = loc.spatialMap ? JSON.parse(loc.spatialMap) : (loc.container?.spatialMap && loc.container.parentId ? JSON.parse(loc.container.spatialMap) : null)}
             <div class="flex items-center gap-3 flex-1 min-w-0">
-                <div class="w-14 h-14 shrink-0 rounded-lg overflow-hidden border border-base-200 bg-base-50 flex items-center justify-center">
-                    {#if loc.container.parent?.photoPath}
-                        <img class="w-full h-full object-cover" src="{loc.container.parent.photoPath.replace(/\.[^/.]+$/, '_thumb.webp')}" alt="Parent container" on:error={(e) => { if (!(e.currentTarget).dataset.fb) { (e.currentTarget).dataset.fb = '1'; (e.currentTarget).src = loc.container.parent.photoPath; } }}/>
-                    {:else if loc.container?.photoPath}
-                        <img class="w-full h-full object-cover" src="{loc.container.photoPath.replace(/\.[^/.]+$/, '_thumb.webp')}" alt="Container thumbnail" on:error={(e) => { if (!(e.currentTarget).dataset.fb) { (e.currentTarget).dataset.fb = '1'; (e.currentTarget).src = loc.container.photoPath; } }}/>
+                <!-- svelte-ignore a11y_click_events_have_key_events --><!-- svelte-ignore a11y_interactive_supports_focus -->
+                <div class="w-14 h-14 shrink-0 rounded-lg overflow-hidden border border-base-200 bg-base-50 flex items-center justify-center relative cursor-zoom-in hover:opacity-80 transition-opacity" on:click={() => openMapModal(loc)} role="button">
+                    {#if polyMap && (loc.container.parent?.photoPath || loc.container?.photoPath)}
+                        <div class="relative max-w-full max-h-full flex items-center justify-center">
+                            <img class="block max-w-full max-h-full" src="{loc.container.parent?.photoPath ? loc.container.parent.photoPath.replace(/\.[^/.]+$/, '_thumb.webp') : loc.container.photoPath.replace(/\.[^/.]+$/, '_thumb.webp')}" alt="Container thumbnail" on:error={(e) => { if (!(e.currentTarget).dataset.fb) { (e.currentTarget).dataset.fb = '1'; (e.currentTarget).src = loc.container.parent?.photoPath || loc.container.photoPath; } }}/>
+                            <svg viewBox="0 0 1000 1000" preserveAspectRatio="none" class="absolute inset-0 w-full h-full pointer-events-none drop-shadow-lg">
+                                <polygon points={polyMap.map(p => p.join(',')).join(' ')} vector-effect="non-scaling-stroke" class="fill-primary/40 stroke-primary stroke-[3px] animate-pulse" />
+                            </svg>
+                        </div>
+                    {:else if loc.container.parent?.photoPath || loc.container?.photoPath}
+                        <img class="w-full h-full object-cover" src="{loc.container.parent?.photoPath ? loc.container.parent.photoPath.replace(/\.[^/.]+$/, '_thumb.webp') : loc.container.photoPath.replace(/\.[^/.]+$/, '_thumb.webp')}" alt="Container thumbnail" on:error={(e) => { if (!(e.currentTarget).dataset.fb) { (e.currentTarget).dataset.fb = '1'; (e.currentTarget).src = loc.container.parent?.photoPath || loc.container.photoPath; } }}/>
                     {:else}
                         <i class="bi bi-box-seam text-2xl text-gray-400"></i>
                     {/if}
@@ -192,11 +211,19 @@
     {#each item.locations || [] as loc, i}
         <div class="card bg-base-100 shadow-sm border border-base-200 w-full overflow-hidden">
             {#if i === 0}
-                <figure class="w-full h-20 border-b border-base-200 bg-base-200 m-0">
-                    {#if loc.container.parent?.photoPath}
-                        <img class="w-full h-full object-cover object-top" src="{loc.container.parent.photoPath.replace(/\.[^/.]+$/, '_thumb.webp')}" alt="Parent container" on:error={(e) => { if (!(e.currentTarget).dataset.fb) { (e.currentTarget).dataset.fb = '1'; (e.currentTarget).src = loc.container.parent.photoPath; } }}/>
-                    {:else if loc.container?.photoPath}
-                        <img class="w-full h-full object-cover object-top" src="{loc.container.photoPath.replace(/\.[^/.]+$/, '_thumb.webp')}" alt="Container thumbnail" on:error={(e) => { if (!(e.currentTarget).dataset.fb) { (e.currentTarget).dataset.fb = '1'; (e.currentTarget).src = loc.container.photoPath; } }}/>
+                {@const polyMap = loc.spatialMap ? JSON.parse(loc.spatialMap) : (loc.container?.spatialMap && loc.container.parentId ? JSON.parse(loc.container.spatialMap) : null)}
+                <!-- svelte-ignore a11y_click_events_have_key_events --><!-- svelte-ignore a11y_interactive_supports_focus -->
+                <!-- svelte-ignore a11y_no_noninteractive_element_to_interactive_role -->
+                <figure class="w-full h-20 border-b border-base-200 bg-base-200 m-0 flex items-center justify-center cursor-zoom-in hover:opacity-80 transition-opacity" on:click={() => openMapModal(loc)} role="button">
+                    {#if polyMap && (loc.container.parent?.photoPath || loc.container?.photoPath)}
+                        <div class="relative max-w-full max-h-full flex items-center justify-center">
+                            <img class="block max-w-full max-h-full" src="{loc.container.parent?.photoPath ? loc.container.parent.photoPath.replace(/\.[^/.]+$/, '_thumb.webp') : loc.container.photoPath.replace(/\.[^/.]+$/, '_thumb.webp')}" alt="Container thumbnail" on:error={(e) => { if (!(e.currentTarget).dataset.fb) { (e.currentTarget).dataset.fb = '1'; (e.currentTarget).src = loc.container.parent?.photoPath || loc.container.photoPath; } }}/>
+                            <svg viewBox="0 0 1000 1000" preserveAspectRatio="none" class="absolute inset-0 w-full h-full pointer-events-none drop-shadow-lg">
+                                <polygon points={polyMap.map(p => p.join(',')).join(' ')} vector-effect="non-scaling-stroke" class="fill-primary/40 stroke-primary stroke-[3px] animate-pulse" />
+                            </svg>
+                        </div>
+                    {:else if loc.container.parent?.photoPath || loc.container?.photoPath}
+                        <img class="w-full h-full object-cover" src="{loc.container.parent?.photoPath ? loc.container.parent.photoPath.replace(/\.[^/.]+$/, '_thumb.webp') : loc.container.photoPath.replace(/\.[^/.]+$/, '_thumb.webp')}" alt="Container thumbnail" on:error={(e) => { if (!(e.currentTarget).dataset.fb) { (e.currentTarget).dataset.fb = '1'; (e.currentTarget).src = loc.container.parent?.photoPath || loc.container.photoPath; } }}/>
                     {:else}
                         <div class="w-full h-full flex items-center justify-center"><i class="bi bi-box-seam text-4xl text-gray-400"></i></div>
                     {/if}
@@ -250,3 +277,32 @@
     </div>
     <form method="dialog" class="modal-backdrop"><button disabled={isMoving}>close</button></form>
 </dialog>
+
+<Modal bind:this={mapModal} title="" position="bottom" boxClass="p-0 overflow-hidden bg-base-100 shadow-2xl sm:rounded-[2.5rem] border border-base-200">
+    {#if activeMapLoc}
+        <div class="relative w-full h-[50vh] sm:h-[60vh] bg-base-300 flex items-center justify-center border-b border-base-200 p-2 sm:p-4">
+            {#if activeMapLoc.container.parent?.photoPath || activeMapLoc.container?.photoPath}
+                <div class="relative max-w-full max-h-full flex items-center justify-center">
+                    <img src={activeMapLoc.container.parent?.photoPath || activeMapLoc.container?.photoPath} class="block max-w-full max-h-full drop-shadow-md" alt="Container" />
+                    {#if activePolyMap}
+                        {@const cx = (activePolyMap[0][0] + activePolyMap[1][0] + activePolyMap[2][0] + activePolyMap[3][0]) / 4}
+                        {@const cy = (activePolyMap[0][1] + activePolyMap[1][1] + activePolyMap[2][1] + activePolyMap[3][1]) / 4}
+                        <svg viewBox="0 0 1000 1000" preserveAspectRatio="none" class="absolute inset-0 w-full h-full z-10 pointer-events-none drop-shadow-lg">
+                            <polygon points={activePolyMap.map(p => p.join(',')).join(' ')} class="fill-primary/40 stroke-primary stroke-[6px] animate-pulse" vector-effect="non-scaling-stroke" />
+                            <text x={cx} y={cy} font-family="sans-serif" font-weight="900" font-size="40" fill="white" stroke="rgba(0,0,0,0.8)" stroke-width="8" paint-order="stroke fill" text-anchor="middle" dominant-baseline="middle" class="drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)]">{item.title}</text>
+                        </svg>
+                    {/if}
+                </div>
+            {:else}
+                <i class="bi bi-box-seam text-6xl text-gray-400"></i>
+            {/if}
+        </div>
+        <div class="p-6 bg-base-100 flex flex-col items-center text-center gap-1">
+            <h3 class="font-bold text-xl">{activeMapLoc.container.name}</h3>
+            {#if activeMapLoc.container.description || activeMapLoc.container.parent?.description}
+                <p class="text-sm text-gray-500">{activeMapLoc.container.description || activeMapLoc.container.parent?.description}</p>
+            {/if}
+            <button class="btn btn-neutral w-full rounded-xl mt-4" on:click={() => mapModal.close()}>Close</button>
+        </div>
+    {/if}
+</Modal>

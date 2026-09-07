@@ -1,6 +1,6 @@
 import type { PageServerLoad } from './$types';
 import { db } from '$lib/server/database';
-import { error } from "@sveltejs/kit";
+import { error, fail } from "@sveltejs/kit";
 
 export const load = (async ({ locals, params, url, fetch }) => {
     const item = await db.container.findFirst({
@@ -18,6 +18,7 @@ export const load = (async ({ locals, params, url, fetch }) => {
                     name : true,
                     parentId : true,
                     description : true,
+                    spatialMap: true
                 }
             },
         }
@@ -42,6 +43,13 @@ export const load = (async ({ locals, params, url, fetch }) => {
 
     const apiPath = `/api/items${apiUrl.search}`;
 
+    let polygons = [];
+    if (item.spatialMap) {
+        try {
+            polygons = JSON.parse(item.spatialMap);
+        } catch(e) {}
+    }
+
     return {
         item: item,
         items: data.items,
@@ -49,6 +57,31 @@ export const load = (async ({ locals, params, url, fetch }) => {
         includeTrays,
         prevPage: data.prevPage,
         nextPage: data.nextPage,
-        apiPath: apiPath + (apiPath.includes('?') ? '&' : '?')
+        apiPath: apiPath + (apiPath.includes('?') ? '&' : '?'),
+        polygons
     };
 }) satisfies PageServerLoad;
+
+export const actions = {
+    saveSpatialMap: async ({ request, locals, params }) => {
+        if (!locals.user) return fail(401, { error: true, message: "Unauthorized" });
+        const data = await request.formData();
+        const spatialMap = data.get('spatialMap') as string;
+        
+        await db.container.updateMany({
+            where: { name: params.slug, inventoryId: locals.activeInventoryId },
+            data: { spatialMap }
+        });
+        
+        return { success: true, message: "Spatial map updated." };
+    },
+
+    clearSpatialMap: async ({ locals, params }) => {
+        if (!locals.user) return fail(401, { error: true, message: "Unauthorized" });
+        await db.container.updateMany({
+            where: { name: params.slug, inventoryId: locals.activeInventoryId },
+            data: { spatialMap: null }
+        });
+        return { success: true, message: "Spatial map cleared." };
+    }
+};

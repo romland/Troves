@@ -18,7 +18,7 @@ export interface ImageAnalysisResult {
   distinctive_blemishes_or_wear?: string | null;
   physical_traits?: string[];
   searchSynonyms?: string[];
-  foregroundBox?: number[];
+  foregroundBox?: number[][];
   extractedAttributes?: Record<string, any>;
   _debugPayload?: string;
 }
@@ -62,7 +62,14 @@ export async function analyzePhoto(
     distinctive_blemishes_or_wear: { type: 'string', nullable: true, description: 'Specific damage, wear, or unique blemishes (e.g., "scratched bezel", "hole in left sleeve"). Null if pristine.' },
     physical_traits: { type: 'array', items: { type: 'string' } },
     searchSynonyms: { type: 'array', items: { type: 'string' } },
-    foregroundBox: { type: 'array', items: { type: 'number' }, description: 'Bounding box [ymin, xmin, ymax, xmax] normalized 0-1000 for the primary foreground object. Ignore background clutter.' },
+    foregroundBox: { 
+        type: 'array', 
+        items: { 
+            type: 'array', 
+            items: { type: 'number' } 
+        }, 
+        description: 'A 4-point polygon (oriented bounding box) outlining the primary foreground object to capture any rotation or skew. Array of exactly 4 points: [[x1,y1], [x2,y2], [x3,y3], [x4,y4]] normalized 0-1000. Ignore background clutter.' 
+    },
     extractedAttributes: { 
         type: 'array', 
         description: 'Extract visual values for ALL keys in the \'global\' list. Then, extract values for ALL keys in your chosen \'subCategory\' list. VALUES MUST BE NATURAL HUMAN LANGUAGE (e.g., "Athletic Fit" instead of "athletic", "Scoop Neck" instead of "scoop"). IF your subCategory is NOT in the dictionary, you MUST still extract the \'global\' keys, and then invent 3-5 new descriptive keys for the item (use snake_case for keys, but natural language for values). IF a dictionary key is logically impossible for the specific object, output "N/A".',
@@ -108,7 +115,7 @@ TASKS:
 8. distinctive_blemishes_or_wear: Specific damage, fading, or wear (e.g., "hole in knee", "scratched screen"). Null if pristine.
 9. physical_traits: An array of 5-10 generic descriptive strings (e.g., ["cotton", "crew-neck", "short-sleeves", "stainless steel"]). Describe form and structure.
 10. searchSynonyms: An array of 3-5 broad synonyms/hypernyms for the object.
-11. foregroundBox: Provide the bounding box of the isolated primary object.
+11. foregroundBox: Provide the 4-point polygon (oriented bounding box) of the isolated primary object, enabling skew/rotation detection. Format: [[x1,y1], [x2,y2], [x3,y3], [x4,y4]] normalized 0-1000.
 12. extractedAttributes: Return an array of key-value objects. Look at the SCHEMA DICTIONARY. You MUST extract values for ALL keys in the 'global' list. Then, extract values for ALL keys in your chosen 'subCategory' list. IF your subCategory is NOT in the dictionary, you MUST still extract the 'global' keys, and then invent 3-5 new descriptive keys for the item. IF a dictionary key is logically impossible for the specific object, output "N/A".${sandboxRule}`;
 
   properties.description = { type: 'string', description: 'Brief visual description' };
@@ -193,7 +200,7 @@ For each item:
 - distinctive_blemishes_or_wear: Specific damage, fading, or wear (e.g., "hole in knee", "scratched screen"). Null if pristine.
 - physical_traits: Array of 5-10 raw, unconstrained descriptive strings describing form, structure, material. e.g., ["cotton", "crew-neck", "short-sleeves", "distressed hem"].
 - extractedAttributes: Object containing strict key-value pairs matching the SCHEMA DICTIONARY.
-- box: The spatial bounding box of the item's spine or front, as [ymin, xmin, ymax, xmax] normalized from 0 to 1000.
+- box: The spatial 4-point polygon (oriented bounding box) of the item's spine or front, capturing its exact rotation and skew. Array of exactly 4 points: [[x1,y1], [x2,y2], [x3,y3], [x4,y4]] normalized from 0 to 1000.
 - low_confidence: Set to true if the text is blurry, occluded, or hard to read.`;
 
   const visibleSchema = activeSchema.filter((s: any) => s.extractionMethod !== 'HUMAN_REQUIRED');
@@ -211,7 +218,7 @@ For each item:
       promptText += `\n\nUSER HINT: The user noted this inventory is: "${hint.trim()}". Prioritize identifying the items within this context.`;
   }
 
-  const jsonSchema = { type: 'object', properties: { totalVisibleCount: { type: 'integer', description: 'The total number of items you counted' }, collectionType: { type: 'string' }, items: { type: 'array', items: { type: 'object', properties: { title: { type: 'string' }, subtitle: { type: 'string' }, category: { type: 'string' }, rawText: { type: 'string' }, color_mix: { type: 'array', items: { type: 'object', properties: { color: { type: 'string' }, pct: { type: 'number' } } } }, prominent_text_or_graphic: { type: 'string' }, distinctive_blemishes_or_wear: { type: 'string' }, physical_traits: { type: 'array', items: { type: 'string' } }, extractedAttributes: { type: 'object' }, box: { type: 'array', items: { type: 'number' }, description: '[ymin, xmin, ymax, xmax] normalized 0-1000' }, low_confidence: { type: 'boolean' } }, required: ['title', 'category', 'color_mix', 'prominent_text_or_graphic', 'distinctive_blemishes_or_wear', 'physical_traits', 'extractedAttributes', 'box'] } } }, required: ['totalVisibleCount', 'items'] };
+  const jsonSchema = { type: 'object', properties: { totalVisibleCount: { type: 'integer', description: 'The total number of items you counted' }, collectionType: { type: 'string' }, items: { type: 'array', items: { type: 'object', properties: { title: { type: 'string' }, subtitle: { type: 'string' }, category: { type: 'string' }, rawText: { type: 'string' }, color_mix: { type: 'array', items: { type: 'object', properties: { color: { type: 'string' }, pct: { type: 'number' } } } }, prominent_text_or_graphic: { type: 'string' }, distinctive_blemishes_or_wear: { type: 'string' }, physical_traits: { type: 'array', items: { type: 'string' } }, extractedAttributes: { type: 'object' }, box: { type: 'array', items: { type: 'array', items: { type: 'number' } }, description: '[[x1,y1], [x2,y2], [x3,y3], [x4,y4]] normalized 0-1000' }, low_confidence: { type: 'boolean' } }, required: ['title', 'category', 'color_mix', 'prominent_text_or_graphic', 'distinctive_blemishes_or_wear', 'physical_traits', 'extractedAttributes', 'box'] } } }, required: ['totalVisibleCount', 'items'] };
   const rawText = await analyzeImage(promptText, mimeType, base64Data, true, jsonSchema, 'Bulk Collection Analysis', tracking, 'MULTISCAN');
   return JSON.parse(rawText);
 }

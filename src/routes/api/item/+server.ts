@@ -8,7 +8,7 @@ import { JSDOM } from 'jsdom';
 import DOMPurify from 'dompurify';
 import { json } from '@sveltejs/kit';
 import slugify from 'slugify';
-import { extractBoundingBox } from '$lib/server/imageProcessor';
+  import { cropPolygon } from '$lib/server/vision/polygonCrop';
 import { logActivity } from '$lib/server/logger';
 import { taskManager } from '$lib/server/taskManager';
 import { assertCanMutate } from '$lib/server/security';
@@ -90,7 +90,7 @@ export async function POST({ request, locals }) {
         try {
             const box = JSON.parse(boxStr);
             const localDraftPath = `data${draftPath}`;
-            const extracted = await extractBoundingBox(localDraftPath, box, title);
+            const extracted = await cropPolygon(localDraftPath, box, title);
             if (extracted) finalPathForProduct = extracted;
         } catch (e) {
             console.error("Failed to crop image from box", e);

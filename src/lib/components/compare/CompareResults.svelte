@@ -22,6 +22,7 @@
         scopeValue?: string;
         activeSchema?: any[];
     };
+    export let containerSpatialBaseline: any[] = [];
     export let containers: any[] = [];
     export let categories: any[] = [];
     export let tags: any[] = [];
@@ -344,6 +345,12 @@
 
     {#if activeTab === 'missing'}
         <div class="form-control bg-base-200/50 p-3 rounded-2xl border border-base-200 mb-2">
+            {#if containerSpatialBaseline.length > 0}
+                <div class="mb-6 bg-base-200/50 p-4 rounded-3xl border border-base-200">
+                    <h4 class="font-bold text-sm mb-2 flex items-center gap-2"><i class="bi bi-intersect text-warning"></i> Spatial Audit Baseline</h4>
+                    <div class="text-xs text-gray-500">Comparing scanned photo against {containerSpatialBaseline.length} mapped container slots. Anomalies are color-coded below.</div>
+                </div>
+            {/if}
             <label class="label cursor-pointer py-0">
                 <span class="label-text flex flex-col">
                     <span class="font-bold text-sm">Strict Quantity Audit</span>

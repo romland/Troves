@@ -86,7 +86,7 @@ export const load = (async ({ locals, params }) => {
 		item: {
 			...item,
 			// https://marked.js.org/using_advanced
-			contentToHtml: purify.sanitize(await marked.parse(item.description!, {gfm:true,breaks:true}))
+			contentToHtml: purify.sanitize(await marked.parse(item.description! || '', {gfm:true,breaks:true}))
 		},
 		activeTasks: taskManager.getTasks('item', item.id),
 		categories,
