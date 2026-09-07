@@ -47,18 +47,22 @@
     // REALTIME SYNC ENGINE
     if (browser) {
         let evtSource: EventSource | null = null;
+        let lastKeyTime = 0;
+
+        window.addEventListener('keydown', (e) => {
+            if (!['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) lastKeyTime = Date.now();
+        }, { capture: true });
         
         const safeInvalidate = () => {
             const activeTag = document.activeElement?.tagName;
-            const isTyping = activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT';
-            const isDropdownOpen = !!document.querySelector('.dropdown-open') || !!document.activeElement?.closest('.dropdown');
+            const isTyping = (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT') && (Date.now() - lastKeyTime < 3000);
             
-            if (isTyping || isDropdownOpen || $navigating) {
-                console.log("🕵️‍♂️ [DEBUG-SYNC] User is interacting or navigating. Deferring invalidateAll().");
+            if (isTyping || $navigating) {
+                console.log("🕵️‍♂️ [DEBUG-SYNC] User is actively typing or navigating. Deferring invalidateAll().");
                 const attemptSync = () => {
                     const active = document.activeElement?.tagName;
-                    const dropdown = document.querySelector('.dropdown-open') || document.activeElement?.closest('.dropdown');
-                    if (active === 'INPUT' || active === 'TEXTAREA' || active === 'SELECT' || dropdown || $navigating) {
+                    const stillTyping = (active === 'INPUT' || active === 'TEXTAREA' || active === 'SELECT') && (Date.now() - lastKeyTime < 3000);
+                    if (stillTyping || $navigating) {
                         setTimeout(attemptSync, 1000);
                     } else {
                         console.log("🕵️‍♂️ [DEBUG-SYNC] Interaction complete. Syncing UI via invalidateAll().");
