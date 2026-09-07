@@ -1,11 +1,9 @@
-import { GoogleGenAI, Type } from '@google/genai';
 import fs from 'fs';
 import path from 'path';
-import { withRetry } from './retry';
 import { dev } from '$app/environment';
 import { env } from '$env/dynamic/private';
-
-const ai = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
+import { analyzeImage } from './ai/index';
+import type { TaskContext } from './taskManager';
 
 export interface ImageAnalysisResult {
   photoType: 'product' | 'invoice' | 'information' | 'other';
@@ -118,31 +116,7 @@ TASKS:
   properties.description = { type: 'string', description: 'Brief visual description' };
   properties.subtitle = { type: 'string', description: 'Author, maker, or secondary text' };
 
-  const response = await withRetry(() => ai.models.generateContent({
-    model: 'gemini-3.1-flash-lite',
-    contents: [
-      {
-        role: 'user',
-        parts: [
-          { text: promptText },
-          { inlineData: { mimeType, data: base64Data } }
-        ]
-      }
-    ],
-    config: {
-      temperature: 0.0,
-      responseMimeType: 'application/json',
-      responseSchema: {
-        type: 'object', properties, required
-      }
-    }
-  }), 3, 2000, 'Gemini Classification', { prompt: promptText, path: localFilePath, itemId });
-
-  let rawText = response.text!;
-  // Failsafe for the Gemini space-loop token-exhaustion bug
-  if (rawText.length > 10000) {
-      rawText = rawText.replace(/\s{10,}/g, ' ');
-  }
+  const rawText = await analyzeImage(promptText, mimeType, base64Data, true, { type: 'object', properties, required }, 'Vision Classification', { path: localFilePath, itemId }, 'CLASSIFY');
   
   const result = JSON.parse(rawText);
 
@@ -171,32 +145,8 @@ export async function guessProductDetails(localFilePath: string, hint: string = 
     promptText += `\n\nUSER HINT: "${hint}". You MUST use this hint to identify the exact product model or brand, overriding your default guess.`;
   }
 
-  const response = await withRetry(() => ai.models.generateContent({
-    model: 'gemini-3.1-flash-lite',
-    contents: [
-      {
-        role: 'user',
-        parts: [
-          { text: promptText },
-          { inlineData: { mimeType, data: fileBuffer.toString('base64') } }
-        ]
-      }
-    ],
-    config: {
-      temperature: 0.0,
-      responseMimeType: 'application/json',
-      responseSchema: {
-        type: 'object',
-        properties: {
-          title: { type: 'string' },
-          description: { type: 'string' }
-        },
-        required: ['title', 'description']
-      }
-    }
-  }), 3, 2000, 'Product Details Guess', { prompt: promptText, path: localFilePath, itemId });
-
-  return JSON.parse(response.text!);
+  const rawText = await analyzeImage(promptText, mimeType, fileBuffer.toString('base64'), true, { type: 'object', properties: { title: { type: 'string' }, description: { type: 'string' } }, required: ['title', 'description'] }, 'Product Details Guess', { path: localFilePath, itemId }, 'GUESS');
+  return JSON.parse(rawText);
 }
 
 export async function extractKVPsFromText(text: string): Promise<{ rows: string[][] }> {
@@ -207,36 +157,9 @@ If it is a simple list of attributes, structure each row with 2 columns: [Attrib
 TEXT:
 ${text}`;
 
-  const response = await withRetry(() => ai.models.generateContent({
-    model: 'gemini-3.1-flash-lite',
-    contents: [
-      {
-        role: 'user',
-        parts: [
-          { text: promptText }
-        ]
-      }
-    ],
-    config: {
-      temperature: 0.0,
-      responseMimeType: 'application/json',
-      responseSchema: {
-        type: 'object',
-        properties: {
-          rows: {
-            type: 'array',
-            items: {
-              type: 'array',
-              items: { type: 'string' }
-            }
-          }
-        },
-        required: ['rows']
-      }
-    }
-  }), 3, 2000, 'KVP Extraction', { prompt: promptText });
-
-  return JSON.parse(response.text!);
+  const { generateText } = await import('./ai/index');
+  const resText = await generateText('You are a helpful data extraction assistant.', promptText, true, { type: 'object', properties: { rows: { type: 'array', items: { type: 'array', items: { type: 'string' } } } }, required: ['rows'] }, 'KVP Extraction', undefined, 'PARSER');
+  return JSON.parse(resText);
 }
 
 export async function analyzeBulkCollection(
@@ -291,43 +214,7 @@ For each item:
       promptText += `\n\nUSER HINT: The user noted this inventory is: "${hint.trim()}". Prioritize identifying the items within this context.`;
   }
 
-  const response = await withRetry(() => ai.models.generateContent({
-      model: 'gemini-3.1-flash-lite',
-      contents: [
-          { role: 'user', parts: [{ text: promptText }, { inlineData: { mimeType, data: base64Data } }] }
-      ],
-      config: {
-          responseMimeType: 'application/json',
-          responseSchema: {
-              type: Type.OBJECT,
-              properties: {
-                  totalVisibleCount: { type: Type.INTEGER, description: 'The total number of items you counted' },
-                  collectionType: { type: Type.STRING },
-                  items: {
-                      type: Type.ARRAY,
-                      items: {
-                          type: Type.OBJECT,
-                          properties: {
-                              title: { type: Type.STRING },
-                              subtitle: { type: Type.STRING },
-                              category: { type: Type.STRING },
-                              rawText: { type: Type.STRING },
-                              color_mix: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { color: { type: Type.STRING }, pct: { type: Type.NUMBER } } } },
-                              prominent_text_or_graphic: { type: Type.STRING },
-                              distinctive_blemishes_or_wear: { type: Type.STRING },
-                              physical_traits: { type: Type.ARRAY, items: { type: Type.STRING } },
-                              extractedAttributes: { type: Type.OBJECT },
-                              box: { type: Type.ARRAY, items: { type: Type.NUMBER }, description: '[ymin, xmin, ymax, xmax] normalized 0-1000' },
-                              low_confidence: { type: Type.BOOLEAN }
-                          },
-                          required: ['title', 'category', 'color_mix', 'prominent_text_or_graphic', 'distinctive_blemishes_or_wear', 'physical_traits', 'extractedAttributes', 'box']
-                      }
-                  }
-              },
-              required: ['totalVisibleCount', 'items']
-          }
-      }
-  }), 3, 2000, 'Bulk Collection Analysis (Vision)', { prompt: promptText, taskId: tracking?.targetId });
-
-  return JSON.parse(response.text!);
+  const jsonSchema = { type: 'object', properties: { totalVisibleCount: { type: 'integer', description: 'The total number of items you counted' }, collectionType: { type: 'string' }, items: { type: 'array', items: { type: 'object', properties: { title: { type: 'string' }, subtitle: { type: 'string' }, category: { type: 'string' }, rawText: { type: 'string' }, color_mix: { type: 'array', items: { type: 'object', properties: { color: { type: 'string' }, pct: { type: 'number' } } } }, prominent_text_or_graphic: { type: 'string' }, distinctive_blemishes_or_wear: { type: 'string' }, physical_traits: { type: 'array', items: { type: 'string' } }, extractedAttributes: { type: 'object' }, box: { type: 'array', items: { type: 'number' }, description: '[ymin, xmin, ymax, xmax] normalized 0-1000' }, low_confidence: { type: 'boolean' } }, required: ['title', 'category', 'color_mix', 'prominent_text_or_graphic', 'distinctive_blemishes_or_wear', 'physical_traits', 'extractedAttributes', 'box'] } } }, required: ['totalVisibleCount', 'items'] };
+  const rawText = await analyzeImage(promptText, mimeType, base64Data, true, jsonSchema, 'Bulk Collection Analysis', tracking, 'MULTISCAN');
+  return JSON.parse(rawText);
 }

@@ -2,12 +2,12 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { db } from '$lib/server/database';
-import Groq from 'groq-sdk';
 import { env } from '$env/dynamic/private';
 import { recordLLMLog } from '$lib/server/llmLogger';
 import { logActivity } from '$lib/server/logger';
 import { tokenizeAndStem } from '$lib/server/nlp';
 import { processVoiceQuery } from '$lib/server/voice/VoiceEngine';
+import { transcribeAudio } from '$lib/server/ai/index';
 
 export const POST: RequestHandler = async ({ request, locals }) => {
     if (!locals.user) return json({ error: 'Unauthorized' }, { status: 401 });
@@ -60,19 +60,12 @@ export const POST: RequestHandler = async ({ request, locals }) => {
             // We prime the model with the user's exact data to guide unfamiliar spellings
             contextPrompt = `Inventory search context. Expected vocabulary includes: ${categoryNames}. Tags: ${tagNames}.`;
 
-            // Transcribe via Groq's lightning-fast Whisper model
-            const groq = new Groq({ apiKey: env.GROQ_API_TOKEN });
-            const transcription = await groq.audio.transcriptions.create({
-                file: audioFile,
-                model: 'whisper-large-v3-turbo',
-                prompt: contextPrompt,
-                response_format: 'verbose_json'
-            });
-
+            const transcription = await transcribeAudio(audioFile, contextPrompt, 'DICTATION');
+            
             rawTranscription = transcription.text.replace(/[.?!]+$/, '').trim();
             groqData = transcription as any;
-            tokensIn = groqData.x_groq?.usage?.prompt_tokens || Math.round(fileSize / 100); 
-            tokensOut = groqData.x_groq?.usage?.completion_tokens || rawTranscription.split(' ').length;
+            tokensIn = transcription.usage?.prompt_tokens || Math.round(fileSize / 100); 
+            tokensOut = transcription.usage?.completion_tokens || rawTranscription.split(' ').length;
 
             const hallucinatedPromptWords = ['tags', 'inventory search context', 'expected vocabulary includes'];
             if (!rawTranscription || hallucinatedPromptWords.includes(rawTranscription.toLowerCase())) {
@@ -85,10 +78,10 @@ export const POST: RequestHandler = async ({ request, locals }) => {
         const { query: finalQuery, spokenReply, route } = await processVoiceQuery(rawTranscription, locals.activeInventoryId);
         const durationMs = performance.now() - t0;
 
-        const provider = textQuery.trim() ? 'local' : 'groq';
+        const provider = textQuery.trim() ? 'local' : (groqData.provider || 'unknown');
         const logTitle = textQuery.trim() ? 'Voice Intent (Text Test)' : 'Voice Search';
 
-        recordLLMLog(logTitle, provider, { prompt: contextPrompt, textQuery, fileSize }, { text: rawTranscription, finalQuery, spokenReply, usage: groqData.x_groq?.usage }, durationMs, tokensIn, tokensOut);
+        recordLLMLog(logTitle, provider, { prompt: contextPrompt, textQuery, fileSize }, { text: rawTranscription, finalQuery, spokenReply, usage: transcription?.usage }, durationMs, tokensIn, tokensOut);
         await logActivity(null, logTitle, `Parsed intent to query: "${finalQuery}"`, 'info');
 
         return json({ success: true, text: finalQuery, spokenReply, route });

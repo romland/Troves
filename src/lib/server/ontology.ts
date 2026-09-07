@@ -1,12 +1,8 @@
 import { db } from '$lib/server/database';
-import { GoogleGenAI } from '@google/genai';
-import { env } from '$env/dynamic/private';
-import { apiQueue } from '$lib/server/queue/index';
-import { withRetry } from './retry';
 import { taskManager } from './taskManager';
 import { BASE_COLORS } from './colors';
+import { generateText } from './ai/index';
 
-const ai = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
 
 
 const eavResponseSchema = {
@@ -82,12 +78,11 @@ export async function bootstrapInventorySchema(inventoryId: number, domainName: 
     }
 
     try {
-        return await apiQueue.add(async () => {
-            // const prompt = `You are a Principal Data Architect designing a strict EAV taxonomy for an inventory tracking: "${domainName}".
-            // const prompt = `You are a Principal Data Architect designing a strict EAV taxonomy for an inventory tracking: "${domainName}".
-            // const prompt = `You are a Principal Data Architect designing a strict Entity-Attribute-Value (EAV) taxonomy for an inventory tracking: "${domainName}".
-            // The user describes this inventory as: "${inv.description || 'A general collection'}".
-            const prompt = `You are a Principal Data Architect designing a strict Entity-Attribute-Value (EAV) taxonomy.
+        // const prompt = `You are a Principal Data Architect designing a strict EAV taxonomy for an inventory tracking: "${domainName}".
+        // const prompt = `You are a Principal Data Architect designing a strict EAV taxonomy for an inventory tracking: "${domainName}".
+        // const prompt = `You are a Principal Data Architect designing a strict Entity-Attribute-Value (EAV) taxonomy for an inventory tracking: "${domainName}".
+        // The user describes this inventory as: "${inv.description || 'A general collection'}".
+        const prompt = `You are a Principal Data Architect designing a strict Entity-Attribute-Value (EAV) taxonomy.
 The user was asked what this inventory contains, and they answered: "${domainName}".
 If this answer is vague (like "stuff in the shed" or "boxes"), generate a broad, generic tracking schema. If it is highly specific (like "vintage stamps"), generate a bespoke schema.
 
@@ -119,28 +114,22 @@ CRITICAL BANS:
 - For ALL enums, provide a HIGHLY EXHAUSTIVE 'options' array. Format the options nicely (e.g. 'Athletic Fit' instead of 'athletic'). For item types/forms, generate at least 15-25 common values to prevent cold-start issues. For sizes, include a full standard range.
 
 ADAPT TO USER INTENT: Adjust your specificity based on the user's description and archetype. If it's a generic inventory, keep fields broad. If the description implies a highly specific sub-niche (e.g., "Vintage Belts"), generate hyper-specific fields (e.g., "Buckle Type", "Notch Count").`;
-            const res = await withRetry(() => ai.models.generateContent({
-                model: 'gemini-3.1-flash-lite',
-                contents: [{ role: 'user', parts: [{ text: prompt }] }],
-                config: { responseMimeType: 'application/json', responseSchema: eavResponseSchema as any }
-            }), 3, 2000, `Trove Bootstrap: ${domainName}`, { prompt });
+        const resText = await generateText('You are a helpful assistant.', prompt, true, eavResponseSchema, `Trove Bootstrap: ${domainName}`, undefined, 'TAXONOMY');
+        const fields = JSON.parse(resText);
+        console.log(`[Taxonomy Engine] 🟢 Received ${fields.length} schema fields for "${domainName}". Saving to DB:`, JSON.stringify(fields, null, 2));
             
-            const fields = JSON.parse(res.text!);
-            console.log(`[Taxonomy Engine] 🟢 Received ${fields.length} schema fields for "${domainName}". Saving to DB:`, JSON.stringify(fields, null, 2));
-            
-            for (const f of fields) {
-                const existing = await db.templateField.findFirst({
-                    where: { inventoryId, categoryId: null, name: f.name }
+        for (const f of fields) {
+            const existing = await db.templateField.findFirst({
+                where: { inventoryId, categoryId: null, name: f.name }
+            });
+            if (!existing) {
+                const created = await db.templateField.create({
+                    data: { name: f.name, uiLabel: f.uiLabel, type: f.type, options: f.options ? JSON.stringify(f.options) : null, matchWeight: f.matchWeight, extractionMethod: f.extractionMethod, inventoryId, categoryId: null }
                 });
-                if (!existing) {
-                    const created = await db.templateField.create({
-                        data: { name: f.name, uiLabel: f.uiLabel, type: f.type, options: f.options ? JSON.stringify(f.options) : null, matchWeight: f.matchWeight, extractionMethod: f.extractionMethod, inventoryId, categoryId: null }
-                    });
-                    console.log(`[Taxonomy Engine] 💾 Inserted TemplateField Rule [Inventory ID ${inventoryId}]:`, created);
-                }
+                console.log(`[Taxonomy Engine] 💾 Inserted TemplateField Rule [Inventory ID ${inventoryId}]:`, created);
             }
-            return true;
-        });
+        }
+        return true;
     } catch (e) {
         console.error(`[Taxonomy Engine] 🔴 Trove schema bootstrap failed for ${domainName}:`, e);
         throw e;
@@ -160,8 +149,7 @@ export async function bootstrapCategorySchema(categoryId: number, categoryName: 
         const existingCategories = await db.category.findMany({ where: { inventoryId }, select: { name: true } });
         const existingCatNames = existingCategories.map(c => c.name).join(', ');
 
-        await apiQueue.add(async () => {
-            const prompt = `You are a Principal Data Architect. Define 1-3 critical visual attributes needed to uniquely identify and deduplicate an item specifically in the sub-category: "${categoryName}".
+        const prompt = `You are a Principal Data Architect. Define 1-3 critical visual attributes needed to uniquely identify and deduplicate an item specifically in the sub-category: "${categoryName}".
             
             CONTEXT (THE ZOOM LEVEL):
             The overarching inventory archetype is: "${(inv as any)?.archetype || 'generic'}".
@@ -178,48 +166,42 @@ export async function bootstrapCategorySchema(categoryId: number, categoryName: 
             3. For ALL enums, provide a HIGHLY EXHAUSTIVE 'options' array.
             4. NO REDUNDANCY: Do not generate "Color", "Color Mix", or "Brand" fields as they are tracked globally.`;
 
-            const res = await withRetry(() => ai.models.generateContent({
-                model: 'gemini-3.1-flash-lite',
-                contents: [{ role: 'user', parts: [{ text: prompt }] }],
-                config: { responseMimeType: 'application/json', responseSchema: eavResponseSchema as any }
-            }), 3, 2000, `Category Bootstrap: ${categoryName}`, { prompt });
+        const resText = await generateText('You are a helpful assistant.', prompt, true, eavResponseSchema, `Category Bootstrap: ${categoryName}`, undefined, 'TAXONOMY');
+        const fields = JSON.parse(resText);
+        console.log(`[Taxonomy Engine] 🟢 Received ${fields.length} fields for category "${categoryName}". Saving to DB:`, JSON.stringify(fields, null, 2));
+
+        const { calculateKeySimilarity } = await import('$lib/server/matcher');
+        const allExistingFields = await db.templateField.findMany({ where: { inventoryId } });
+
+        for (const f of fields) {
+            let bestSim = 0;
+            let matchedField: any = null;
             
-            const fields = JSON.parse(res.text!);
-            console.log(`[Taxonomy Engine] 🟢 Received ${fields.length} fields for category "${categoryName}". Saving to DB:`, JSON.stringify(fields, null, 2));
-
-            const { calculateKeySimilarity } = await import('$lib/server/matcher');
-            const allExistingFields = await db.templateField.findMany({ where: { inventoryId } });
-
-            for (const f of fields) {
-                let bestSim = 0;
-                let matchedField: any = null;
-                
-                for (const existing of allExistingFields) {
-                    const sim = calculateKeySimilarity(f.name, existing.name);
-                    if (sim > bestSim) { bestSim = sim; matchedField = existing; }
-                }
-                
-                if (bestSim > 0.82 && matchedField) {
-                    if (matchedField.categoryId === null) {
-                        console.log(`[Taxonomy Engine] 🛑 Vetoed local field '${f.name}': Already exists globally as '${matchedField.name}'`);
-                        continue; // Drop it completely to protect the global namespace
-                    } else {
-                        console.log(`[Taxonomy Engine] 🔗 Snapped proposed field '${f.name}' to existing local trait '${matchedField.name}'`);
-                        f.name = matchedField.name; // Standardize the key across categories
-                    }
-                }
-
-                const existing = await db.templateField.findFirst({
-                    where: { inventoryId, categoryId, name: f.name }
-                });
-                if (!existing) {
-                    const created = await db.templateField.create({
-                        data: { name: f.name, uiLabel: f.uiLabel, type: f.type, options: f.options ? JSON.stringify(f.options) : null, matchWeight: f.matchWeight, extractionMethod: f.extractionMethod, inventoryId, categoryId }
-                    });
-                    console.log(`[Taxonomy Engine] 💾 Inserted TemplateField Rule [Category ID ${categoryId}]:`, created);
+            for (const existing of allExistingFields) {
+                const sim = calculateKeySimilarity(f.name, existing.name);
+                if (sim > bestSim) { bestSim = sim; matchedField = existing; }
+            }
+            
+            if (bestSim > 0.82 && matchedField) {
+                if (matchedField.categoryId === null) {
+                    console.log(`[Taxonomy Engine] 🛑 Vetoed local field '${f.name}': Already exists globally as '${matchedField.name}'`);
+                    continue; // Drop it completely to protect the global namespace
+                } else {
+                    console.log(`[Taxonomy Engine] 🔗 Snapped proposed field '${f.name}' to existing local trait '${matchedField.name}'`);
+                    f.name = matchedField.name; // Standardize the key across categories
                 }
             }
-        });
+
+            const existing = await db.templateField.findFirst({
+                where: { inventoryId, categoryId, name: f.name }
+            });
+            if (!existing) {
+                const created = await db.templateField.create({
+                    data: { name: f.name, uiLabel: f.uiLabel, type: f.type, options: f.options ? JSON.stringify(f.options) : null, matchWeight: f.matchWeight, extractionMethod: f.extractionMethod, inventoryId, categoryId }
+                });
+                console.log(`[Taxonomy Engine] 💾 Inserted TemplateField Rule [Category ID ${categoryId}]:`, created);
+            }
+        }
     } catch (e) {
         console.error(`[Taxonomy Engine] 🔴 Category schema bootstrap failed for ${categoryName}:`, e);
     } finally {
@@ -233,35 +215,29 @@ export async function beautifyTaxonomyRules(inventoryId: number) {
 
     const taskId = taskManager.start('global', inventoryId, `Beautifying taxonomy labels`);
     try {
-        return await apiQueue.add(async () => {
-            const payload = fields.map(f => ({
-                id: f.id, name: f.name, uiLabel: f.uiLabel, options: f.options ? JSON.parse(f.options) : null
-            }));
+        const payload = fields.map(f => ({
+            id: f.id, name: f.name, uiLabel: f.uiLabel, options: f.options ? JSON.parse(f.options) : null
+        }));
 
-            const prompt = `You are a UX writer improving an inventory app. 
+        const prompt = `You are a UX writer improving an inventory app. 
 Translate the following system taxonomy fields into everyday, layman's terms (suitable for a teenager or general adult, not overly technical).
 - "uiLabel": Rewrite the machine "name" into a simple, natural label (e.g., "textile_construction" -> "Fabric", "body_zone" -> "Worn On", "garment_style" -> "Style").
 - "options": If present, format the enum values to look nice and readable (e.g., "synthetic" -> "Synthetic", "button-down" -> "Button-Down").
 Output exactly the same JSON array structure, preserving the "id" integer, but updating "uiLabel" and "options".`;
 
-            const res = await withRetry(() => ai.models.generateContent({
-                model: 'gemini-3.1-flash-lite',
-                contents: [{ role: 'user', parts: [{ text: prompt + '\n\n' + JSON.stringify(payload) }] }],
-                config: { responseMimeType: 'application/json', responseSchema: {
-                    type: 'array', items: { type: 'object', properties: { id: { type: 'integer' }, uiLabel: { type: 'string' }, options: { type: 'array', items: { type: 'string' }, nullable: true } }, required: ['id', 'uiLabel'] }
-                } }
-            }), 3, 2000, `Beautify Taxonomy`, { prompt });
-
-            const improved = JSON.parse(res.text!);
+        const jsonSchema = {
+            type: 'array', items: { type: 'object', properties: { id: { type: 'integer' }, uiLabel: { type: 'string' }, options: { type: 'array', items: { type: 'string' }, nullable: true } }, required: ['id', 'uiLabel'] }
+        };
+        const resText = await generateText('You are a UX writer improving an inventory app.', prompt + '\n\n' + JSON.stringify(payload), true, jsonSchema, `Beautify Taxonomy`, undefined, 'TAXONOMY');
+        const improved = JSON.parse(resText);
             
-            for (const field of improved) {
-                await db.templateField.update({
-                    where: { id: field.id },
-                    data: { uiLabel: field.uiLabel, ...(field.options ? { options: JSON.stringify(field.options) } : {}) }
-                });
-            }
-            return true;
-        });
+        for (const field of improved) {
+            await db.templateField.update({
+                where: { id: field.id },
+                data: { uiLabel: field.uiLabel, ...(field.options ? { options: JSON.stringify(field.options) } : {}) }
+            });
+        }
+        return true;
     } catch (e) {
         console.error("Beautify failed:", e);
     } finally {

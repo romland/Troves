@@ -1,16 +1,13 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { db } from '$lib/server/database';
-import { GoogleGenAI } from '@google/genai';
 import { env } from '$env/dynamic/private';
 import { uploadsDiskFolder, uploadsWebFolder } from '$lib/server/constants';
 import fs from 'fs';
 import path from 'path';
 import { logActivity } from '$lib/server/logger';
-import { withRetry } from '$lib/server/retry';
 import { getSafeFilename } from '$lib/server/fsUtils';
-
-const ai = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
+import { generateText, analyzeImage } from '$lib/server/ai/index';
 
 export const POST: RequestHandler = async ({ request, locals }) => {
     if (!locals.user) return json({ error: 'Unauthorized' }, { status: 401 });
@@ -57,7 +54,7 @@ ${docsText.substring(0, 3000)}
 USER QUESTION: ${question}
 `;
 
-        const parts: any[] = [{ text: prompt }];
+        let answer = '';
 
         if (includePhoto) {
             const primaryPhoto = item.photos.find(p => p.type === 'product' && p.orgPath);
@@ -70,7 +67,7 @@ USER QUESTION: ${question}
                     if (ext === '.png') mimeType = 'image/png';
                     else if (ext === '.webp') mimeType = 'image/webp';
 
-                    parts.push({ inlineData: { mimeType, data: fileBuffer.toString('base64') } });
+                    answer = await analyzeImage(prompt, mimeType, fileBuffer.toString('base64'), false, undefined, 'AI Assistant Q&A', { itemId }, 'QNA');
                 } catch (err) {
                     console.error("Failed to load photo for AI context:", err);
                 }
@@ -78,12 +75,9 @@ USER QUESTION: ${question}
         }
 
     try {
-            const response = await withRetry(() => ai.models.generateContent({
-            model: 'gemini-3.1-flash-lite',
-                contents: [{ role: 'user', parts }]
-            }), 3, 2000, 'AI Assistant Q&A', { prompt, itemId });
-
-        const answer = response.text!;
+        if (!answer) {
+            answer = await generateText('You are a helpful assistant.', prompt, false, undefined, 'AI Assistant Q&A', { itemId }, 'QNA');
+        }
 
         // Save to Notebook (Document)
         const filename = getSafeFilename(`item-${item.id}-qna`);

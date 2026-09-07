@@ -3,8 +3,9 @@
 
 Inventory management (for at home). There are many like it, but this one is mine.
 
-The primary use is:
-`Do I have that, where the heck is it?` and `What does it do and why did I buy it?` [1]
+My use-cases were:  
+`Do I have that, where the heck is it?` and  
+`What does it do and why did I buy it?` [1]
 
 I am no fan of data-entry, so adding new products/items should be as automated as 
 possible (using any device). Most of the effort of making this app went into creating
@@ -101,6 +102,7 @@ about the visuals ... But, let's get the ball rolling in 2026, the first screens
 - Collection (bulk/multi-scan) import of CDs, DVDs, books, whiskeys, what have you
 - Multiple inventories (i.e. one for shoes, another for clothes, and yet another for electronics)
 - Reminder to self: long-tap on notebook button to add a quick note without going to notebook
+- Bring your own model
 - ...and more
 
 ### Scanning collections

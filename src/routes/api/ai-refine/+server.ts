@@ -1,7 +1,6 @@
 import { json } from '@sveltejs/kit';
 import { guessProductDetails } from '$lib/server/gemini-classification';
 import { db } from '$lib/server/database';
-import { apiQueue } from '$lib/server/queue/index';
 
 export async function POST({ request, locals }) {
     if (!locals.user) return json({ error: 'Unauthorized' }, { status: 401 });
@@ -22,10 +21,7 @@ export async function POST({ request, locals }) {
     }
 
     try {
-        const result = await apiQueue.add(
-            () => guessProductDetails(`data${photo.orgPath}`, hint),
-            { targetType: 'item', targetId: Number(itemId), description: 'Refining product details via LLM' }
-        );
+        const result = await guessProductDetails(`data${photo.orgPath}`, hint, Number(itemId));
         return json(result);
     } catch (e: any) {
         console.error("AI Refine Error:", e);

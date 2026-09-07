@@ -30,8 +30,9 @@ export async function getSystemDiagnostics() {
     ];
 
     const apis = {
-        groq: !!env.GROQ_API_TOKEN,
-        gemini: !!env.GEMINI_API_KEY
+        vision: { provider: env.AI_VISION_PROVIDER || 'gemini', configured: !!env.AI_VISION_API_KEY || !!env.AI_VISION_BASE_URL },
+        text: { provider: env.AI_TEXT_PROVIDER || 'openai', configured: !!env.AI_TEXT_API_KEY || !!env.AI_TEXT_BASE_URL },
+        audio: { provider: env.AI_AUDIO_PROVIDER || 'openai', configured: !!env.AI_AUDIO_API_KEY || !!env.AI_AUDIO_BASE_URL }
     };
 
     return { totalRamGB, deps, microservices, apis };

@@ -49,20 +49,27 @@
 
     <!-- AI Providers -->
     <div>
-        <h5 class="text-xs font-bold uppercase tracking-wider text-base-content/50 mb-3">Model Providers</h5>
+        <h5 class="text-xs font-bold uppercase tracking-wider text-base-content/50 mb-3">AI Engines</h5>
         <ul class="flex flex-col gap-3">
             <li class="flex items-start gap-3">
-                <i class="bi {diagnostics.apis.gemini ? 'bi-check-circle-fill text-success' : 'bi-x-circle-fill text-error'} text-lg mt-0.5"></i>
+                <i class="bi {diagnostics.apis.vision.configured ? 'bi-check-circle-fill text-success' : 'bi-x-circle-fill text-error'} text-lg mt-0.5"></i>
                 <div>
-                    <div class="font-bold text-sm leading-tight">Gemini API Key (free plan)</div>
-                    <div class="text-xs text-gray-500 mt-0.5">Optional but highly recommended for Vision Classification & Deduplication.</div>
+                    <div class="font-bold text-sm leading-tight">Vision Engine: <span class="uppercase tracking-wider text-[10px] bg-base-200 px-1.5 py-0.5 rounded ml-1">{diagnostics.apis.vision.provider}</span></div>
+                    <div class="text-xs text-gray-500 mt-0.5">Used for Image Classification, Auto-Tagging, & Deduplication.</div>
                 </div>
             </li>
             <li class="flex items-start gap-3">
-                <i class="bi {diagnostics.apis.groq ? 'bi-check-circle-fill text-success' : 'bi-dash-circle-fill text-warning'} text-lg mt-0.5"></i>
+                <i class="bi {diagnostics.apis.text.configured ? 'bi-check-circle-fill text-success' : 'bi-dash-circle-fill text-warning'} text-lg mt-0.5"></i>
                 <div>
-                    <div class="font-bold text-sm leading-tight">Groq API Key (free plan)</div>
-                    <div class="text-xs text-gray-500 mt-0.5">Optional. But highly recommended for document summaries. Also used for voice search.</div>
+                    <div class="font-bold text-sm leading-tight">Text Engine: <span class="uppercase tracking-wider text-[10px] bg-base-200 px-1.5 py-0.5 rounded ml-1">{diagnostics.apis.text.provider}</span></div>
+                    <div class="text-xs text-gray-500 mt-0.5">Used for OCR JSON formatting, Summaries, and Ask Troves.</div>
+                </div>
+            </li>
+            <li class="flex items-start gap-3">
+                <i class="bi {diagnostics.apis.audio.configured ? 'bi-check-circle-fill text-success' : 'bi-dash-circle-fill text-warning'} text-lg mt-0.5"></i>
+                <div>
+                    <div class="font-bold text-sm leading-tight">Audio Engine: <span class="uppercase tracking-wider text-[10px] bg-base-200 px-1.5 py-0.5 rounded ml-1">{diagnostics.apis.audio.provider}</span></div>
+                    <div class="text-xs text-gray-500 mt-0.5">Used for Voice Search dictation and parsing.</div>
                 </div>
             </li>
         </ul>

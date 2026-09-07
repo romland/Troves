@@ -17,13 +17,14 @@ export async function withRetry<T>(
     maxRetries = 3, 
     delayMs = 1500, 
     taskName = 'LLM Operation',
-    context?: { itemId?: number, taskId?: string | number, prompt?: any, path?: string }
+    context?: { itemId?: number, taskId?: string | number, prompt?: any, path?: string, provider?: string }
 ): Promise<T> {
     let attempt = 0;
 
     // Auto-infer service from taskName
     const nameLower = taskName.toLowerCase();
-    const service = nameLower.includes('groq') ? 'groq' : nameLower.includes('openai') ? 'openai' : nameLower.includes('replicate') ? 'replicate' : 'gemini';
+    let service = context?.provider || (nameLower.includes('groq') ? 'groq' : nameLower.includes('openai') ? 'openai' : nameLower.includes('replicate') ? 'replicate' : 'gemini');
+    if (!serviceQuotas[service]) service = 'openai';
     const quota = serviceQuotas[service];
 
     while (true) {
