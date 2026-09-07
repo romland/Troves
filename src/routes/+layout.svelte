@@ -53,12 +53,12 @@
             const isTyping = activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT';
             const isDropdownOpen = !!document.querySelector('.dropdown-open') || !!document.activeElement?.closest('.dropdown');
             
-            if (isTyping || isDropdownOpen) {
-                console.log("🕵️‍♂️ [DEBUG-SYNC] User is interacting. Deferring invalidateAll().");
+            if (isTyping || isDropdownOpen || $navigating) {
+                console.log("🕵️‍♂️ [DEBUG-SYNC] User is interacting or navigating. Deferring invalidateAll().");
                 const attemptSync = () => {
                     const active = document.activeElement?.tagName;
                     const dropdown = document.querySelector('.dropdown-open') || document.activeElement?.closest('.dropdown');
-                    if (active === 'INPUT' || active === 'TEXTAREA' || active === 'SELECT' || dropdown) {
+                    if (active === 'INPUT' || active === 'TEXTAREA' || active === 'SELECT' || dropdown || $navigating) {
                         setTimeout(attemptSync, 1000);
                     } else {
                         console.log("🕵️‍♂️ [DEBUG-SYNC] Interaction complete. Syncing UI via invalidateAll().");

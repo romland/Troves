@@ -30,7 +30,7 @@
             try {
                 const parsed = JSON.parse(cached);
                 loadedPages = parsed.loadedPages || [];
-                nextPage = parsed.nextPage || 1;
+                    nextPage = parsed.nextPage !== undefined ? parsed.nextPage : nextPage;
                 reachedEnd = parsed.reachedEnd || false;
                 console.log(`[DEBUG-SCROLL] ✅ Synchronously restored ${loadedPages.length} pages. (This enables scroll restore)`);
             } catch (e) { console.warn("Was a silenced exception", e); }
@@ -49,7 +49,7 @@
                 try {
                     const parsed = JSON.parse(cached);
                     loadedPages = parsed.loadedPages || [];
-                    nextPage = parsed.nextPage || 1;
+                        nextPage = parsed.nextPage !== undefined ? parsed.nextPage : $page.data.nextPage;
                     reachedEnd = parsed.reachedEnd || false;
                     console.log(`[DEBUG-SCROLL] ✅ Synchronously restored ${loadedPages.length} pages.`);
                 } catch (e) { console.warn("Was a silenced exception", e); }
@@ -57,6 +57,7 @@
                 // CRITICAL: If URL changed and no cache exists, wipe the old pages out!
                 loadedPages = [];
                 reachedEnd = false;
+                    nextPage = $page.data.nextPage;
             }
         }
     }
