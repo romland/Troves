@@ -14,7 +14,7 @@ import { taskManager } from '$lib/server/taskManager';
 import { fetchVideoIfSupported } from './ytdlp';
 import { extractEpubText } from './epub';
 import { isPdf, isEpub } from '$lib/shared/fileutils';
-import { decodeHtmlEntities } from '$lib/shared/fileutils';
+import { stripHtmlSafe, extractHtmlTitleSafe } from '$lib/server/htmlUtils';
     import { env } from '$env/dynamic/private';
 
 export async function downloadAndStoreDocuments(target: { itemId?: number, timelineNoteId?: number }, remoteSite: string, data: any, diskFolder: string, webFolder: string, formPrefix: string, depth: number = 0)
@@ -188,22 +188,16 @@ export async function downloadAndStoreDocuments(target: { itemId?: number, timel
 			
 			// Fallback: If SingleFile failed to grab the title, manually extract it from HTML
 			if (!pageData.title && pageData.html) {
-				const titleMatch = pageData.html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
-				const h1Match = pageData.html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
-				pageData.title = titleMatch ? titleMatch[1].replace(/<[^>]+>/g, '').trim() : (h1Match ? h1Match[1].replace(/<[^>]+>/g, '').trim() : "");
+                pageData.title = extractHtmlTitleSafe(pageData.html, line);
 			}
 
-        pageData.title = decodeHtmlEntities(pageData.title);
 			
 			let extractText = pageData.extracts?.[0] || "";
 			
 			// Fallback: If SingleFile extraction failed, aggressively strip HTML tags
 			if (extractText.length <= 50 && pageData.html) {
-				extractText = pageData.html.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-				.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-				.replace(/<[^>]+>/g, ' ')
-				.replace(/\s+/g, ' ').trim();
-				pageData.extracts = [extractText.substring(0, 10000)];
+                extractText = stripHtmlSafe(pageData.html, 10000);
+                pageData.extracts = [extractText];
 			}
 			
 			try {
@@ -259,8 +253,9 @@ export async function downloadAndStoreDocuments(target: { itemId?: number, timel
 			const keywords = /datasheet|manual|schematic|user guide|instructions|specs|pinout|wiring|\.pdf$/i;
 			let match;
 			let deepLinksFound = 0;
+            const safeSearchChunk = pageData.html.substring(0, 1000000); // Limit deep link scraping to first 1MB
 			
-			while ((match = linkRegex.exec(pageData.html)) !== null && deepLinksFound < 3) {
+            while ((match = linkRegex.exec(safeSearchChunk)) !== null && deepLinksFound < 3) {
 				const href = match[1];
 				const text = match[2].replace(/<[^>]+>/g, '').trim(); 
 				

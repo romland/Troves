@@ -6,7 +6,7 @@ import { uploadsDiskFolder, uploadsWebFolder } from '$lib/server/constants';
 import fs from 'fs';
 import path from 'path';
 import { logActivity } from '$lib/server/logger';
-import { getSafeFilename } from '$lib/server/fsUtils';
+import { getSafeFilename, getImageMimeType } from '$lib/server/fsUtils';
 import { generateText, analyzeImage } from '$lib/server/ai/index';
 
 export const POST: RequestHandler = async ({ request, locals }) => {
@@ -62,10 +62,7 @@ USER QUESTION: ${question}
                 try {
                     const localFilePath = `data${primaryPhoto.orgPath}`;
                     const fileBuffer = fs.readFileSync(localFilePath);
-                    const ext = path.extname(localFilePath).toLowerCase();
-                    let mimeType = 'image/jpeg';
-                    if (ext === '.png') mimeType = 'image/png';
-                    else if (ext === '.webp') mimeType = 'image/webp';
+                    const mimeType = getImageMimeType(localFilePath);
 
                     answer = await analyzeImage(prompt, mimeType, fileBuffer.toString('base64'), false, undefined, 'AI Assistant Q&A', { itemId }, 'QNA');
                 } catch (err) {

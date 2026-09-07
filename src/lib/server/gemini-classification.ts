@@ -3,6 +3,7 @@ import path from 'path';
 import { dev } from '$app/environment';
 import { env } from '$env/dynamic/private';
 import { analyzeImage } from './ai/index';
+import { getImageMimeType } from './fsUtils';
 import type { TaskContext } from './taskManager';
 
 export interface ImageAnalysisResult {
@@ -32,10 +33,7 @@ export async function analyzePhoto(
   const fileBuffer = fs.readFileSync(localFilePath);
   const base64Data = fileBuffer.toString('base64');
   
-  const ext = path.extname(localFilePath).toLowerCase();
-  let mimeType = 'image/jpeg';
-  if (ext === '.png') mimeType = 'image/png';
-  else if (ext === '.webp') mimeType = 'image/webp';
+  const mimeType = getImageMimeType(localFilePath);
 
   const rootKeys = new Set(['color_mix', 'distinctive_blemishes_or_wear', 'prominent_text_or_graphic']);
   const visibleFields = activeSchema.filter(f => f.extractionMethod !== 'HUMAN_REQUIRED' && !rootKeys.has(f.name));
@@ -137,8 +135,7 @@ TASKS:
 
 export async function guessProductDetails(localFilePath: string, hint: string = "", itemId?: number): Promise<{title: string, description: string}> {
   const fileBuffer = fs.readFileSync(localFilePath);
-  const ext = path.extname(localFilePath).toLowerCase();
-  const mimeType = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg';
+  const mimeType = getImageMimeType(localFilePath);
 
   let promptText = "Identify this product. Return a concise 'title' and a 1-2 sentence 'description'.";
   if (hint.trim() !== "") {

@@ -33,7 +33,7 @@ export async function fetchVideoIfSupported(
         // 1. Ask yt-dlp to dump the JSON metadata. If it succeeds, the site is supported!
         // We use a timeout to prevent hanging on unsupported/slow sites.
         const { stdout: jsonOut } = await execFileAsync('yt-dlp', [
-            '--dump-json', '--no-playlist', '--playlist-items', '1', '--js-runtimes', 'node', url
+            '--dump-json', '--no-playlist', '--playlist-items', '1', '--js-runtimes', 'node', '--extractor-args', 'generic:impersonate', url
         ], { timeout: 15000, maxBuffer: 10 * 1024 * 1024 });
 
         // Extract the first valid JSON object to avoid crashing on Newline Delimited JSON (NDJSON) or warnings
@@ -55,7 +55,7 @@ export async function fetchVideoIfSupported(
 		const t0 = performance.now();
 		console.log(`[yt-dlp] 🚀 Starting heavy background download for: ${url}`);
         await execFileAsync('yt-dlp', [
-            '-f', 'bestvideo+bestaudio/best', '-S', 'vcodec:h264,res,acodec:m4a', '--merge-output-format', 'mp4',
+            '-f', 'bestvideo+bestaudio/best', '-S', 'vcodec:h264,res,acodec:m4a', '--merge-output-format', 'mp4', '--extractor-args', 'generic:impersonate',
             '-o', finalDiskPath, '--no-playlist', '--playlist-items', '1', '--js-runtimes', 'node', url
         ]);
 		console.log(`[yt-dlp] ✅ Finished download in ${((performance.now() - t0) / 1000).toFixed(2)}s for: ${url}`);

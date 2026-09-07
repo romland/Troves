@@ -5,7 +5,7 @@ import { summarizeWebpageExtract } from '$lib/server/llm';
 import { getSafeFilename } from '$lib/server/fsUtils';
 import { uploadsDiskFolder, uploadsWebFolder } from '$lib/server/constants';
 import fs from 'fs';
-import { decodeHtmlEntities } from '$lib/shared/fileutils';
+import { stripHtmlSafe, extractHtmlTitleSafe } from '$lib/server/htmlUtils';
 
 export const POST: RequestHandler = async ({ request, locals }) => {
     if (!locals.user) return json({ error: 'Unauthorized' }, { status: 401 });
@@ -32,12 +32,10 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
                 // Fallback: If SingleFile failed to grab the title, manually extract it from HTML
                 if (!parsed.title && parsed.html) {
-                    const titleMatch = parsed.html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
-                    const h1Match = parsed.html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
-                    parsed.title = titleMatch ? titleMatch[1].replace(/<[^>]+>/g, '').trim() : (h1Match ? h1Match[1].replace(/<[^>]+>/g, '').trim() : "");
+                    parsed.title = extractHtmlTitleSafe(parsed.html, payload);
                 }
 
-                title = decodeHtmlEntities(parsed.title || payload); // Fallback to URL if title is blank
+                title = parsed.title;
                 path = `${uploadsWebFolder}/${docFilename}.html`;
                 console.log(`[Background Task] Saving HTML to ${path}`);
 
@@ -47,12 +45,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
                 
                 // Fallback: If readability failed, aggressively strip HTML tags to get raw text for the LLM
                 if (extractText.length <= 50 && parsed.html) {
-                    extractText = parsed.html.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-                                             .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-                                             .replace(/<[^>]+>/g, ' ')
-                                             .replace(/\s+/g, ' ').trim();
+                    extractText = stripHtmlSafe(parsed.html, 10000);
                     // Overwrite the empty array so the DB actually saves the raw text
-                    parsed.extracts = [extractText.substring(0, 10000)];
+                    parsed.extracts = [extractText];
                 }
                 extracts = JSON.stringify(parsed.extracts || []);
 
