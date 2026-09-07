@@ -18,6 +18,7 @@
 		"migrate:webp": "npx tsx scripts/convert-to-webp.ts",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+		"generate-favicon": "convert t-as-in-troves-48x48.png -define icon:auto-resize=48,32,16 favicon.ico",
 		"generate-pwa-assets": "pwa-assets-generator --preset minimal-2023 static/troves512.webp",
 		"paddleocr:build": "docker compose up -d --build paddleocr",
 		"singlefile:build": "docker compose up -d --build singlefile",
