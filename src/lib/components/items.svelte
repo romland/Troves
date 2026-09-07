@@ -137,6 +137,11 @@
         .filter(job => job.endpoint === '/add')
         .map(job => {
             const getVal = (key: string) => Array.isArray(job.payload[key]) ? job.payload[key][0] : job.payload[key];
+
+            // Prevent ghosts from haunting the wrong troves
+            const inventoryId = getVal('inventoryId');
+            if (inventoryId && Number(inventoryId) !== $page.data.activeInventoryId) return null;
+
             const clientId = getVal('clientId');
             if (!clientId || serverClientIds.has(clientId)) return null;
             
