@@ -5,8 +5,9 @@
     import QRurlScanner from "$lib/components/QRurlScanner.svelte";
     import AttributeAdder from "$lib/components/AttributeAdder.svelte";
     import ItemMiniCard from "$lib/components/ItemMiniCard.svelte";
-    import RefreshDeleteList from "$lib/components/RefreshDeleteList.svelte";
+    import DocumentList from "$lib/components/search/DocumentList.svelte";
     import ImageLightbox from "$lib/components/ImageLightbox.svelte";
+    import DocumentLightbox from "$lib/components/DocumentLightbox.svelte";
     import RelativeDate from "$lib/components/RelativeDate.svelte";
     import { photoTypes } from "$lib/shared/constants";
     import ActionCard from "$lib/components/ActionCard.svelte";
@@ -47,6 +48,8 @@
         reason = "";
         tagcsv = "";
         currentAttributes = [];
+        deletedDocIds = [];
+        refreshedDocIds = [];
         pendingPhotos = [];
         qrScannerCount = 0;
         pastedDocCount = 0;
@@ -102,6 +105,9 @@
     let duplicateDetails: any = null;
     let duplicateDismissed = false;
     let showNudgeTip = false;
+    
+    let deletedDocIds: number[] = [];
+    let refreshedDocIds: number[] = [];
 
     // Dirty State Reactivity
     $: {
@@ -114,6 +120,8 @@
         if (pendingPhotos.length > 0) dirty = true;
         if (qrScannerCount > 0) dirty = true;
         if (pastedDocCount > 0) dirty = true;
+        if (deletedDocIds.length > 0) dirty = true;
+        if (refreshedDocIds.length > 0) dirty = true;
         
         // FIX: If it's a new item, the baseline location is the ambient location, not an empty string.
         const initialLocations = item ? (item.locations?.map(l => l.container?.name).sort().join(',') || "") : [...$ambientLocation].sort().join(',');
@@ -138,6 +146,7 @@
     let isRefining = false;
     let aiDialog: Modal;
     let lightbox: ImageLightbox;
+    let docLightbox: DocumentLightbox;
 
 
     function handleAnalyzingStart(ev: any) {
@@ -551,13 +560,18 @@
                 {#if item?.documents?.length > 0}
                     <div class="mb-6 bg-base-50/50 p-4 rounded-xl border border-base-200">
                         <h3 class="font-semibold text-sm text-gray-500 mb-3 flex items-center gap-2"><i class="bi bi-file-earmark-text"></i> Existing Documents</h3>
-                        <RefreshDeleteList
-                            values={item.documents}
-                            inputName="documents"
-                            columns={({
-                                "3":{name:"Document", fieldName:"title", subFieldName:"source", linkFieldName:"path", isImage: false}
-                            } as any)}
+                        <DocumentList 
+                            documents={item.documents} 
+                            editable={true} 
+                            showContextItem={false} 
+                            containerClass="" 
+                            bind:deletedIds={deletedDocIds} 
+                            bind:refreshedIds={refreshedDocIds} 
+                            on:openDoc={(e) => docLightbox.open(e.detail)} 
+                            on:openImage={(e) => lightbox.open(e.detail)} 
                         />
+                        <input type="hidden" name="delete_documents" value={JSON.stringify(deletedDocIds)} />
+                        <input type="hidden" name="refresh_documents" value={JSON.stringify(refreshedDocIds)} />
                     </div>
                 {/if}
                 <QRurlScanner 
@@ -654,6 +668,7 @@
 </Modal>
 
 <ImageLightbox bind:this={lightbox} />
+<DocumentLightbox bind:this={docLightbox} />
 
 <style>
     @keyframes shimmer {

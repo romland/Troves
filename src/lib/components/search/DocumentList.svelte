@@ -6,6 +6,12 @@
     import { isPdf, isHtml, isEpub, isMarkdown, isImage } from "$lib/shared/fileutils";
     export let documents: any[] = [];
 
+    export let editable: boolean = false;
+    export let showContextItem: boolean = true;
+    export let deletedIds: number[] = [];
+    export let refreshedIds: number[] = [];
+    export let containerClass: string = "pb-32";
+
     const dispatch = createEventDispatcher();
 
     function handleDocumentClick(e: MouseEvent, doc: any, contextMatch: string, exactWord: string) {
@@ -20,9 +26,21 @@
             dispatch('openImage', { orgPath: doc.path || doc.source, showOriginal: true });
         }
     }
+
+    function toggleDelete(id: number) {
+        if (deletedIds.includes(id)) deletedIds = deletedIds.filter(x => x !== id);
+        else deletedIds = [...deletedIds, id];
+        dispatch('change');
+    }
+    
+    function toggleRefresh(id: number) {
+        if (refreshedIds.includes(id)) refreshedIds = refreshedIds.filter(x => x !== id);
+        else refreshedIds = [...refreshedIds, id];
+        dispatch('change');
+    }
 </script>
 
-<div class="flex flex-col gap-2 pb-32 animate-fade-in px-2 sm:px-0">
+<div class="flex flex-col gap-2 animate-fade-in px-2 sm:px-0 {containerClass}">
     {#each documents as doc}
         {@const info = getFileInfo(doc)}
         {@const rawPath = doc.path || doc.source || ''}
@@ -47,7 +65,7 @@
             (isHtml(rawPath) || rawPath.startsWith('http') || rawPath.endsWith('.csv')) ? `${rawPath}#:~:text=${safeQuery}` :
             rawPath
         ) : rawPath}
-        <div class="flex flex-row p-3 sm:p-5 hover:bg-base-200/40 rounded-2xl sm:rounded-3xl transition-all border border-base-200 shadow-sm bg-base-100 group relative gap-3 sm:gap-6 items-start sm:items-center">
+        <div class="flex flex-row p-3 sm:p-5 hover:bg-base-200/40 rounded-2xl sm:rounded-3xl transition-all border border-base-200 shadow-sm bg-base-100 group relative gap-3 sm:gap-6 items-start sm:items-center {deletedIds.includes(doc.id) ? 'opacity-50 grayscale scale-[0.98]' : ''}">
             <!-- Invisible hit-target -->
             <a href="{directHref}" target="_blank" rel="noopener noreferrer" class="absolute inset-0 z-0 rounded-2xl sm:rounded-3xl outline-none" aria-label="View Document" on:click={(e) => handleDocumentClick(e, doc, contextMatch, exactWord)}></a>
             
@@ -91,8 +109,20 @@
 
             </div>
 
+            <!-- Action Buttons for Edit Mode -->
+            {#if editable}
+                <div class="relative z-20 pointer-events-auto flex items-center gap-1 shrink-0 ml-auto flex-col sm:flex-row">
+                    <button type="button" class="btn btn-circle btn-sm btn-ghost {refreshedIds.includes(doc.id) ? 'text-primary bg-primary/10' : 'text-base-content/50 hover:text-primary'}" on:click={() => toggleRefresh(doc.id)} title="Re-download / Refresh">
+                        <i class="bi bi-arrow-clockwise {refreshedIds.includes(doc.id) ? 'animate-spin' : ''}"></i>
+                    </button>
+                    <button type="button" class="btn btn-circle btn-sm btn-ghost {deletedIds.includes(doc.id) ? 'text-error bg-error/10' : 'text-base-content/50 hover:text-error hover:bg-error/10'}" on:click={() => toggleDelete(doc.id)} title={deletedIds.includes(doc.id) ? "Undo Delete" : "Delete"}>
+                        <i class="bi {deletedIds.includes(doc.id) ? 'bi-arrow-counterclockwise' : 'bi-trash3'}"></i>
+                    </button>
+                </div>
+            {/if}
+
             <!-- Desktop-only Attached Item Context (Right Column) -->
-            {#if doc.item}
+            {#if showContextItem && doc.item}
                 <div class="hidden md:flex w-64 shrink-0 relative z-10 pointer-events-auto border-l border-base-200 pl-6 flex-col justify-center">
                     <div class="text-[10px] font-semibold uppercase tracking-wider text-base-content/40 mb-2.5 flex items-center gap-1.5">
                         <i class="bi bi-paperclip text-sm"></i> Attached To

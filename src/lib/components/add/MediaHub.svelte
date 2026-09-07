@@ -2,7 +2,6 @@
 <script lang="ts">
     import MultiImageFetcher from "$lib/components/MultiImageFetcher.svelte";
     import MultiImageUpload from "$lib/components/MultiImageUpload.svelte";
-    import RefreshDeleteList from "$lib/components/RefreshDeleteList.svelte";
     import { createEventDispatcher } from 'svelte';
     
     const dispatch = createEventDispatcher();
@@ -12,6 +11,9 @@
     
     // View state for tabs
     let activeTab = 'device'; // 'device' | 'web'
+    
+    let deletedImageIds: number[] = [];
+    let refreshedImageIds: number[] = [];
 
     // Map existing photos to extract vision/LLM category and format it cleanly
     $: displayValues = photoValues.map(photo => {
@@ -31,7 +33,19 @@
             ...photo,
             displayInfo: category ? `${typeStr} — ${category}` : typeStr
         };
-    });    
+    });
+
+    function toggleDelete(id: number) {
+        if (deletedImageIds.includes(id)) deletedImageIds = deletedImageIds.filter(x => x !== id);
+        else deletedImageIds = [...deletedImageIds, id];
+        dispatch('change');
+    }
+    
+    function toggleRefresh(id: number) {
+        if (refreshedImageIds.includes(id)) refreshedImageIds = refreshedImageIds.filter(x => x !== id);
+        else refreshedImageIds = [...refreshedImageIds, id];
+        dispatch('change');
+    }
 </script>
 
 <div class="flex flex-col w-full">
@@ -98,14 +112,32 @@
     {#if photoValues.length > 0}
         <div class="mb-6 bg-base-50/50 p-4 rounded-xl border border-base-200">
             <h3 class="font-semibold text-sm text-gray-500 mb-3 flex items-center gap-2"><i class="bi bi-images"></i> Existing Photos</h3>
-            <RefreshDeleteList
-                values={displayValues}
-                inputName="images"
-                columns={{
-                    "3":{name:"Image",    fieldName:"orgPath", isImage: true},
-                    "4":{name:"Details", fieldName:"displayInfo"}
-                }}
-            />
+            <div class="flex flex-col gap-2">
+                {#each displayValues as photo}
+                    <div class="flex items-center p-2 sm:p-3 bg-base-100 border border-base-200 shadow-sm rounded-xl gap-3 transition-all {deletedImageIds.includes(photo.id) ? 'opacity-50 grayscale scale-[0.98]' : ''}">
+                        <div class="w-12 h-12 sm:w-16 sm:h-16 shrink-0 rounded-lg overflow-hidden border border-base-200 bg-base-50 flex items-center justify-center">
+                            {#if photo.thumbPath || photo.orgPath}
+                                <img src={photo.thumbPath || photo.orgPath} alt="Item photo" class="w-full h-full object-cover" />
+                            {:else}
+                                <i class="bi bi-image text-2xl text-gray-400"></i>
+                            {/if}
+                        </div>
+                        <div class="flex-1 min-w-0 flex flex-col justify-center">
+                            <span class="font-bold text-sm sm:text-base text-base-content leading-tight truncate">{photo.displayInfo}</span>
+                        </div>
+                        <div class="flex items-center gap-1 shrink-0 ml-auto">
+                            <button type="button" class="btn btn-circle btn-sm btn-ghost {refreshedImageIds.includes(photo.id) ? 'text-primary bg-primary/10' : 'text-base-content/50 hover:text-primary'}" on:click={() => toggleRefresh(photo.id)} title="Re-process Image AI">
+                                <i class="bi bi-arrow-clockwise {refreshedImageIds.includes(photo.id) ? 'animate-spin' : ''}"></i>
+                            </button>
+                            <button type="button" class="btn btn-circle btn-sm btn-ghost {deletedImageIds.includes(photo.id) ? 'text-error bg-error/10' : 'text-base-content/50 hover:text-error hover:bg-error/10'}" on:click={() => toggleDelete(photo.id)} title={deletedImageIds.includes(photo.id) ? "Undo Delete" : "Delete"}>
+                                <i class="bi {deletedImageIds.includes(photo.id) ? 'bi-arrow-counterclockwise' : 'bi-trash3'}"></i>
+                            </button>
+                        </div>
+                    </div>
+                {/each}
+            </div>
+            <input type="hidden" name="delete_images" value={JSON.stringify(deletedImageIds)} />
+            <input type="hidden" name="refresh_images" value={JSON.stringify(refreshedImageIds)} />
         </div>
     {/if}
 
