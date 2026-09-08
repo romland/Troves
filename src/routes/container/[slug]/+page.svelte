@@ -264,7 +264,7 @@
             {@const poly = polygons[currentItem.slotIndex]}
             <div class="p-4 border-b border-base-200 bg-base-200/30 flex flex-col gap-1">
                 <div class="flex justify-between items-center">
-                    <h3 class="font-bold text-lg"><i class="bi bi-robot text-primary mr-1"></i> Review Scanned Items</h3>
+                    <h3 class="font-bold text-lg"><i class="bi bi-robot text-primary mr-1"></i> Review Scanned Result</h3>
                     <div class="badge badge-primary badge-outline font-bold">{currentTriageIdx + 1} of {deepScanItems.length}</div>
                 </div>
                 <div class="text-[10px] uppercase font-bold text-gray-500 tracking-wider">in {data.item?.name}</div>
@@ -280,28 +280,21 @@
                 {@const boxW = Math.max(1, maxX - minX)}
                 {@const boxH = Math.max(1, maxY - minY)}
                 
-                <!-- Expand the view by 80% to show surrounding context and labels -->
-                {@const padX = Math.max(100, boxW * 0.8)}
-                {@const padY = Math.max(100, boxH * 0.8)}
-                
-                {@const paddedMinX = Math.max(0, minX - padX)}
-                {@const paddedMaxX = Math.min(1000, maxX + padX)}
-                {@const paddedMinY = Math.max(0, minY - padY)}
-                {@const paddedMaxY = Math.min(1000, maxY + padY)}
-                
-                {@const paddedW = Math.max(1, paddedMaxX - paddedMinX)}
-                {@const paddedH = Math.max(1, paddedMaxY - paddedMinY)}
+                {@const cx = (minX + maxX) / 2 / 10}
+                {@const cy = (minY + maxY) / 2 / 10}
+                {@const maxDim = Math.max(boxW, boxH)}
+                {@const zoomFactor = Math.max(1, Math.min(6, 400 / maxDim))}
                 
                 <div class="w-full h-48 sm:h-64 bg-base-300 relative overflow-hidden">
-                    <!-- Padded Context Image -->
-                    <img src={data.item?.photoPath} class="absolute max-w-none origin-top-left object-cover pointer-events-none" style="width: {100000 / paddedW}%; height: {100000 / paddedH}%; left: -{(paddedMinX / paddedW) * 100}%; top: -{(paddedMinY / paddedH) * 100}%;" alt="Slot View" />
-                    
-                    <!-- Exact Highlight Overlay -->
-                    <svg viewBox="0 0 1000 1000" preserveAspectRatio="none" class="absolute max-w-none origin-top-left pointer-events-none drop-shadow-md z-10" style="width: {100000 / paddedW}%; height: {100000 / paddedH}%; left: -{(paddedMinX / paddedW) * 100}%; top: -{(paddedMinY / paddedH) * 100}%;">
-                        <polygon points={poly.map(pt => pt.join(',')).join(' ')} class="fill-primary/20 stroke-primary stroke-[5px]" vector-effect="non-scaling-stroke" />
-                    </svg>
                     
                     <!-- Minimap Abstract Context Overlay -->
+                    <div class="absolute pointer-events-none transition-all duration-500 ease-out" style="width: {zoomFactor * 100}%; top: 50%; left: 50%; transform: translate(-{cx}%, -{cy}%);">
+                        <img src={data.item?.photoPath} class="w-full h-auto block" alt="Slot View" />
+                        <svg viewBox="0 0 1000 1000" preserveAspectRatio="none" class="absolute inset-0 w-full h-full">
+                            <path d="M 0,0 L 1000,0 L 1000,1000 L 0,1000 Z M {poly[0].join(',')} L {poly[1].join(',')} L {poly[2].join(',')} L {poly[3].join(',')} Z" fill="rgba(0,0,0,0.6)" fill-rule="evenodd" />
+                            <polygon points={poly.map(pt => pt.join(',')).join(' ')} class="fill-primary/10 stroke-primary" stroke-width="3" vector-effect="non-scaling-stroke" />
+                        </svg>
+                    </div>
                     <div class="absolute top-3 right-3 w-24 sm:w-32 z-20 shadow-[0_10px_20px_rgba(0,0,0,0.3)] rounded-2xl ring-4 ring-base-100/50">
                         <SpatialGridMap 
                             activeIndex={currentItem.slotIndex} 

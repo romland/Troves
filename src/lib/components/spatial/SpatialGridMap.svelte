@@ -14,15 +14,16 @@
         <div class="w-full aspect-square"></div>
     {/if}
     
-    <svg viewBox="0 0 1000 1000" preserveAspectRatio="none" class="absolute inset-0 w-full h-full">
+    <svg viewBox="0 0 1000 1000" preserveAspectRatio="none" class="absolute inset-0 w-full h-full [transform:translateZ(0)]">
         {#each polygons as p, i}
             {@const isActive = activeIndex === i}
             {@const isMapped = mappedIndices.includes(i)}
             <polygon 
                 points={p.map(pt => pt.join(',')).join(' ')} 
-                class="transition-all duration-300 {isActive ? 'fill-primary stroke-primary' : (isMapped ? 'fill-base-content/10 stroke-base-content/40' : 'fill-transparent stroke-base-content/20')} hover:fill-base-content/5" 
-                stroke-width={isActive ? "8" : "3"} 
+                class="transition-colors duration-300 {isActive ? 'fill-primary/30 stroke-primary' : (isMapped ? 'fill-base-content/20 stroke-base-content/80' : 'fill-transparent stroke-base-content/50')} hover:fill-base-content/10" 
+                stroke-width={isActive ? "3" : "1.5"} 
                 vector-effect="non-scaling-stroke" 
+                stroke-linejoin="round"
             />
         {/each}
     </svg>
