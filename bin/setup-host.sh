@@ -192,7 +192,7 @@ fi
 info "Checking RAM and Swap allocation..."
 if [ "$TOTAL_RAM_MB" -le 4096 ] && [ "$TOTAL_SWAP_MB" -lt 1900 ]; then
     warn "Low Swap Configuration Detected (${TOTAL_SWAP_MB}MB Swap on ${TOTAL_RAM_MB}MB RAM)."
-    echo "Heavy OCR (PaddleOCR) and Vision AI tasks can crash the server due to OOM kills."
+    echo "Heavy OCR (PaddleOCR) and Vision Model tasks can crash the server due to OOM kills."
     
     if [ -f /etc/dphys-swapfile ]; then
         read -p "Automated fix available: Set swap to 2048MB in /etc/dphys-swapfile? (y/N): " -n 1 -r

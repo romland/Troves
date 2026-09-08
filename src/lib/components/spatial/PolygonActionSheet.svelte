@@ -126,6 +126,7 @@
             }}>
                 <input type="hidden" name="entityId" value={mappedEntity.id}>
                 <input type="hidden" name="entityType" value={mappedEntity.type || 'item'}>
+                <input type="hidden" name="parentContainerId" value={parentContainerId}>
                 <button type="submit" class="btn btn-outline btn-error w-full rounded-xl mt-2">Unlink from Map</button>
             </form>
         {:else}

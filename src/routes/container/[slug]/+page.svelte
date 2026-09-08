@@ -22,11 +22,13 @@
     let actionSheet: PolygonActionSheet;
 
     let polygons = data.polygons || [];
+    let warpMap = data.warpMap || null;
     let isMapping = false;
     let isMapDirty = false;
     let activePolyIdx: number | null = null;
-    let gridCols = 5;
-    let gridRows = 4;
+    let gridCols = warpMap?.cols || 5;
+    let gridRows = warpMap?.rows || 4;
+    let warpCorners = warpMap?.corners || [[100, 100], [900, 100], [900, 900], [100, 900]];
     let isWarpMode = false;
 
     // Deep Scan Triage State
@@ -60,14 +62,28 @@
         }
     }
 
-    async function triggerDeepScan() {
+    async function triggerDeepScan(force = false) {
         const emptySlots = polygons
             .map((p, i) => ({ polygon: p, originalIndex: i }))
             .filter((_, i) => !mappedEntities[i]);
             
         if (emptySlots.length === 0) return notify('info', 'All slots are already mapped.');
 
+        if (!force && typeof sessionStorage !== 'undefined') {
+            const cached = sessionStorage.getItem(`deepscan_${data.item?.id}`);
+            const cachedIdx = sessionStorage.getItem(`deepscan_idx_${data.item?.id}`);
+            if (cached) {
+                deepScanItems = JSON.parse(cached);
+                currentTriageIdx = cachedIdx ? parseInt(cachedIdx, 10) : 0;
+                if (currentTriageIdx < deepScanItems.length) {
+                    triageModal.showModal();
+                    return;
+                }
+            }
+        }
+
         isDeepScanning = true;
+        triageModal.showModal();
         try {
             const res = await fetch('/api/container-deep-scan', {
                 method: 'POST',
@@ -78,10 +94,34 @@
             if (json.items && json.items.length > 0) {
                 deepScanItems = json.items;
                 currentTriageIdx = 0;
-                triageModal.showModal();
-            } else notify('warning', 'No items detected in any slots.');
-        } catch (e) { notify('error', 'Deep Scan failed.'); } 
-        finally { isDeepScanning = false; }
+                if (typeof sessionStorage !== 'undefined') {
+                    sessionStorage.setItem(`deepscan_${data.item?.id}`, JSON.stringify(deepScanItems));
+                    sessionStorage.setItem(`deepscan_idx_${data.item?.id}`, '0');
+                }
+            } else {
+                triageModal.close();
+                notify('warning', 'No items detected in any slots.');
+            }
+        } catch (e) { 
+            triageModal.close(); 
+            notify('error', 'Deep Scan failed.'); 
+        } finally { 
+            isDeepScanning = false; 
+        }
+    }
+
+    function nextTriageItem() {
+        if (currentTriageIdx < deepScanItems.length - 1) {
+            currentTriageIdx++;
+            if (typeof sessionStorage !== 'undefined') sessionStorage.setItem(`deepscan_idx_${data.item?.id}`, currentTriageIdx.toString());
+        } else {
+            if (typeof sessionStorage !== 'undefined') {
+                sessionStorage.removeItem(`deepscan_${data.item?.id}`);
+                sessionStorage.removeItem(`deepscan_idx_${data.item?.id}`);
+            }
+            triageModal.close();
+            invalidateAll();
+        }
     }
 
     function handlePolySelect(e: CustomEvent<number>) {
@@ -188,7 +228,7 @@
                             <form method="POST" action="?/saveSpatialMap" use:enhance={() => {
                                 return async ({ update }) => { isMapDirty = false; notify('success', 'Map saved!'); await update({ reset: false }); };
                             }}>
-                                <input type="hidden" name="spatialMap" value={JSON.stringify(polygons)}>
+                                <input type="hidden" name="spatialMap" value={JSON.stringify({ polygons, warpMap: { cols: gridCols, rows: gridRows, corners: warpCorners } })}>
                                 <button type="submit" class="btn btn-sm btn-success text-white rounded-xl shadow-sm"><i class="bi bi-check-lg"></i> Save Layout</button>
                             </form>
                         {/if}
@@ -206,6 +246,7 @@
                 bind:isWarpMode
                 bind:warpCols={gridCols}
                 bind:warpRows={gridRows}
+                bind:warpCorners={warpCorners}
             />
         </div>
     {/if}
@@ -259,13 +300,28 @@
 
 <dialog bind:this={triageModal} class="modal modal-bottom sm:modal-middle backdrop-blur-sm">
     <div class="modal-box p-0 overflow-hidden bg-base-100 shadow-2xl border border-base-200 sm:rounded-[2.5rem]">
-        {#if deepScanItems.length > 0 && deepScanItems[currentTriageIdx]}
+        {#if isDeepScanning}
+            <div class="flex flex-col items-center justify-center py-20 px-6 text-center gap-6">
+                <div class="relative w-24 h-24">
+                    <div class="absolute inset-0 border-[6px] border-base-200 rounded-full"></div>
+                    <div class="absolute inset-0 border-[6px] border-primary rounded-full border-t-transparent animate-spin"></div>
+                    <i class="bi bi-stars absolute inset-0 flex items-center justify-center text-4xl text-primary animate-pulse"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-2xl tracking-tight text-base-content mb-2">Analyzing Compartments</h3>
+                    <p class="text-sm text-gray-500 font-medium">Scanning your container and reading labels...</p>
+                </div>
+            </div>
+        {:else if deepScanItems.length > 0 && deepScanItems[currentTriageIdx]}
             {@const currentItem = deepScanItems[currentTriageIdx]}
             {@const poly = polygons[currentItem.slotIndex]}
             <div class="p-4 border-b border-base-200 bg-base-200/30 flex flex-col gap-1">
                 <div class="flex justify-between items-center">
                     <h3 class="font-bold text-lg"><i class="bi bi-robot text-primary mr-1"></i> Review Scanned Result</h3>
-                    <div class="badge badge-primary badge-outline font-bold">{currentTriageIdx + 1} of {deepScanItems.length}</div>
+                    <div class="flex items-center gap-2">
+                        <button class="btn btn-ghost btn-xs text-gray-500" on:click={() => triggerDeepScan(true)} title="Force Rescan"><i class="bi bi-arrow-clockwise"></i></button>
+                        <div class="badge badge-primary badge-outline font-bold">{currentTriageIdx + 1} of {deepScanItems.length}</div>
+                    </div>
                 </div>
                 <div class="text-[10px] uppercase font-bold text-gray-500 tracking-wider">in {data.item?.name}</div>
             </div>
@@ -312,7 +368,7 @@
                 <FormInput label="Description (Optional)" bind:value={currentItem.description} />
                 
                 <div class="flex gap-2 mt-4">
-                    <button class="btn btn-ghost text-error hover:bg-error/10 flex-1 rounded-xl" on:click={() => { if (currentTriageIdx < deepScanItems.length - 1) currentTriageIdx++; else { triageModal.close(); invalidateAll(); } }}>Skip</button>
+                    <button class="btn btn-ghost text-error hover:bg-error/10 flex-1 rounded-xl" on:click={nextTriageItem}>Skip</button>
                     <button class="btn btn-primary flex-[2] shadow-md rounded-xl" on:click={async () => {
                         const fd = new FormData();
                         fd.append('parentContainerId', String(data.item?.id));
@@ -322,7 +378,8 @@
                         if (currentItem.description) fd.append('description', currentItem.description);
                         await saveToQueue('/api/spatial-quick-create', fd);
                         window.dispatchEvent(new CustomEvent('outbox-trigger'));
-                        if (currentTriageIdx < deepScanItems.length - 1) currentTriageIdx++; else { triageModal.close(); notify('success', 'Deep Scan Queued!'); invalidateAll(); }
+                        notify('success', 'Added to Queue');
+                        nextTriageItem();
                     }}>Accept & Next <i class="bi bi-arrow-right"></i></button>
                 </div>
             </div>

@@ -47,12 +47,13 @@
     export let isWarpMode = false;
     export let warpCols = 5;
     export let warpRows = 4;
-    let warpCorners = [[100, 100], [900, 100], [900, 900], [100, 900]];
+    export let warpCorners = [[100, 100], [900, 100], [900, 900], [100, 900]];
     
     $: previewGrid = isWarpMode ? computePerspectiveGrid(warpCols, warpRows, warpCorners) : [];
 
     function startDrag(polyIdx: number, ptIdx: number, e: PointerEvent) {
         if (readonly) return;
+        saveHistory();
         let sharedPoints = [];
         if (polyIdx !== -1) {
             activePolyIndex = polyIdx;
@@ -205,7 +206,9 @@
     }
 
     export function enterWarpMode() {
-        if (polygons.length > 0) {
+        // If we open a grid with polygons but the corners are purely default,
+        // fall back to estimating the bounding box.
+        if (polygons.length > 0 && JSON.stringify(warpCorners) === JSON.stringify([[100, 100], [900, 100], [900, 900], [100, 900]])) {
             let minX = 1000, minY = 1000, maxX = 0, maxY = 0;
             polygons.forEach(p => p.forEach(pt => {
                 if (pt[0] < minX) minX = pt[0];
@@ -214,8 +217,6 @@
                 if (pt[1] > maxY) maxY = pt[1];
             }));
             warpCorners = [[minX, minY], [maxX, minY], [maxX, maxY], [minX, maxY]];
-        } else {
-            warpCorners = [[100, 100], [900, 100], [900, 900], [100, 900]];
         }
         isWarpMode = true;
     }
@@ -230,7 +231,7 @@
 
 <div class="relative w-full h-[50vh] sm:h-[65vh] bg-base-300 rounded-[2rem] overflow-hidden shadow-inner border border-base-200">
     <!-- Floating Apple-Style Zoom Pill -->
-    <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-40 flex gap-2 bg-base-100/60 hover:bg-base-100/95 backdrop-blur-xl p-1.5 rounded-full shadow-lg border border-base-200/50 items-center transition-all">
+    <div class="absolute top-6 right-6 z-40 flex gap-2 bg-base-100/80 backdrop-blur-xl p-1.5 rounded-full shadow-lg border border-base-200/50 items-center transition-all">
         <!-- svelte-ignore a11y_consider_explicit_label -->
         <button class="btn btn-circle btn-sm btn-ghost text-base-content/70" on:click|stopPropagation={() => zoomLevel = Math.max(100, zoomLevel - 50)}><i class="bi bi-dash text-lg"></i></button>
         <div class="text-xs font-bold w-12 text-center select-none text-base-content/80">{zoomLevel}%</div>
@@ -263,7 +264,7 @@
         </div>
         <div class="flex gap-2 w-full sm:w-auto px-1">
             <button class="btn btn-ghost btn-sm rounded-xl flex-1 hover:bg-base-200" on:click={() => { isWarpMode = false; }}>Cancel</button>
-            <button class="btn btn-primary btn-sm rounded-xl shadow-sm flex-1" on:click={bakeWarpGrid}>Apply Grid</button>
+            <button class="btn btn-primary btn-sm rounded-xl shadow-sm flex-1" on:click={bakeWarpGrid}>Apply</button>
         </div>
     </div>
     {/if}
@@ -271,7 +272,7 @@
     <!-- Scrollable Canvas -->
     <!-- svelte-ignore a11y_click_events_have_key_events -->
     <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <div class="w-full h-full overflow-auto custom-scrollbar p-8 sm:p-24 pb-20 sm:pb-32" on:click={() => activePolyIndex = null}>
+    <div class="w-full h-full overflow-auto custom-scrollbar px-4 sm:px-8 pt-24 sm:pt-28 pb-24 sm:pb-28" on:click={() => activePolyIndex = null}>
         <div class="relative origin-top-left transition-all duration-200 mx-auto shadow-2xl ring-1 ring-black/5" style="width: {zoomLevel}%;">
             <img src={imageUrl} alt="Container map" class="w-full h-auto block pointer-events-none" />
             
@@ -343,6 +344,12 @@
                                 <div class="absolute w-3 h-3 -ml-1.5 -mt-1.5 bg-base-content/30 rounded-full pointer-events-none" style="left: {cx / 10}%; top: {cy / 10}%;"></div>
                             {/if}
                         {/if}
+
+                            {#if isMapped && zoomLevel >= 250}
+                                <div class="absolute -translate-x-1/2 -translate-y-1/2 pointer-events-none text-[8px] sm:text-[10px] font-bold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] whitespace-nowrap hidden md:block" style="left: {cx / 10}%; top: {cy / 10}%; margin-top: 1.5rem;">
+                                    <span class="truncate block px-1 py-0.5 bg-black/40 backdrop-blur-sm rounded max-w-[120px]">{mappedEntities[i].title || mappedEntities[i].name}</span>
+                                </div>
+                            {/if}
                     {/each}
 
                     <!-- Active Handles -->

@@ -44,9 +44,16 @@ export const load = (async ({ locals, params, url, fetch }) => {
     const apiPath = `/api/items${apiUrl.search}`;
 
     let polygons = [];
+    let warpMap = null;
     if (item.spatialMap) {
         try {
-            polygons = JSON.parse(item.spatialMap);
+            const parsed = JSON.parse(item.spatialMap);
+            if (Array.isArray(parsed)) {
+                polygons = parsed;
+            } else {
+                polygons = parsed.polygons || [];
+                warpMap = parsed.warpMap || null;
+            }
         } catch(e) {}
     }
 
@@ -58,7 +65,8 @@ export const load = (async ({ locals, params, url, fetch }) => {
         prevPage: data.prevPage,
         nextPage: data.nextPage,
         apiPath: apiPath + (apiPath.includes('?') ? '&' : '?'),
-        polygons
+        polygons,
+        warpMap
     };
 }) satisfies PageServerLoad;
 
@@ -83,5 +91,26 @@ export const actions = {
             data: { spatialMap: null }
         });
         return { success: true, message: "Spatial map cleared." };
+    },
+
+    unmapEntity: async ({ request, locals }) => {
+        if (!locals.user) return fail(401, { error: true, message: "Unauthorized" });
+        const data = await request.formData();
+        const entityId = Number(data.get('entityId'));
+        const entityType = data.get('entityType') as string;
+        const parentContainerId = Number(data.get('parentContainerId'));
+
+        if (entityType === 'container') {
+            await db.container.updateMany({
+                where: { id: entityId, inventoryId: locals.activeInventoryId, parentId: parentContainerId },
+                data: { spatialMap: null }
+            });
+        } else {
+            await db.itemsInContainer.updateMany({
+                where: { itemId: entityId, containerId: parentContainerId },
+                data: { spatialMap: null }
+            });
+        }
+        return { success: true, message: "Unlinked from map." };
     }
 };

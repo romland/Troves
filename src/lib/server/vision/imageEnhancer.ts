@@ -2,7 +2,7 @@ import sharp from 'sharp';
 
 /**
  * Creates a hyper-contrasted, auto-leveled temporary image.
- * Solves "Lighting Occlusion" where shadows in drawers blind the Vision AI.
+ * Solves "Lighting Occlusion" where shadows in drawers blind the Vision Model.
  * This image should be passed to the LLM and immediately deleted.
  */
 export async function createVisionOptimizedPass(inputPath: string, outputPath: string): Promise<string> {
