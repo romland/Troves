@@ -134,6 +134,9 @@ Troves doesn't just track *which* drawer an item is in; it can track exactly *wh
 <video src="./.github/screenshots/spatial-indexing-001.mp4" controls="controls" muted="muted" width="40%"></video>
 <video src="./.github/screenshots/spatial-indexing-002.mp4" controls="controls" muted="muted" width="40%"></video>
 
+[Spatial Indexing Demo 1](./.github/screenshots/spatial-indexing-001.mp4)
+[Spatial Indexing Demo 2](./.github/screenshots/spatial-indexing-002.mp4)
+
 
 #### Digital Books & Documentation
 Create a virtual container named **"Digital Library"** and assign tech books, spec sheets, or EPUBs/PDFs there. When you drop an EPUB or PDF into an item, Troves automatically extracts the embedded cover art, `og:image`, or first page to use as the primary thumbnail. The item card gives you a direct **"Read"** button to view and study the document inside the browser.
