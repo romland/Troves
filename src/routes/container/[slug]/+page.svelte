@@ -407,7 +407,7 @@
         </div>
         <div>
             <h3 class="text-3xl font-bold tracking-tight text-base-content mb-3">Layout Saved</h3>
-            <p class="text-gray-500 text-sm max-w-sm leading-relaxed">Your grid is ready. Would you like Troves Vision AI to scan the compartments and automatically detect the items inside?</p>
+            <p class="text-gray-500 text-sm max-w-sm leading-relaxed">Your grid is ready. Would you like Troves to scan the compartments and automatically detect the items inside?</p>
         </div>
         
         <div class="flex flex-col gap-3 w-full max-w-xs mt-4">
