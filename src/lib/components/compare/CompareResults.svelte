@@ -10,6 +10,7 @@
     import BottomSheet from "$lib/components/BottomSheet.svelte";
     import StatTab from './StatTab.svelte';
     import ActionCard from '../ActionCard.svelte';
+    import SpatialMap from "$lib/components/spatial/SpatialMap.svelte";
     import { ambientLocation } from '$lib/client/ambientContext';
 
     export let results: {
@@ -101,7 +102,8 @@
                     expected: expected,
                     count: mg.count,
                     isShortfall: true,
-                    box: mg.box
+                    box: mg.box,
+                    spatialMap: mg.matchedItem.spatialMap
                 });
             }
         }
@@ -349,6 +351,25 @@
                 <div class="mb-6 bg-base-200/50 p-4 rounded-3xl border border-base-200">
                     <h4 class="font-bold text-sm mb-2 flex items-center gap-2"><i class="bi bi-intersect text-warning"></i> Spatial Audit Baseline</h4>
                     <div class="text-xs text-gray-500">Comparing scanned photo against {containerSpatialBaseline.length} mapped container slots. Anomalies are color-coded below.</div>
+                
+                <div class="w-full mt-4 relative overflow-hidden shadow-sm border border-base-300 bg-base-300 rounded-[2rem]">
+                     <SpatialMap 
+                         imageUrl={results.draftPath} 
+                         polygons={containerSpatialBaseline} 
+                         readonly={true} 
+                         activePolyIndex={null}
+                         mappedEntities={containerSpatialBaseline.map(p => {
+                              const pStr = JSON.stringify(p);
+                              const m = missing.find(m => m.spatialMap === pStr);
+                              if (m) return { title: m.title, isError: true };
+                              return { title: 'Present', isError: false };
+                         })}
+                     />
+                </div>
+                
+                <button class="btn btn-outline btn-sm w-full mt-4 rounded-xl" on:click={() => dispatch('remap', results.draftPath)}>
+                    <i class="bi bi-bounding-box-circles"></i> Update Map with this Photo
+                </button>
                 </div>
             {/if}
             <label class="label cursor-pointer py-0">

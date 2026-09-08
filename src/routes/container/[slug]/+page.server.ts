@@ -143,5 +143,16 @@ export const actions = {
             });
         }
         return { success: true, message: "Unlinked from map." };
+    },
+
+    updatePhoto: async ({ request, locals, params }) => {
+        if (!locals.user) return fail(401, { error: true, message: "Unauthorized" });
+        const data = await request.formData();
+        const photoPath = data.get('photoPath') as string;
+        await db.container.updateMany({
+            where: { name: params.slug, inventoryId: locals.activeInventoryId },
+            data: { photoPath }
+        });
+        return { success: true, message: "Container photo updated." };
     }
 };

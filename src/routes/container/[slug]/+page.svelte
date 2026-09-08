@@ -12,6 +12,7 @@
     import FormInput from "$lib/components/FormInput.svelte";
     import SpatialItemSettings from "$lib/components/spatial/SpatialItemSettings.svelte";
     import ContainerBreadcrumbs from "$lib/components/ContainerBreadcrumbs.svelte";
+    import CompareHub from "$lib/components/compare/CompareHub.svelte";
     import Modal from "$lib/components/Modal.svelte";
     import MoveContainerModal from "$lib/components/MoveContainerModal.svelte";
     import { saveToQueue } from "$lib/client/offlineQueue";
@@ -45,6 +46,8 @@
     let moveModal: MoveContainerModal;
     let analyzeWithVision = false;
     let removeBackground = true;
+    let auditModal: Modal;
+    let compareHubComponent: CompareHub;
 
     async function triggerAiMapping() {
         isMapping = true;
@@ -219,6 +222,9 @@
                             <button class="btn btn-sm btn-primary shadow-sm rounded-xl" on:click={triggerAiMapping} disabled={isMapping}>
                                 {#if isMapping}<span class="loading loading-spinner loading-xs"></span>{:else}<i class="bi bi-stars"></i> Auto-Map AI{/if}
                             </button>
+                            <button class="btn btn-sm btn-secondary shadow-sm rounded-xl" on:click={() => auditModal.showModal()}>
+                                <i class="bi bi-camera"></i> Audit
+                            </button>
                             <button class="btn btn-sm btn-outline border-base-300 rounded-xl" on:click={() => { spatialMapRef?.enterWarpMode(); }}>
                                 <i class="bi bi-grid-3x3"></i> Draw Grid
                             </button>
@@ -228,6 +234,9 @@
                             <div tabindex="-1" class="dropdown-content z-50 p-4 shadow-xl bg-base-100 border border-base-200 rounded-2xl w-64 mt-2 flex flex-col gap-3">
                                 <button class="btn btn-sm btn-primary w-full shadow-sm" on:click={triggerDeepScan} disabled={isDeepScanning}>
                                     {#if isDeepScanning}<span class="loading loading-spinner loading-xs"></span>{:else}<i class="bi bi-stars"></i> Deep Scan Grid{/if}
+                                </button>
+                                <button class="btn btn-sm btn-secondary shadow-sm rounded-xl w-full" on:click={() => auditModal.showModal()}>
+                                    <i class="bi bi-camera"></i> Audit & Rescan
                                 </button>
                                 <button class="btn btn-sm btn-neutral w-full" on:click={() => { spatialMapRef?.enterWarpMode(); (document.activeElement as HTMLElement)?.blur(); }}>Adjust Warp Grid</button>
                                     
@@ -322,6 +331,33 @@
 </article>
 
 <MoveContainerModal bind:this={moveModal} allContainers={data.allContainers} />
+
+<Modal bind:this={auditModal} position="bottom" boxClass="p-0 overflow-hidden bg-base-100 shadow-2xl border border-base-200 sm:rounded-[2.5rem]">
+    <div class="p-6">
+        <CompareHub 
+            bind:this={compareHubComponent}
+            containers={data.allContainers}
+            categories={data.categories}
+            tags={data.tags}
+            predefinedScopeType="container"
+            predefinedScopeValue={data.item.name}
+            containerSpatialBaseline={polygons}
+            on:processingStart={(ev) => notify("loading", ev.detail.message, ev.detail.taskId)}
+            on:processingComplete={(ev) => notify(ev.detail.status, ev.detail.message, ev.detail.taskId)}
+            on:success={(ev) => notify("success", ev.detail)}
+            on:remap={async (e) => {
+                const newPhoto = e.detail;
+                auditModal.close();
+                const fd = new FormData();
+                fd.append('photoPath', newPhoto);
+                await fetch('?/updatePhoto', { method: 'POST', body: fd, headers: { 'x-sveltekit-action': 'true' }});
+                data.item.photoPath = newPhoto;
+                notify('success', 'Photo updated. Re-mapping...');
+                triggerAiMapping();
+            }}
+        />
+    </div>
+</Modal>
 
 <PolygonActionSheet 
     bind:this={actionSheet} 

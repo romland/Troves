@@ -293,7 +293,8 @@
                 {:else}
                     {#each polygons as poly, i}
                         {@const isActive = activePolyIndex === i}
-                        {@const isMapped = !!mappedEntities[i]}
+                        {@const isError = mappedEntities[i]?.isError}
+                        {@const isMapped = !!mappedEntities[i] && !isError}
                         {@const cx = (poly[0][0] + poly[1][0] + poly[2][0] + poly[3][0]) / 4}
                         {@const cy = (poly[0][1] + poly[1][1] + poly[2][1] + poly[3][1]) / 4}
                         <!-- Base Polygon Area -->
@@ -301,7 +302,7 @@
                         <!-- svelte-ignore a11y-no-static-element-interactions -->
                         <polygon 
                             points={poly.map(p => p.join(',')).join(' ')} 
-                            class="transition-colors duration-200 {isActive ? 'fill-accent/40 stroke-accent stroke-[5px] drop-shadow-md' : (isMapped ? 'fill-success/20 stroke-success/60 stroke-[3px] hover:fill-success/40' : 'fill-base-content/10 stroke-base-content/40 stroke-[3px] hover:fill-base-content/20')} cursor-pointer"
+                            class="transition-colors duration-200 {isActive ? 'fill-accent/40 stroke-accent stroke-[5px] drop-shadow-md' : (isError ? 'fill-error/30 stroke-error/80 stroke-[4px] drop-shadow-[0_0_10px_rgba(var(--er),0.6)]' : (isMapped ? 'fill-success/20 stroke-success/60 stroke-[3px] hover:fill-success/40' : 'fill-base-content/10 stroke-base-content/40 stroke-[3px] hover:fill-base-content/20'))} cursor-pointer"
                                 vector-effect="non-scaling-stroke"
                                 on:click={(e) => makeActive(i, e)}
                             on:pointerdown={(e) => startDragPoly(i, e)}
@@ -353,12 +354,17 @@
                     <!-- Center Markers (Not Active) -->
                     {#each polygons as poly, i}
                         {@const isActive = activePolyIndex === i}
-                        {@const isMapped = !!mappedEntities[i]}
+                        {@const isError = mappedEntities[i]?.isError}
+                        {@const isMapped = !!mappedEntities[i] && !isError}
                         {@const cx = (poly[0][0] + poly[1][0] + poly[2][0] + poly[3][0]) / 4}
                         {@const cy = (poly[0][1] + poly[1][1] + poly[2][1] + poly[3][1]) / 4}
                         
                         {#if !isActive}
-                            {#if isMapped}
+                            {#if isError}
+                                <div class="absolute w-7 h-7 -ml-3.5 -mt-3.5 bg-error rounded-full shadow-sm flex items-center justify-center pointer-events-none" style="left: {cx / 10}%; top: {cy / 10}%;">
+                                    <i class="bi bi-x text-white text-2xl mt-0.5"></i>
+                                </div>
+                            {:else if isMapped}
                                 <div class="absolute w-7 h-7 -ml-3.5 -mt-3.5 bg-success rounded-full shadow-sm flex items-center justify-center pointer-events-none" style="left: {cx / 10}%; top: {cy / 10}%;">
                                     <i class="bi bi-check text-white text-2xl mt-0.5"></i>
                                 </div>
@@ -377,7 +383,8 @@
                     <!-- Active Handles -->
                     {#each polygons as poly, i}
                         {@const isActive = activePolyIndex === i}
-                        {@const isMapped = !!mappedEntities[i]}
+                        {@const isError = mappedEntities[i]?.isError}
+                        {@const isMapped = !!mappedEntities[i] && !isError}
                         {@const cx = (poly[0][0] + poly[1][0] + poly[2][0] + poly[3][0]) / 4}
                         {@const cy = (poly[0][1] + poly[1][1] + poly[2][1] + poly[3][1]) / 4}
 
@@ -400,8 +407,10 @@
                                 on:pointerdown|stopPropagation
                             >
                                 <div class="w-11 h-11 bg-base-100 rounded-full drop-shadow-xl hover:bg-base-200 transition-colors flex items-center justify-center relative">
-                                    <div class="w-8 h-8 rounded-full flex items-center justify-center {isMapped ? 'bg-success text-white' : 'bg-accent text-white'}">
-                                        {#if isMapped}
+                                    <div class="w-8 h-8 rounded-full flex items-center justify-center {isError ? 'bg-error text-white' : (isMapped ? 'bg-success text-white' : 'bg-accent text-white')}">
+                                        {#if isError}
+                                            <i class="bi bi-x text-3xl mt-0.5"></i>
+                                        {:else if isMapped}
                                             <i class="bi bi-check text-2xl mt-0.5"></i>
                                         {:else}
                                             <i class="bi bi-three-dots text-lg"></i>

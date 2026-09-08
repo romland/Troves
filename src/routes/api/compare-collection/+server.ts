@@ -58,7 +58,15 @@ export const POST: RequestHandler = async ({ request, locals }) => {
             if (scopeType === 'category' && scopeValue) return i.photos?.some(p => p.category?.name === scopeValue);
             if (scopeType === 'container' && scopeValue) return i.locations.some(l => l.container.name === scopeValue);
             return false;
-        }) : []).map(i => ({ id: i.id, title: i.title, slug: i.slug, amount: i.amount, locationName: i.locations?.[0]?.container?.name || null, thumbPath: i.photos?.[0]?.thumbPath || i.photos?.[0]?.orgPath || null }));
+        }) : []).map(i => ({ 
+            id: i.id, 
+            title: i.title, 
+            slug: i.slug, 
+            amount: i.amount, 
+            locationName: i.locations?.[0]?.container?.name || null, 
+            thumbPath: i.photos?.[0]?.thumbPath || i.photos?.[0]?.orgPath || null,
+            spatialMap: i.locations?.[0]?.spatialMap || null
+        }));
 
         return json({ success: true, draftPath: webPath, totalDetected: detected.length, totalVisibleCount, inCollection, newToYou, missingFromScope, scopeType, scopeValue, activeSchema });
     } catch (e: any) {

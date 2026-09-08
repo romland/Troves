@@ -6,6 +6,9 @@
     export let containers: any[] = [];
     export let categories: any[] = [];
     export let tags: any[] = [];
+    export let predefinedScopeType: string | null = null;
+    export let predefinedScopeValue: string | null = null;
+    export let containerSpatialBaseline: any[] = [];
     const dispatch = createEventDispatcher();
 
     let fileInputCamera: HTMLInputElement;
@@ -59,8 +62,8 @@
 
         const fd = new FormData();
         fd.append('file', file);
-        fd.append('scopeType', 'all');
-        fd.append('scopeValue', '');
+        fd.append('scopeType', predefinedScopeType || 'all');
+        fd.append('scopeValue', predefinedScopeValue || '');
         if (scanHint.trim()) fd.append('hint', scanHint.trim());
 
         try {
@@ -101,10 +104,12 @@
             <p class="text-gray-500 text-xs mt-1">Snap a photo of shelves, crates, or groceries to see what you own and what you're missing.</p>
         </div>
 
-        <!-- Step 1: Context Hint -->
-        <div class="mb-8">
-            <input type="text" bind:value={scanHint} placeholder="Optional context (e.g. 'Sci-Fi paperbacks', 'Spices')..." class="input input-sm input-bordered w-full rounded-xl bg-base-100 text-xs shadow-inner" />
-        </div>
+        {#if !predefinedScopeType}
+            <!-- Step 1: Context Hint -->
+            <div class="mb-8">
+                <input type="text" bind:value={scanHint} placeholder="Optional context (e.g. 'Sci-Fi paperbacks', 'Spices')..." class="input input-sm input-bordered w-full rounded-xl bg-base-100 text-xs shadow-inner" />
+            </div>
+        {/if}
 
         <!-- Step 2: Trigger Buttons -->
         {#if isScanning}
@@ -130,6 +135,6 @@
             <h2 class="text-xl font-bold tracking-tight">Scan Results</h2>
             <button type="button" class="btn btn-sm btn-ghost rounded-xl gap-1 text-gray-500" on:click={reset}><i class="bi bi-arrow-counterclockwise"></i> Scan Again</button>
         </div>
-        <CompareResults results={compareResults} {containers} {categories} {tags} on:notify={(e) => dispatch(e.detail.status, e.detail.message)} />
+        <CompareResults results={compareResults} {containers} {categories} {tags} {containerSpatialBaseline} on:notify={(e) => dispatch(e.detail.status, e.detail.message)} on:remap={(e) => dispatch('remap', e.detail)} />
     {/if}
 </div>

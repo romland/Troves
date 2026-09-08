@@ -763,7 +763,17 @@ export function findBestMatchesForBatch(
 
             inCollection.push({
                 ...item,
-                matchedItem: { id: dbItem.id, title: dbItem.title, slug: dbItem.slug, amount: dbItem.amount, dbTotalAmount, locationName: dbItem.locations?.[0]?.container?.name || null, thumbPath: dbItem.photos?.[0]?.thumbPath || dbItem.photos?.[0]?.orgPath || null, categoryName: dbItem.photos?.[0]?.category?.name || 'Uncategorized' }
+                matchedItem: { 
+                    id: dbItem.id, 
+                    title: dbItem.title, 
+                    slug: dbItem.slug, 
+                    amount: dbItem.amount, 
+                    dbTotalAmount, 
+                    locationName: dbItem.locations?.[0]?.container?.name || null, 
+                    thumbPath: dbItem.photos?.[0]?.thumbPath || dbItem.photos?.[0]?.orgPath || null, 
+                    categoryName: dbItem.photos?.[0]?.category?.name || 'Uncategorized',
+                    spatialMap: dbItem.locations?.[0]?.spatialMap || null
+                }
             });
         } else {
             item.isDuplicate = false;
