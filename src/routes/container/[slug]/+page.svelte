@@ -148,6 +148,10 @@
 
 <article style="padding-bottom: 100px;" class="max-w-4xl mx-auto">
 
+    <div class="mb-4 ml-2">
+        <a href="/container" class="btn btn-sm btn-ghost text-gray-500 hover:text-primary"><i class="bi bi-arrow-left"></i> All Containers</a>
+    </div>
+
     <div class="relative w-full rounded-[2rem] overflow-hidden bg-base-200 border border-base-300 mb-8 shadow-sm group min-h-[250px] sm:min-h-[300px] flex items-end">
         {#if data.item?.photoPath}
             <!-- Blurred background -->

@@ -95,10 +95,23 @@ export const actions = {
 
     clearSpatialMap: async ({ locals, params }) => {
         if (!locals.user) return fail(401, { error: true, message: "Unauthorized" });
-        await db.container.updateMany({
-            where: { name: params.slug, inventoryId: locals.activeInventoryId },
-            data: { spatialMap: null }
+        const container = await db.container.findUnique({
+            where: { inventoryId_name: { inventoryId: locals.activeInventoryId, name: params.slug } }
         });
+        if (container) {
+            await db.container.update({
+                where: { id: container.id },
+                data: { spatialMap: null }
+            });
+            await db.itemsInContainer.updateMany({
+                where: { containerId: container.id },
+                data: { spatialMap: null }
+            });
+            await db.container.updateMany({
+                where: { parentId: container.id },
+                data: { spatialMap: null }
+            });
+        }
         return { success: true, message: "Spatial map cleared." };
     },
 

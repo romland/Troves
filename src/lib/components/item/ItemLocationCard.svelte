@@ -401,7 +401,7 @@
             {/if}
         </div>
         <div class="p-6 bg-base-100 flex flex-col items-center text-center gap-1">
-            <h3 class="font-bold text-xl">{activeMapLoc.container.name}</h3>
+            <a href="/container/{encodeURIComponent(activeMapLoc.container.name)}" class="font-bold text-xl hover:text-primary hover:underline">{activeMapLoc.container.name}</a>
             {#if activeMapLoc.container.description || activeMapLoc.container.parent?.description}
                 <p class="text-sm text-gray-500">{activeMapLoc.container.description || activeMapLoc.container.parent?.description}</p>
             {/if}

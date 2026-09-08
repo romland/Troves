@@ -137,6 +137,8 @@ Troves doesn't just track *which* drawer an item is in; it can track exactly *wh
 [Spatial Indexing Demo 1](./.github/screenshots/spatial-indexing-001.mp4)
 [Spatial Indexing Demo 2](./.github/screenshots/spatial-indexing-002.mp4)
 
++**⚠️ Important Note on Medication:**
+Please do **NOT** use the automatic indexing, spatial mapping, or LLM-based label reading for organizing medication, drugs, or hazardous materials. AI models can hallucinate or misread dosages and labels. Rigorous human proof-reading is always required.
 
 #### Digital Books & Documentation
 Create a virtual container named **"Digital Library"** and assign tech books, spec sheets, or EPUBs/PDFs there. When you drop an EPUB or PDF into an item, Troves automatically extracts the embedded cover art, `og:image`, or first page to use as the primary thumbnail. The item card gives you a direct **"Read"** button to view and study the document inside the browser.
