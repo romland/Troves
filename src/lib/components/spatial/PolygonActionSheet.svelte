@@ -16,10 +16,12 @@
     export let polygonCoords: number[][] | null = null;
     export let mappedEntity: any = null; // Item or Child Container currently in this polygon
     export let parentImagePath: string = "";
+    export let categories: any[] = [];
 
     let isReadingLabel = false;
     let aiSuggestedTitle = "";
     let itemTitle = "";
+    let selectedCategory = "";
     let isCreating = false;
     let searchTimer: ReturnType<typeof setTimeout>;
     let existingMatches: any[] = [];
@@ -45,6 +47,7 @@
     export function show() {
         aiSuggestedTitle = "";
         itemTitle = "";
+        selectedCategory = "";
         existingMatches = [];
         modal.showModal();
     }
@@ -102,6 +105,7 @@
             fd.append('polygon', JSON.stringify(polygonCoords));
             fd.append('parentImagePath', parentImagePath);
             fd.append('title', finalTitle);
+            if (selectedCategory) fd.append('categoryName', selectedCategory);
             fd.append('skipVision', String(!analyzeWithVision));
 
             await saveToQueue('/api/spatial-quick-create', fd);
@@ -134,12 +138,7 @@
         {:else}
             <!-- Empty Polygon -->
             <div class="flex flex-col gap-1.5">
-                <div class="flex justify-between items-end">
-                    <div class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Compartment Contents</div>
-                    <button class="btn btn-xs btn-ghost text-primary" on:click={readPhysicalLabel} disabled={isReadingLabel}>
-                        {#if isReadingLabel}<span class="loading loading-spinner loading-xs"></span>{:else}<i class="bi bi-stars"></i> Read Label{/if}
-                    </button>
-                </div>
+                <div class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Compartment Contents</div>
                 <p class="text-xs text-base-content/60 leading-relaxed">
                     Map physical items directly into this slot. No need to create nested folder containers—just assign what lives here.
                 </p>
@@ -154,8 +153,26 @@
 
             <!-- Quick Create Ghost Item -->
             <div class="flex flex-col gap-3 bg-base-200/50 p-4 rounded-xl border border-base-200">
-                <h4 class="font-bold text-sm m-0">Quick Create</h4>
-                <FormInput bind:value={itemTitle} on:input={onTitleInput} placeholder="What's in this compartment?..." required inputClass="input-sm rounded-lg shadow-inner bg-base-100" />
+                <div class="flex justify-between items-center">
+                    <h4 class="font-bold text-sm m-0">Quick Create</h4>
+                    <button class="btn btn-xs btn-ghost text-primary" on:click={readPhysicalLabel} disabled={isReadingLabel}>
+                        {#if isReadingLabel}<span class="loading loading-spinner loading-xs"></span>{:else}<i class="bi bi-stars"></i> Read Label{/if}
+                    </button>
+                </div>
+                
+                <div class="flex gap-2">
+                    <div class="flex-1">
+                        <FormInput bind:value={itemTitle} on:input={onTitleInput} placeholder="What's in this compartment?..." required inputClass="input-sm rounded-lg shadow-inner bg-base-100" />
+                    </div>
+                    <div class="w-1/3 shrink-0">
+                        <select bind:value={selectedCategory} class="select select-sm select-bordered w-full rounded-lg shadow-inner bg-base-100 font-normal">
+                            <option value="">Category...</option>
+                            {#each categories as cat}
+                                <option value={cat.name}>{cat.name}</option>
+                            {/each}
+                        </select>
+                    </div>
+                </div>
                 <button type="button" class="btn btn-primary btn-sm rounded-lg shadow-sm" on:click={quickCreate} disabled={isCreating}>
                     {#if isCreating}<span class="loading loading-spinner loading-xs"></span>{:else}Create Here{/if}
                 </button>

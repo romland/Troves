@@ -599,7 +599,7 @@
     <!-- Bottom Sheet Menu -->
     <Modal bind:this={mobileMenuModal} boxClass="sm:rounded-[2.5rem] p-4 sm:p-6 bg-base-100/95 shadow-2xl border border-base-200 !overflow-visible">
         <div class="flex justify-between items-center mb-6 px-2 mt-[-10px]">
-            <h3 class="font-bold text-2xl tracking-tight">Menu <span class="text-xs text-slate-500">{import.meta.env.PUBLIC_APP_VERSION}</span></h3>
+            <h3 class="font-bold text-2xl tracking-tight">Troves <span class="text-xs text-slate-500">{import.meta.env.PUBLIC_APP_VERSION}</span></h3>
             <button type="button" class="btn btn-sm btn-circle btn-ghost bg-base-200/50" on:click={() => mobileMenuModal.close()}>✕</button>
         </div>
         

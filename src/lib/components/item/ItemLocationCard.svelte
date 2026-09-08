@@ -4,6 +4,8 @@
     import ContainerSelector from '$lib/components/ContainerSelector.svelte';
     import { ambientLocation } from '$lib/client/ambientContext';
     import Modal from "$lib/components/Modal.svelte";
+    import SpatialGridMap from "$lib/components/spatial/SpatialGridMap.svelte";
+    import SpatialMap from "$lib/components/spatial/SpatialMap.svelte";
 
     export let item: any;
     export let canEdit: boolean = false;
@@ -18,6 +20,11 @@
     let activeMapLoc: any = null;
     let activePolyMap: number[][] | null = null;
 
+    let cellSelectModal: Modal;
+    let selectedContainerForMap: any = null;
+    let selectedPolygons: any[] = [];
+    let selectedPolyIndex: number | null = null;
+
     async function openMoveModal() {
         if (!moveModal) return;
         moveModal.showModal();
@@ -30,24 +37,41 @@
         }
     }
 
-    async function quickMove(newContainer: string) {
+    function handleContainerSelect(contName: string) {
+        const contData = globalContainers.find(c => c.name === contName);
+        if (contData && contData.spatialMap) {
+            try {
+                const parsed = JSON.parse(contData.spatialMap);
+                selectedPolygons = Array.isArray(parsed) ? parsed : (parsed.polygons || []);
+                if (selectedPolygons.length > 0) {
+                    selectedContainerForMap = contData;
+                    moveModal.close();
+                    cellSelectModal.showModal();
+                    return;
+                }
+            } catch(e) {}
+        }
+        quickMove(contName);
+    }
+
+    async function quickMove(newContainer: string, spatialMap: number[][] | null = null) {
         if (!item?.id) return;
         isMoving = true;
         try {
             const res = await fetch('/api/item', { 
                 method: 'PATCH', 
                 headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify({ itemId: item.id, newContainer }) 
+                body: JSON.stringify({ itemId: item.id, newContainer, spatialMap }) 
             });
             if (res.ok) {
                 notify('success', `Moved to ${newContainer}`);
 				// Optimistic UI update to prevent the jarring page flash
 				const newContData = globalContainers.find(c => c.name === newContainer) || { name: newContainer };
-				item.locations = [{ container: newContData }];
+                item.locations = [{ container: newContData, spatialMap: spatialMap ? JSON.stringify(spatialMap) : null }];
 				item = item; // Trigger Svelte reactivity
             } else notify('error', 'Failed to move item.');
         } catch (e) { notify('error', 'Network error.'); } 
-        finally { isMoving = false; moveModal.close(); }
+        finally { isMoving = false; moveModal.close(); cellSelectModal?.close(); }
     }
 
     function openMapModal(loc: any) {
@@ -99,12 +123,22 @@
 
         {#if item.locations?.[0]}
             {@const loc = item.locations[0]}
-            {@const polyMap = loc.spatialMap ? JSON.parse(loc.spatialMap) : (loc.container?.spatialMap && loc.container.parentId ? JSON.parse(loc.container.spatialMap) : null)}
+            {@const cellPolyMap = loc.spatialMap ? JSON.parse(loc.spatialMap) : null}
+            {@const containerMapRaw = loc.container?.spatialMap ? JSON.parse(loc.container.spatialMap) : null}
+            {@const polyMap = cellPolyMap || (containerMapRaw && loc.container.parentId ? containerMapRaw : null)}
+            {@const isVectorGrid = containerMapRaw && !Array.isArray(containerMapRaw) && containerMapRaw.renderAsGrid}
+            {@const allPolys = isVectorGrid ? (containerMapRaw.polygons || []) : []}
+            {@const activeIdx = isVectorGrid && cellPolyMap ? allPolys.findIndex(p => JSON.stringify(p) === JSON.stringify(cellPolyMap)) : -1}
+            {@const src = loc.container.parent?.photoPath ? loc.container.parent.photoPath.replace(/\.[^/.]+$/, '_thumb.webp') : (loc.container?.photoPath ? loc.container.photoPath.replace(/\.[^/.]+$/, '_thumb.webp') : '')}
+
             <div class="flex items-center gap-3 flex-1 min-w-0">
                 <!-- svelte-ignore a11y_click_events_have_key_events --><!-- svelte-ignore a11y_interactive_supports_focus -->
                 <div class="w-14 h-14 shrink-0 rounded-lg overflow-hidden border border-base-200 bg-base-50 flex items-center justify-center relative cursor-zoom-in hover:opacity-80 transition-opacity" on:click={() => openMapModal(loc)} role="button">
-                    {#if polyMap && (loc.container.parent?.photoPath || loc.container?.photoPath)}
-                        {@const src = loc.container.parent?.photoPath ? loc.container.parent.photoPath.replace(/\.[^/.]+$/, '_thumb.webp') : loc.container.photoPath.replace(/\.[^/.]+$/, '_thumb.webp')}
+                    {#if isVectorGrid && allPolys.length > 0}
+                        <div class="w-full h-full p-1 bg-base-200/50 flex items-center justify-center">
+                            <SpatialGridMap polygons={allPolys} activeIndex={activeIdx} mappedIndices={[activeIdx]} referenceImage={src} />
+                        </div>
+                    {:else if polyMap && (loc.container.parent?.photoPath || loc.container?.photoPath)}
                         {@const clipPathStr = `polygon(${polyMap.map(p => `${(p[0]/10).toFixed(2)}% ${(p[1]/10).toFixed(2)}%`).join(', ')})`}
                         <div class="relative max-w-full max-h-full flex items-center justify-center">
                             <img class="block max-w-full max-h-full blur-[1px] brightness-[0.75] saturate-[0.8]" src="{src}" alt="Background" on:error={(e) => { if (!(e.currentTarget).dataset.fb) { (e.currentTarget).dataset.fb = '1'; (e.currentTarget).src = loc.container.parent?.photoPath || loc.container.photoPath; } }}/>
@@ -116,7 +150,7 @@
                             </svg>
                         </div>
                     {:else if loc.container.parent?.photoPath || loc.container?.photoPath}
-                        <img class="w-full h-full object-cover" src="{loc.container.parent?.photoPath ? loc.container.parent.photoPath.replace(/\.[^/.]+$/, '_thumb.webp') : loc.container.photoPath.replace(/\.[^/.]+$/, '_thumb.webp')}" alt="Container thumbnail" on:error={(e) => { if (!(e.currentTarget).dataset.fb) { (e.currentTarget).dataset.fb = '1'; (e.currentTarget).src = loc.container.parent?.photoPath || loc.container.photoPath; } }}/>
+                        <img class="w-full h-full object-cover" src="{src}" alt="Container thumbnail" on:error={(e) => { if (!(e.currentTarget).dataset.fb) { (e.currentTarget).dataset.fb = '1'; (e.currentTarget).src = loc.container.parent?.photoPath || loc.container.photoPath; } }}/>
                     {:else}
                         <i class="bi bi-box-seam text-2xl text-gray-400"></i>
                     {/if}
@@ -216,12 +250,22 @@
     {#each item.locations || [] as loc, i}
         <div class="card bg-base-100 shadow-sm border border-base-200 w-full overflow-hidden">
             {#if i === 0}
-                {@const polyMap = loc.spatialMap ? JSON.parse(loc.spatialMap) : (loc.container?.spatialMap && loc.container.parentId ? JSON.parse(loc.container.spatialMap) : null)}
+                {@const cellPolyMap = loc.spatialMap ? JSON.parse(loc.spatialMap) : null}
+                {@const containerMapRaw = loc.container?.spatialMap ? JSON.parse(loc.container.spatialMap) : null}
+                {@const polyMap = cellPolyMap || (containerMapRaw && loc.container.parentId ? containerMapRaw : null)}
+                {@const isVectorGrid = containerMapRaw && !Array.isArray(containerMapRaw) && containerMapRaw.renderAsGrid}
+                {@const allPolys = isVectorGrid ? (containerMapRaw.polygons || []) : []}
+                {@const activeIdx = isVectorGrid && cellPolyMap ? allPolys.findIndex(p => JSON.stringify(p) === JSON.stringify(cellPolyMap)) : -1}
+                {@const src = loc.container.parent?.photoPath ? loc.container.parent.photoPath.replace(/\.[^/.]+$/, '_thumb.webp') : (loc.container?.photoPath ? loc.container.photoPath.replace(/\.[^/.]+$/, '_thumb.webp') : '')}
+
                 <!-- svelte-ignore a11y_click_events_have_key_events --><!-- svelte-ignore a11y_interactive_supports_focus -->
                 <!-- svelte-ignore a11y_no_noninteractive_element_to_interactive_role -->
                 <figure class="w-full h-20 border-b border-base-200 bg-base-200 m-0 flex items-center justify-center cursor-zoom-in hover:opacity-80 transition-opacity" on:click={() => openMapModal(loc)} role="button">
-                    {#if polyMap && (loc.container.parent?.photoPath || loc.container?.photoPath)}
-                        {@const src = loc.container.parent?.photoPath ? loc.container.parent.photoPath.replace(/\.[^/.]+$/, '_thumb.webp') : loc.container.photoPath.replace(/\.[^/.]+$/, '_thumb.webp')}
+                    {#if isVectorGrid && allPolys.length > 0}
+                        <div class="w-full h-full p-2 bg-base-200/50 flex items-center justify-center">
+                            <SpatialGridMap polygons={allPolys} activeIndex={activeIdx} mappedIndices={[activeIdx]} referenceImage={src} />
+                        </div>
+                    {:else if polyMap && (loc.container.parent?.photoPath || loc.container?.photoPath)}
                         {@const clipPathStr = `polygon(${polyMap.map(p => `${(p[0]/10).toFixed(2)}% ${(p[1]/10).toFixed(2)}%`).join(', ')})`}
                         <div class="relative max-w-full max-h-full flex items-center justify-center">
                             <img class="block max-w-full max-h-full blur-[1px] brightness-[0.75] saturate-[0.8]" src="{src}" alt="Background" on:error={(e) => { if (!(e.currentTarget).dataset.fb) { (e.currentTarget).dataset.fb = '1'; (e.currentTarget).src = loc.container.parent?.photoPath || loc.container.photoPath; } }}/>
@@ -233,7 +277,7 @@
                             </svg>
                         </div>
                     {:else if loc.container.parent?.photoPath || loc.container?.photoPath}
-                        <img class="w-full h-full object-cover" src="{loc.container.parent?.photoPath ? loc.container.parent.photoPath.replace(/\.[^/.]+$/, '_thumb.webp') : loc.container.photoPath.replace(/\.[^/.]+$/, '_thumb.webp')}" alt="Container thumbnail" on:error={(e) => { if (!(e.currentTarget).dataset.fb) { (e.currentTarget).dataset.fb = '1'; (e.currentTarget).src = loc.container.parent?.photoPath || loc.container.photoPath; } }}/>
+                        <img class="w-full h-full object-cover" src="{src}" alt="Container thumbnail" on:error={(e) => { if (!(e.currentTarget).dataset.fb) { (e.currentTarget).dataset.fb = '1'; (e.currentTarget).src = loc.container.parent?.photoPath || loc.container.photoPath; } }}/>
                     {:else}
                         <div class="w-full h-full flex items-center justify-center"><i class="bi bi-box-seam text-4xl text-gray-400"></i></div>
                     {/if}
@@ -282,18 +326,57 @@
         {#if isLoadingContainers}
             <div class="flex justify-center p-8"><span class="loading loading-spinner text-primary"></span></div>
         {:else}
-            <ContainerSelector containers={globalContainers} defaultTab="select" on:change={(e) => { if (e.detail.containers.length > 0) quickMove(e.detail.containers[0]); }} />
+            <ContainerSelector containers={globalContainers} defaultTab="select" on:change={(e) => { if (e.detail.containers.length > 0) handleContainerSelect(e.detail.containers[0]); }} />
         {/if}
     </div>
     <form method="dialog" class="modal-backdrop"><button disabled={isMoving}>close</button></form>
 </dialog>
+
+<Modal bind:this={cellSelectModal} position="bottom" boxClass="p-0 overflow-hidden bg-base-100 shadow-2xl sm:rounded-[2.5rem] border border-base-200" on:close={() => selectedPolyIndex = null}>
+    {#if selectedContainerForMap}
+        <div class="p-6 border-b border-base-200 bg-base-200/30">
+            <h3 class="font-bold text-xl mb-1">Where in {selectedContainerForMap.name}?</h3>
+            <p class="text-xs text-gray-500">Tap the specific compartment to place this item.</p>
+        </div>
+        <div class="w-full">
+            <SpatialMap 
+                imageUrl={selectedContainerForMap.photoPath} 
+                polygons={selectedPolygons} 
+                readonly={true} 
+                mappedEntities={[]} 
+                bind:activePolyIndex={selectedPolyIndex}
+                on:select={(e) => quickMove(selectedContainerForMap.name, selectedPolygons[e.detail])} 
+            />
+        </div>
+        <div class="p-4 bg-base-100 flex gap-2">
+            {#if selectedPolyIndex !== null}
+                <button class="btn btn-ghost flex-1 rounded-xl" on:click={() => selectedPolyIndex = null}>Clear</button>
+                <button class="btn btn-primary flex-[2] rounded-xl shadow-md" on:click={() => quickMove(selectedContainerForMap.name, selectedPolygons[selectedPolyIndex])}>
+                    Place Here <i class="bi bi-arrow-right"></i>
+                </button>
+            {:else}
+                <button class="btn btn-neutral flex-1 rounded-xl" on:click={() => cellSelectModal.close()}>Cancel</button>
+                <button class="btn btn-ghost flex-1 rounded-xl text-primary" on:click={() => quickMove(selectedContainerForMap.name)}>Skip, just drop in box</button>
+            {/if}
+        </div>
+    {/if}
+</Modal>
 
 <Modal bind:this={mapModal} title="" position="bottom" boxClass="p-0 overflow-hidden bg-base-100 shadow-2xl sm:rounded-[2.5rem] border border-base-200">
     {#if activeMapLoc}
         <div class="relative w-full aspect-square sm:aspect-video max-h-[65vh] bg-base-300 flex items-center justify-center border-b border-base-200 overflow-hidden">
             {#if activeMapLoc.container.parent?.photoPath || activeMapLoc.container?.photoPath}
                 {@const src = activeMapLoc.container.parent?.photoPath || activeMapLoc.container?.photoPath}
+                    {@const containerMapRaw = activeMapLoc.container?.spatialMap ? JSON.parse(activeMapLoc.container.spatialMap) : null}
+                    {@const isVectorGrid = containerMapRaw && !Array.isArray(containerMapRaw) && containerMapRaw.renderAsGrid}
+                    {@const allPolys = isVectorGrid ? (containerMapRaw.polygons || []) : []}
+                    {@const activeIdx = isVectorGrid && activePolyMap ? allPolys.findIndex(p => JSON.stringify(p) === JSON.stringify(activePolyMap)) : -1}
                 <div class="relative max-w-full max-h-full flex items-center justify-center shadow-[0_20px_50px_rgba(0,0,0,0.5)] rounded-2xl overflow-hidden m-2 sm:m-4">
+                
+                {#if isVectorGrid && allPolys.length > 0}
+                    <div class="w-full h-full bg-base-200/50 absolute inset-0"></div>
+                    <SpatialGridMap polygons={allPolys} activeIndex={activeIdx} mappedIndices={[activeIdx]} referenceImage={src} />
+                {:else}
                     <img src={src} class="block max-w-full max-h-full" alt="Container Base" />
                     {#if activePolyMap}
                         {@const clipPathStr = `polygon(${activePolyMap.map(p => `${(p[0]/10).toFixed(2)}% ${(p[1]/10).toFixed(2)}%`).join(', ')})`}
@@ -305,7 +388,9 @@
                         <svg viewBox="0 0 1000 1000" preserveAspectRatio="none" class="absolute inset-0 w-full h-full z-30 pointer-events-none scale-[1.01]">
                             <polygon points={activePolyMap.map(p => p.join(',')).join(' ')} class="fill-transparent stroke-white/80 drop-shadow-[0_0_4px_rgba(255,255,255,0.8)]" stroke-width="4" vector-effect="non-scaling-stroke" />
                         </svg>
-                        
+                    {/if}
+                {/if}
+                {#if activePolyMap}
                         <div class="absolute z-40 top-4 left-1/2 -translate-x-1/2 px-4 py-2 bg-base-100/95 backdrop-blur-xl rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.5)] border border-base-content/10 text-base-content font-bold text-sm sm:text-base flex items-center gap-2 pointer-events-none">
                             <i class="bi bi-geo-alt-fill text-primary"></i> {item.title}
                         </div>

@@ -8,6 +8,9 @@
     export let readonly: boolean = false;
     export let activePolyIndex: number | null = null;
     export let mappedEntities: any[] = [];
+    
+    // Toggle for experimental perspective labels
+    const EXPERIMENTAL_PERSPECTIVE_LABELS = false;
 
     let svgNode: SVGSVGElement;
     let draggingPoint: { polyIdx: number, ptIdx: number, sharedPoints?: {pIdx: number, ptIdx: number}[] } | null = null;
@@ -222,21 +225,21 @@
     }
 </script>
 
-<svelte:window 
-    on:pointermove={handlePointerMove}
-    on:pointerup={handlePointerUp}
-    on:pointercancel={handlePointerUp}
-    on:keydown={handleKeydown}
-/>
+<svelte:window on:pointermove={handlePointerMove} on:pointerup={handlePointerUp} on:pointercancel={handlePointerUp}
+    on:keydown={handleKeydown} />
 
-<div class="relative w-full h-[50vh] sm:h-[65vh] bg-base-300 rounded-[2rem] overflow-hidden shadow-inner border border-base-200">
+<div
+    class="relative w-full h-[50vh] sm:h-[65vh] bg-base-300 rounded-[2rem] overflow-hidden shadow-inner border border-base-200">
     <!-- Floating Apple-Style Zoom Pill -->
-    <div class="absolute top-6 right-6 z-40 flex gap-2 bg-base-100/80 backdrop-blur-xl p-1.5 rounded-full shadow-lg border border-base-200/50 items-center transition-all">
+    <div
+        class="absolute top-6 right-6 z-40 flex gap-2 bg-base-100/80 backdrop-blur-xl p-1.5 rounded-full shadow-lg border border-base-200/50 items-center transition-all">
         <!-- svelte-ignore a11y_consider_explicit_label -->
-        <button class="btn btn-circle btn-sm btn-ghost text-base-content/70" on:click|stopPropagation={() => zoomLevel = Math.max(100, zoomLevel - 50)}><i class="bi bi-dash text-lg"></i></button>
+        <button class="btn btn-circle btn-sm btn-ghost text-base-content/70" on:click|stopPropagation={()=> zoomLevel =
+            Math.max(100, zoomLevel - 50)}><i class="bi bi-dash text-lg"></i></button>
         <div class="text-xs font-bold w-12 text-center select-none text-base-content/80">{zoomLevel}%</div>
         <!-- svelte-ignore a11y_consider_explicit_label -->
-        <button class="btn btn-circle btn-sm btn-ghost text-base-content/70" on:click|stopPropagation={() => zoomLevel = Math.min(500, zoomLevel + 50)}><i class="bi bi-plus text-lg"></i></button>
+        <button class="btn btn-circle btn-sm btn-ghost text-base-content/70" on:click|stopPropagation={()=> zoomLevel =
+            Math.min(500, zoomLevel + 50)}><i class="bi bi-plus text-lg"></i></button>
     </div>
 
     {#if history.length > 0 && !isWarpMode && !readonly}
@@ -248,25 +251,25 @@
 
     <!-- Floating Apple-Style Warp HUD -->
     {#if isWarpMode}
-    <div class="absolute top-6 left-1/2 -translate-x-1/2 z-50 flex flex-col sm:flex-row gap-3 bg-base-100/80 backdrop-blur-2xl p-2 rounded-3xl shadow-[0_10px_40px_rgba(0,0,0,0.3)] border border-base-200/50 items-center animate-fade-in">
-        <div class="flex items-center gap-2 px-2">
-            <span class="text-[10px] font-bold uppercase tracking-wider text-base-content/60">Cols</span>
-            <button class="btn btn-circle btn-sm btn-ghost bg-base-200/50" on:click={() => warpCols = Math.max(1, warpCols - 1)}><i class="bi bi-dash"></i></button>
-            <span class="font-mono w-4 text-center font-bold text-base-content">{warpCols}</span>
-            <button class="btn btn-circle btn-sm btn-ghost bg-base-200/50" on:click={() => warpCols++}><i class="bi bi-plus"></i></button>
+        <div class="absolute top-6 left-1/2 -translate-x-1/2 z-50 flex flex-col sm:flex-row gap-3 bg-base-100/80 backdrop-blur-2xl p-2 rounded-3xl shadow-[0_10px_40px_rgba(0,0,0,0.3)] border border-base-200/50 items-center animate-fade-in">
+            <div class="flex items-center gap-2 px-2">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-base-content/60">Cols</span>
+                <button class="btn btn-circle btn-sm btn-ghost bg-base-200/50" on:click={() => warpCols = Math.max(1, warpCols - 1)}><i class="bi bi-dash"></i></button>
+                <span class="font-mono w-4 text-center font-bold text-base-content">{warpCols}</span>
+                <button class="btn btn-circle btn-sm btn-ghost bg-base-200/50" on:click={() => warpCols++}><i class="bi bi-plus"></i></button>
+            </div>
+            <div class="w-px h-6 bg-base-300 hidden sm:block"></div>
+            <div class="flex items-center gap-2 px-2">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-base-content/60">Rows</span>
+                <button class="btn btn-circle btn-sm btn-ghost bg-base-200/50" on:click={() => warpRows = Math.max(1, warpRows - 1)}><i class="bi bi-dash"></i></button>
+                <span class="font-mono w-4 text-center font-bold text-base-content">{warpRows}</span>
+                <button class="btn btn-circle btn-sm btn-ghost bg-base-200/50" on:click={() => warpRows++}><i class="bi bi-plus"></i></button>
+            </div>
+            <div class="flex gap-2 w-full sm:w-auto px-1">
+                <button class="btn btn-ghost btn-sm rounded-xl flex-1 hover:bg-base-200" on:click={() => { isWarpMode = false; }}>Cancel</button>
+                <button class="btn btn-primary btn-sm rounded-xl shadow-sm flex-1" on:click={bakeWarpGrid}>Apply</button>
+            </div>
         </div>
-        <div class="w-px h-6 bg-base-300 hidden sm:block"></div>
-        <div class="flex items-center gap-2 px-2">
-            <span class="text-[10px] font-bold uppercase tracking-wider text-base-content/60">Rows</span>
-            <button class="btn btn-circle btn-sm btn-ghost bg-base-200/50" on:click={() => warpRows = Math.max(1, warpRows - 1)}><i class="bi bi-dash"></i></button>
-            <span class="font-mono w-4 text-center font-bold text-base-content">{warpRows}</span>
-            <button class="btn btn-circle btn-sm btn-ghost bg-base-200/50" on:click={() => warpRows++}><i class="bi bi-plus"></i></button>
-        </div>
-        <div class="flex gap-2 w-full sm:w-auto px-1">
-            <button class="btn btn-ghost btn-sm rounded-xl flex-1 hover:bg-base-200" on:click={() => { isWarpMode = false; }}>Cancel</button>
-            <button class="btn btn-primary btn-sm rounded-xl shadow-sm flex-1" on:click={bakeWarpGrid}>Apply</button>
-        </div>
-    </div>
     {/if}
 
     <!-- Scrollable Canvas -->
@@ -305,15 +308,34 @@
                             on:dragover|preventDefault
                             on:drop={(e) => handleDrop(i, e)}
                         />
-                        {#if zoomLevel >= 250 && isMapped}
-                            <text x={cx} y={cy} text-anchor="middle" dominant-baseline="middle" class="fill-white text-[12px] font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] hidden md:block pointer-events-none">
-                                {mappedEntities[i].title || mappedEntities[i].name}
-                            </text>
+                        {#if zoomLevel >= 250 && isMapped && EXPERIMENTAL_PERSPECTIVE_LABELS}
+                            <!-- 2.5D Affine Warp Projection -->
+                            {@const w = Math.hypot(poly[1][0] - poly[0][0], poly[1][1] - poly[0][1]) || 1}
+                            {@const h = Math.hypot(poly[3][0] - poly[0][0], poly[3][1] - poly[0][1]) || 1}
+                            {@const ratio = h / w}
+                            
+                            {@const a = (poly[1][0] - poly[0][0]) / w}
+                            {@const b = (poly[1][1] - poly[0][1]) / w}
+                            {@const floorC = (poly[3][0] - poly[0][0]) / h}
+                            {@const floorD = (poly[3][1] - poly[0][1]) / h}
+                            
+                            <!-- Smoothly transition from Floor plane to Wall plane as perspective steepens -->
+                            {@const wallBlend = Math.max(0, Math.min(1, (0.8 - ratio) / 0.4))}
+                            {@const c = floorC * (1 - wallBlend) + (-b) * wallBlend}
+                            {@const d = floorD * (1 - wallBlend) + (a) * wallBlend}
+
+                            <g transform="matrix({a}, {b}, {c}, {d}, {cx}, {cy})">
+                                <text x="0" y="0" text-anchor="middle" dominant-baseline="middle" class="fill-transparent stroke-black/80 text-[14px] sm:text-[18px] font-black pointer-events-none hidden md:block" stroke-width="4" stroke-linejoin="round">
+                                    {mappedEntities[i].title || mappedEntities[i].name}
+                                </text>
+                                <text x="0" y="0" text-anchor="middle" dominant-baseline="middle" class="fill-white text-[14px] sm:text-[18px] font-black pointer-events-none hidden md:block">
+                                    {mappedEntities[i].title || mappedEntities[i].name}
+                                </text>
+                            </g>
                         {/if}
                     {/each}
                 {/if}
             </svg>
-
                             
             <!-- HTML OVERLAY FOR PERFECT CIRCLES -->
             <div class="absolute inset-0 w-full h-full z-20 pointer-events-none overflow-visible">
@@ -345,7 +367,7 @@
                             {/if}
                         {/if}
 
-                            {#if isMapped && zoomLevel >= 250}
+                            {#if isMapped && zoomLevel >= 250 && !EXPERIMENTAL_PERSPECTIVE_LABELS}
                                 <div class="absolute -translate-x-1/2 -translate-y-1/2 pointer-events-none text-[8px] sm:text-[10px] font-bold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] whitespace-nowrap hidden md:block" style="left: {cx / 10}%; top: {cy / 10}%; margin-top: 1.5rem;">
                                     <span class="truncate block px-1 py-0.5 bg-black/40 backdrop-blur-sm rounded max-w-[120px]">{mappedEntities[i].title || mappedEntities[i].name}</span>
                                 </div>

@@ -130,6 +130,9 @@ Troves doesn't just track *which* drawer an item is in; it can track exactly *wh
 * **Triage & Save:** Troves then opens a triage screen where you can quickly step through the results. It zooms in on the active cell, complete with a minimap so you don't lose your bearings—allowing you to verify or edit the model's guess. Hit 'Accept' to log it to your inventory.
 * **Finding Your Stuff:** Items mapped this way display a glowing outline on their thumbnails. Clicking the thumbnail opens a full-screen map of the container, highlighting exactly which slot to pull from. If you run a missing-items audit against the container, Troves will show you the photo with the exact empty slots glowing red.
 
+#### A few clips to demonstrate spatial mapping
+<video src="./.github/screenshots/spatial-indexing-001.mp4" controls="controls" muted="muted" width="40%"></video>
+<video src="./.github/screenshots/spatial-indexing-002.mp4" controls="controls" muted="muted" width="40%"></video>
 
 
 #### Digital Books & Documentation

@@ -152,7 +152,7 @@ export async function POST({ request, locals }) {
 
 export async function PATCH({ request, locals }) {
     assertCanMutate(locals);
-    const { itemId, newContainer } = await request.json();
+    const { itemId, newContainer, spatialMap } = await request.json();
     
     // IDOR Check: Ensure the item actually belongs to the active inventory
     const itemBelongsToVault = await db.item.findFirst({ where: { id: itemId, inventoryId: locals.activeInventoryId } });
@@ -166,7 +166,10 @@ export async function PATCH({ request, locals }) {
             data: {
                 locations: {
                     deleteMany: {},
-                    create: [{ container: { connect: { inventoryId_name: { inventoryId: locals.activeInventoryId, name: newContainer } } } }]
+                    create: [{ 
+                        spatialMap: spatialMap ? JSON.stringify(spatialMap) : null,
+                        container: { connect: { inventoryId_name: { inventoryId: locals.activeInventoryId, name: newContainer } } } 
+                    }]
                 }
             }
         });

@@ -28,6 +28,11 @@ export const load = (async ({ locals, params, url, fetch }) => {
         error(404, 'Container not found.');
     }
 
+    const categories = await db.category.findMany({
+        where: { inventoryId: locals.activeInventoryId },
+        orderBy: { name: 'asc' }
+    });
+
     const includeTrays = url.searchParams.get('includeTrays') === 'true';
     const apiUrl = new URL('/api/items', url.origin);
     url.searchParams.forEach((val, key) => apiUrl.searchParams.append(key, val));
@@ -45,6 +50,7 @@ export const load = (async ({ locals, params, url, fetch }) => {
 
     let polygons = [];
     let warpMap = null;
+    let renderAsGrid = false;
     if (item.spatialMap) {
         try {
             const parsed = JSON.parse(item.spatialMap);
@@ -53,12 +59,14 @@ export const load = (async ({ locals, params, url, fetch }) => {
             } else {
                 polygons = parsed.polygons || [];
                 warpMap = parsed.warpMap || null;
+                renderAsGrid = parsed.renderAsGrid || false;
             }
         } catch(e) {}
     }
 
     return {
         item: item,
+        categories,
         items: data.items,
         totalCount: data.totalCount || 0,
         includeTrays,
@@ -66,7 +74,8 @@ export const load = (async ({ locals, params, url, fetch }) => {
         nextPage: data.nextPage,
         apiPath: apiPath + (apiPath.includes('?') ? '&' : '?'),
         polygons,
-        warpMap
+        warpMap,
+        renderAsGrid
     };
 }) satisfies PageServerLoad;
 

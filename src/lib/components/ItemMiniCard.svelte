@@ -2,6 +2,7 @@
     export let item: any;
     import { createEventDispatcher } from 'svelte';
     import { isSlowConnection } from '$lib/client/utils';
+    import SpatialGridMap from "$lib/components/spatial/SpatialGridMap.svelte";
     const dispatch = createEventDispatcher();
 
     $: mainPhoto = item?.photos?.find(p => p.type === 'product' && p.isPrimary) || item?.photos?.find(p => p.type === 'product') || item?.photos?.[0] || {};
@@ -11,9 +12,16 @@
     $: srcUrl = item.thumbPath || mainPhoto.thumbPath || mainPhoto.orgPath;
     
     let polyMap: number[][] | null = null;
+    let isVectorGrid = false;
+    let allPolys: number[][][] = [];
+    let activeIdx = -1;
     $: {
         try {
             polyMap = item.spatialMap ? JSON.parse(item.spatialMap) : (item.locations?.[0]?.spatialMap ? JSON.parse(item.locations[0].spatialMap) : null);
+            const containerMapRaw = item.locations?.[0]?.container?.spatialMap ? JSON.parse(item.locations[0].container.spatialMap) : null;
+            isVectorGrid = containerMapRaw && !Array.isArray(containerMapRaw) && containerMapRaw.renderAsGrid;
+            allPolys = isVectorGrid ? (containerMapRaw.polygons || []) : [];
+            activeIdx = isVectorGrid && polyMap ? allPolys.findIndex(p => JSON.stringify(p) === JSON.stringify(polyMap)) : -1;
         } catch (e) { polyMap = null; }
     }
 
@@ -27,7 +35,11 @@
             {#if cols.length > 0}
                 <div class="absolute inset-0 opacity-30 pointer-events-none" style="background: linear-gradient(135deg, {cols[0]}, {cols[1] || cols[0]});"></div>
             {/if}
-        {#if polyMap && srcUrl}
+        {#if isVectorGrid && allPolys.length > 0}
+            <div class="w-full h-full p-1 bg-base-200/50 flex items-center justify-center">
+                <SpatialGridMap polygons={allPolys} activeIndex={activeIdx} mappedIndices={[activeIdx]} referenceImage={srcUrl + cb} />
+            </div>
+        {:else if polyMap && srcUrl}
             {@const clipPathStr = `polygon(${polyMap.map(p => `${(p[0]/10).toFixed(2)}% ${(p[1]/10).toFixed(2)}%`).join(', ')})`}
             <div class="relative w-full h-full flex items-center justify-center bg-base-300">
                 <!-- Background: Dimmed & Blurred -->

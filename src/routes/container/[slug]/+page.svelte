@@ -24,6 +24,7 @@
 
     let polygons = data.polygons || [];
     let warpMap = data.warpMap || null;
+    let renderAsGrid = data.renderAsGrid || false;
     let isMapping = false;
     let isMapDirty = false;
     let activePolyIdx: number | null = null;
@@ -213,6 +214,12 @@
                                     {#if isDeepScanning}<span class="loading loading-spinner loading-xs"></span>{:else}<i class="bi bi-stars"></i> Deep Scan Grid{/if}
                                 </button>
                                 <button class="btn btn-sm btn-neutral w-full" on:click={() => { spatialMapRef?.enterWarpMode(); (document.activeElement as HTMLElement)?.blur(); }}>Adjust Warp Grid</button>
+                                    
+                                    <label class="label cursor-pointer py-0 justify-start gap-2 mt-1">
+                                        <input type="checkbox" class="toggle toggle-primary toggle-sm" bind:checked={renderAsGrid} on:change={() => isMapDirty = true} />
+                                        <span class="label-text text-xs font-bold text-base-content">Use Vector Grid globally</span>
+                                    </label>
+                                    
                                 <form method="POST" action="?/clearSpatialMap" class="m-0" use:enhance={() => {
                                     return async ({ update }) => { 
                                         polygons = []; 
@@ -239,7 +246,7 @@
                                     }
                                 };
                             }}>
-                                <input type="hidden" name="spatialMap" value={JSON.stringify({ polygons, warpMap: { cols: gridCols, rows: gridRows, corners: warpCorners } })}>
+                                    <input type="hidden" name="spatialMap" value={JSON.stringify({ polygons, warpMap: { cols: gridCols, rows: gridRows, corners: warpCorners }, renderAsGrid })}>
                                 <button type="submit" class="btn btn-sm btn-success text-white rounded-xl shadow-sm"><i class="bi bi-check-lg"></i> Save Layout</button>
                             </form>
                         {/if}
@@ -306,6 +313,7 @@
     polygonIndex={activePolyIdx}
     polygonCoords={activePolyIdx !== null ? polygons[activePolyIdx] : null}
         mappedEntity={activePolyIdx !== null ? mappedEntities[activePolyIdx] : null}
+        categories={data.categories}
         on:deleteSlot={(e) => { polygons.splice(e.detail, 1); polygons = [...polygons]; isMapDirty = true; activePolyIdx = null; }}
 />
 
