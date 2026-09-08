@@ -10,7 +10,9 @@
     import SpatialMap from "$lib/components/spatial/SpatialMap.svelte";
     import PolygonActionSheet from "$lib/components/spatial/PolygonActionSheet.svelte";
     import FormInput from "$lib/components/FormInput.svelte";
-     import Modal from "$lib/components/Modal.svelte";
+    import ContainerSelector from "$lib/components/ContainerSelector.svelte";
+    import ContainerBreadcrumbs from "$lib/components/ContainerBreadcrumbs.svelte";
+    import Modal from "$lib/components/Modal.svelte";
     import { saveToQueue } from "$lib/client/offlineQueue";
     import { invalidateAll } from '$app/navigation';
 
@@ -22,9 +24,9 @@
     let spatialMapRef: SpatialMap;
     let actionSheet: PolygonActionSheet;
 
-    let polygons = data.polygons || [];
-    let warpMap = data.warpMap || null;
-    let renderAsGrid = data.renderAsGrid || false;
+    $: polygons = data.polygons || [];
+    $: warpMap = data.warpMap || null;
+    $: renderAsGrid = data.renderAsGrid || false;
     let isMapping = false;
     let isMapDirty = false;
     let activePolyIdx: number | null = null;
@@ -39,6 +41,8 @@
     let isDeepScanning = false;
     let deepScanItems: any[] = [];
     let currentTriageIdx = 0;
+    let moveModal: Modal;
+    let selectedParentName = "";
 
     async function triggerAiMapping() {
         isMapping = true;
@@ -164,6 +168,9 @@
         <div class="relative z-10 p-6 sm:p-10 w-full">
             <div class="flex justify-between items-start gap-4">
                 <div class="flex-1">
+                    {#if data.item?.parentId}
+                        <ContainerBreadcrumbs containerId={data.item.id} containers={data.allContainers} />
+                    {/if}                
                     <div class="badge badge-primary badge-sm font-mono mb-3 shadow-sm">{data.item?.name}</div>
                     <h1 class="text-4xl sm:text-5xl font-bold tracking-tight mb-2 text-base-content drop-shadow-sm">{data.item?.name}</h1>
                     
@@ -184,6 +191,9 @@
 
                 <!-- Action Buttons -->
                 <div class="flex gap-2 shrink-0">
+                    <button class="btn btn-circle btn-ghost bg-base-100/50 backdrop-blur-md hover:bg-base-100 transition-colors" title="Move Container" on:click={() => moveModal.showModal()}>
+                        <i class="bi bi-arrows-move text-lg"></i>
+                    </button>
                     <a href="/container/{encodeURIComponent(data.item?.name || '')}/edit" class="btn btn-circle btn-ghost bg-base-100/50 backdrop-blur-md hover:bg-base-100 transition-colors" title="Edit Container">
                         <i class="bi bi-pencil-square text-lg"></i>
                     </a>
@@ -307,8 +317,34 @@
         </div>
         <Navigation href={data.apiPath} prevPage={data.prevPage} nextPage={data.nextPage} />
     </div>
-
 </article>
+
+<Modal bind:this={moveModal} position="bottom" boxClass="p-0 bg-base-100 shadow-2xl sm:rounded-[2.5rem] border border-base-200">
+    <div class="p-6 border-b border-base-200 bg-base-200/30">
+        <h3 class="font-bold text-xl mb-1">Move Container</h3>
+        <p class="text-xs text-gray-500">Select a new parent container for "{data.item?.name}".</p>
+        <p class="text-[10px] text-gray-500 italic mt-1 font-medium">Any nested trays inside this container will move with it.</p>
+    </div>
+    <form method="POST" action="?/moveContainer" use:enhance={() => { return async ({ update, result }) => { moveModal.close(); await update({ reset: false }); if (result.type === 'success' && result.data) notify('success', result.data.message); }; }}>
+        <input type="hidden" name="parentName" value={selectedParentName}>
+        <div class="p-6 pb-2">
+            <ContainerSelector containers={data.allContainers.filter(c => c.id !== data.item?.id)} defaultTab="select" on:change={(e) => selectedParentName = e.detail.containers[0]} />
+        </div>
+        <div class="p-4 bg-base-100 flex flex-col gap-3">
+            <div class="flex gap-2">
+                <button type="button" class="btn btn-neutral flex-1 rounded-xl" on:click={() => { moveModal.close(); selectedParentName = ''; }}>Cancel</button>
+                <button type="submit" class="btn btn-primary flex-[2] rounded-xl shadow-md" disabled={!selectedParentName}>Move Inside Selected</button>
+            </div>
+            {#if data.item?.parentId}
+                <div class="divider my-0 text-xs text-gray-400 uppercase tracking-wider font-bold">Or</div>
+                <button type="button" class="btn btn-outline border-base-300 text-gray-500 hover:text-base-content rounded-xl w-full" on:click={(e) => { selectedParentName = ''; (e.currentTarget as HTMLButtonElement).form?.requestSubmit(); }}>
+                    <i class="bi bi-layer-backward"></i> Detach to Top Level
+                </button>
+                <p class="text-[10px] text-center text-gray-400 mt-1">This removes it from its current parent box.</p>
+            {/if}
+        </div>
+    </form>
+</Modal>
 
 <PolygonActionSheet 
     bind:this={actionSheet} 

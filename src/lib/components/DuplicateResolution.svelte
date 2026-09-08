@@ -71,7 +71,7 @@
         <ActionCard
             size="sm"
             title="Merge (+1)"
-            subtitle="Bump quantity & link box"
+            subtitle="Bump quantity & link container"
             icon="bi-plus-slash-minus"
             iconColorClass="bg-primary/20 text-primary"
             buttonClass="transition-all {currentAction === 'merge' ? 'border-primary bg-primary/10' : 'border-base-300 hover:border-primary/50'}"

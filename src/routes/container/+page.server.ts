@@ -6,6 +6,7 @@ export const load = (async ({ locals, params }) => {
 
     const containers = await db.container.findMany({
         select : {
+          id : true,
           name : true,
           parentId : true,
           photoPath : true,
@@ -13,16 +14,14 @@ export const load = (async ({ locals, params }) => {
           location : true,
           children : {
             select : {
+              id : true,
               name : true,
               parentId : true,
             }
           },
         },
         where: {
-            AND: [
-                { parentId: null },
-                { inventoryId: locals.activeInventoryId }
-            ]
+                inventoryId: locals.activeInventoryId
         },
         orderBy: {
           name : "asc"

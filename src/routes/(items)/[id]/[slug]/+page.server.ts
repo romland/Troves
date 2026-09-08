@@ -82,6 +82,12 @@ export const load = (async ({ locals, params }) => {
         }
 	}
 	
+    const allContainers = await db.container.findMany({
+        where: { inventoryId: locals.activeInventoryId },
+        select: { id: true, name: true, parentId: true },
+        orderBy: { name: 'asc' }
+    });
+
 	return {
 		item: {
 			...item,
@@ -93,6 +99,7 @@ export const load = (async ({ locals, params }) => {
 		duplicateItemDetails,
         relatedItems,
         activeSchema,
+        allContainers,
 		canEdit: locals.role === 'EDITOR' || locals.role === 'OWNER' || locals.user.isAdmin
 	};
 }) satisfies PageServerLoad;

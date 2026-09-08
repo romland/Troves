@@ -12,6 +12,7 @@ export const load = (async ({ locals, params, url, fetch }) => {
             ]
         },
         include: {
+            parent: true,
             children : {
                 select : {
                     id: true,
@@ -30,6 +31,12 @@ export const load = (async ({ locals, params, url, fetch }) => {
 
     const categories = await db.category.findMany({
         where: { inventoryId: locals.activeInventoryId },
+        orderBy: { name: 'asc' }
+    });
+
+    const allContainers = await db.container.findMany({
+        where: { inventoryId: locals.activeInventoryId },
+        select: { id: true, name: true, parentId: true },
         orderBy: { name: 'asc' }
     });
 
@@ -75,7 +82,8 @@ export const load = (async ({ locals, params, url, fetch }) => {
         apiPath: apiPath + (apiPath.includes('?') ? '&' : '?'),
         polygons,
         warpMap,
-        renderAsGrid
+        renderAsGrid,
+        allContainers
     };
 }) satisfies PageServerLoad;
 
@@ -91,6 +99,24 @@ export const actions = {
         });
         
         return { success: true, message: "Spatial map updated." };
+    },
+
+    moveContainer: async ({ request, locals, params }) => {
+        if (!locals.user) return fail(401, { error: true, message: "Unauthorized" });
+        const data = await request.formData();
+        const parentName = data.get('parentName') as string;
+        let parentId = null;
+        
+        if (parentName) {
+            const parent = await db.container.findUnique({ where: { inventoryId_name: { inventoryId: locals.activeInventoryId, name: parentName } }});
+            if (parent) {
+                // Prevent nesting inside self
+                if (parent.name === params.slug) return fail(400, { error: true, message: "Cannot move container inside itself." });
+                parentId = parent.id;
+            }
+        }
+        await db.container.updateMany({ where: { name: params.slug, inventoryId: locals.activeInventoryId }, data: { parentId } });
+        return { success: true, message: parentId ? `Moved into '${parentName}'` : "Detached to top level." };
     },
 
     clearSpatialMap: async ({ locals, params }) => {

@@ -3,6 +3,7 @@
     import { enhance } from "$app/forms";
     import { slide } from 'svelte/transition';
     import Notifications from "$lib/components/Notifications.svelte";
+    import ContainerTreeNode from "$lib/components/ContainerTreeNode.svelte";
 
     export let data: PageServerData;
     import pageTitle from '$lib/stores';
@@ -50,49 +51,25 @@
     </div>
 
     <!-- Inset Grouped List -->
-    <div class="bg-base-100 rounded-[1.5rem] border border-base-200 shadow-sm overflow-hidden">
-        <div class="flex flex-col divide-y divide-base-200">
-            {#each filteredContainers as cont (cont.name)}
-                <div class="flex items-center justify-between p-3 sm:p-4 hover:bg-base-50 transition-colors" transition:slide|local={{ duration: 250 }}>
-                    <a href="/container/{encodeURIComponent(cont.name)}" class="flex items-center gap-4 flex-1 min-w-0">
-                        <div class="w-12 h-12 rounded-xl bg-base-200 overflow-hidden shrink-0 border border-base-300 flex items-center justify-center">
-                            {#if cont.photoPath}
-                                <img class="w-full h-full object-cover" src="{cont.photoPath}" alt="{cont.name}"/>
-                            {:else}
-                                <i class="bi bi-box-seam text-gray-400 text-xl"></i>
-                            {/if}
-                        </div>
-                        <div class="flex-1 min-w-0 pr-2">
-                            <div class="font-semibold text-lg tracking-tight flex items-center gap-2">
-                                {cont.name}
-                                {#if cont.children.length > 0}
-                                    <span class="badge badge-sm badge-ghost text-[10px] uppercase">{cont.children.length} Trays</span>
-                                {/if}
-                            </div>
-                            <div class="text-xs text-gray-500 truncate flex gap-2">
-                                {#if cont.location}<span class="text-primary"><i class="bi bi-geo-alt-fill"></i> {cont.location}</span>{/if}
-                                {#if cont.description}<span class="truncate">{cont.description}</span>{/if}
-                            </div>
-                        </div>
-                    </a>
-                    <div class="flex items-center gap-1 shrink-0 ml-2">
-                        <a href="/container/{encodeURIComponent(cont.name)}/edit" class="btn btn-ghost btn-circle text-gray-400 hover:text-primary hover:bg-primary/10 transition-colors" aria-label="Edit Container">
-                            <i class="bi bi-pencil text-lg"></i>
-                        </a>
-                        <button type="button" class="btn btn-ghost btn-circle text-gray-400 hover:text-error hover:bg-error/10 transition-colors" on:click={() => containerToDelete = cont} aria-label="Delete Container">
-                            <i class="bi bi-trash text-lg"></i>
-                        </button>
-                    </div>
-                </div>
+    <div class="flex flex-col">
+        {#if filteredContainers.length > 0}
+            {#if searchQuery}
+                <!-- Flat rendering when searching to avoid broken tree structure -->
+                {#each filteredContainers as cont (cont.id)}
+                    <ContainerTreeNode container={cont} allContainers={[]} depth={0} on:delete={(e) => containerToDelete = e.detail} />
+                {/each}
             {:else}
-                <div class="p-8 text-center text-gray-400 flex flex-col items-center gap-3">
-                    <div class="w-16 h-16 rounded-full bg-base-200 flex items-center justify-center">
-                        <i class="bi bi-inboxes text-2xl opacity-50"></i>
-                    </div>
-                    <span class="font-medium">No containers found.</span>
-                </div>
-            {/each}
-        </div>
+                <!-- Full visual tree rendering -->
+                {#each filteredContainers.filter(c => c.parentId === null) as rootCont (rootCont.id)}
+                    <ContainerTreeNode container={rootCont} allContainers={data.containers} depth={0} on:delete={(e) => containerToDelete = e.detail} />
+                {/each}
+            {/if}
+        {:else}
+            <div class="p-8 text-center text-gray-400 flex flex-col items-center gap-3">
+                <div class="w-16 h-16 rounded-full bg-base-200 flex items-center justify-center"><i class="bi bi-inboxes text-2xl opacity-50"></i></div>
+                <span class="font-medium">No containers found.</span>
+            </div>
+        {/if}
     </div>
 </div>
 

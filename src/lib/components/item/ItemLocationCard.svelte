@@ -6,10 +6,12 @@
     import Modal from "$lib/components/Modal.svelte";
     import SpatialGridMap from "$lib/components/spatial/SpatialGridMap.svelte";
     import SpatialMap from "$lib/components/spatial/SpatialMap.svelte";
+    import ContainerBreadcrumbs from "$lib/components/ContainerBreadcrumbs.svelte";
 
     export let item: any;
     export let canEdit: boolean = false;
     export let itemCategories: string[] = [];
+    export let allContainers: any[] = [];
 
     let moveModal: HTMLDialogElement;
     let isMoving = false;
@@ -156,6 +158,9 @@
                     {/if}
                 </div>
                 <div class="flex flex-col justify-center min-w-0">
+                    {#if loc.container.parentId}
+                        <ContainerBreadcrumbs containerId={loc.container.id} containers={allContainers} />
+                    {/if}
                     <div class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold leading-none mb-0.5">Location</div>
                     <a href="/container/{encodeURIComponent(loc.container.name)}" class="font-bold text-sm leading-tight truncate hover:text-primary hover:underline">{loc.container.name}</a>
                     <div class="text-xs text-gray-500 leading-snug line-clamp-1 mt-0.5">{loc.container?.parent?.description || loc.container?.description || 'No description'}</div>

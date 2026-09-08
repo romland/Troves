@@ -270,7 +270,7 @@ $: if (data.duplicateItemDetails?.debugTrace) {
         </div>
 
         <div class="w-full md:w-1/3 flex flex-col gap-4">
-            <ItemLocationCard item={data.item} canEdit={data.canEdit} itemCategories={itemCategories} />
+            <ItemLocationCard item={data.item} canEdit={data.canEdit} itemCategories={itemCategories} allContainers={data.allContainers} />
         </div>
     </div>
 
