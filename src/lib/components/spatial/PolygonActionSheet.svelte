@@ -2,6 +2,7 @@
     import Modal from "$lib/components/Modal.svelte";
     import FormInput from "$lib/components/FormInput.svelte";
     import ItemMiniCard from "$lib/components/ItemMiniCard.svelte";
+    import SpatialItemSettings from "./SpatialItemSettings.svelte";
     import { createEventDispatcher } from "svelte";
     import { goto, invalidateAll } from "$app/navigation";
     import { notify } from "$lib/client/notifications";
@@ -26,6 +27,7 @@
     let searchTimer: ReturnType<typeof setTimeout>;
     let existingMatches: any[] = [];
     let analyzeWithVision = false;
+    let removeBackground = true;
 
     $: if (aiSuggestedTitle && !itemTitle) itemTitle = aiSuggestedTitle;
     $: if (aiSuggestedTitle && !itemTitle) onTitleInput();
@@ -107,6 +109,7 @@
             fd.append('title', finalTitle);
             if (selectedCategory) fd.append('categoryName', selectedCategory);
             fd.append('skipVision', String(!analyzeWithVision));
+            fd.append('removeBackground', String(removeBackground));
 
             await saveToQueue('/api/spatial-quick-create', fd);
             notify('success', `Item creation queued!`);
@@ -176,13 +179,8 @@
                 <button type="button" class="btn btn-primary btn-sm rounded-lg shadow-sm" on:click={quickCreate} disabled={isCreating}>
                     {#if isCreating}<span class="loading loading-spinner loading-xs"></span>{:else}Create Here{/if}
                 </button>
-                <label class="label cursor-pointer py-0 justify-start gap-2 mt-1">
-                    <input type="checkbox" class="toggle toggle-primary toggle-sm" bind:checked={analyzeWithVision} />
-                    <span class="label-text text-xs text-gray-500 flex flex-col">
-                        <span class="font-bold text-base-content">Analyze items</span>
-                        <span>Extracts further details from items in the compartment using Vision Model, but takes much longer.</span>
-                    </span>
-                </label>
+                
+                <SpatialItemSettings bind:analyzeWithVision bind:removeBackground />
             </div>
 
             {#if existingMatches.length > 0}

@@ -8,11 +8,18 @@ import sharp from 'sharp';
 
 export const actions = {
     default: async ({ locals, request }) => {
+        if (!locals.user) return fail(401, { error: true, message: 'Unauthorized' });
+        if (locals.role !== 'EDITOR' && locals.role !== 'OWNER' && !locals.user.isAdmin) return fail(403, { error: true, message: 'Forbidden. Viewer access only.' });
+
         const data = Object.fromEntries(await request.formData());
         const name = data.name as string;
         const description = data.description as string;
         const file = data.photoPath as File;
         const mode = data.mode as string;
+
+        if (!name || !name.trim()) {
+            return fail(400, { error: true, message: 'Container name cannot be blank.' });
+        }
 
         let filename = null;
 

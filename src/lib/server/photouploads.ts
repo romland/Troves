@@ -53,7 +53,7 @@ export function readValidSidecar(jsonPath: string) {
 }
 
 
-export async function enrichPhotoData(localPath: string, webPath: string, type: string, inventoryId: number, tracking?: TaskContext, skipLlm: boolean = false, precomputedBox?: number[] | null): Promise<any> {
+export async function enrichPhotoData(localPath: string, webPath: string, type: string, inventoryId: number, tracking?: TaskContext, skipLlm: boolean = false, precomputedBox?: number[] | null, bgRemovalOverride?: boolean): Promise<any> {
     const tempPhoto = { id: -1, orgPath: webPath, type } as any;
     
     let exifDataJson: string | null = null;
@@ -82,7 +82,7 @@ export async function enrichPhotoData(localPath: string, webPath: string, type: 
                 });
             }
         }
-        bgRemovalEnabled = vault?.bgRemovalEnabled ?? true;
+        bgRemovalEnabled = bgRemovalOverride !== undefined ? bgRemovalOverride : (vault?.bgRemovalEnabled ?? true);
         bgRemovalPreCrop = vault?.bgRemovalPreCrop ?? false;
         bgRemovalModel = vault?.bgRemovalModel ?? 'bria-rmbg';
         enablePaddleOCR = vault?.enablePaddleOCR ?? true;
@@ -221,7 +221,14 @@ export async function processDraftPhotoBackground(webPath: string, type: string,
 			const tracking = { targetType: 'global' as const, targetId: 0 };
             const localPath = `data${webPath}`;
 			const box = precomputedAi?.foregroundBox || precomputedAi?.box || null;
-			const data = await enrichPhotoData(localPath, webPath, type, inventoryId, tracking, !!precomputedAi, box);
+            
+            let bgRemovalOverride = undefined;
+            try {
+                const sidecar = JSON.parse(fs.readFileSync(localPath + '.json', 'utf8'));
+                if (sidecar.bgRemovalEnabled !== undefined) bgRemovalOverride = sidecar.bgRemovalEnabled;
+            } catch(e) {}
+            
+            const data = await enrichPhotoData(localPath, webPath, type, inventoryId, tracking, !!precomputedAi, box, bgRemovalOverride);
 			
 			if (precomputedAi) {
 				data.llmAnalysis = JSON.stringify(precomputedAi);
@@ -318,18 +325,27 @@ export async function processItemPhotosBackground(item: any) {
                     await logActivity(item.id, 'Image Processing', `Started ML pipeline for photo ID ${photo.id}`);
                     const skipLlm = !!photo.llmAnalysis; // Skip LLM if we already analyzed it (e.g. Bulk Import)
                     let box = null;
-                    if (skipLlm && photo.llmAnalysis) {
+                    let bgRemovalOverride = undefined;
+                    if (photo.llmAnalysis) {
                         try { 
                             const parsed = JSON.parse(photo.llmAnalysis);
-                            box = parsed.foregroundBox || parsed.box || null; 
-                            
+                            if (skipLlm) box = parsed.foregroundBox || parsed.box || null; 
+                            if (parsed.bgRemovalEnabled !== undefined) bgRemovalOverride = parsed.bgRemovalEnabled;
+                        } catch(e) {}
+                    }
+                    
+                    // Also check sidecar for overrides
+                    if (bgRemovalOverride === undefined) {
+                        try {
+                            const sidecar = JSON.parse(fs.readFileSync(localPath + '.json', 'utf8'));
+                            if (sidecar.bgRemovalEnabled !== undefined) bgRemovalOverride = sidecar.bgRemovalEnabled;
                         } catch(e) {}
                     }
                     
                     console.log(`[Background Task] Calling heavy enrichPhotoData for photo ID ${photo.id}...`);
-                    enriched = await enrichPhotoData(localPath, webPath, photo.type, item.inventoryId, tracking, skipLlm, box);
                     
                     if (enriched.ocr) await logActivity(item.id, 'OCR', `Successfully extracted text from photo ID ${photo.id}`, 'success');
+                    enriched = await enrichPhotoData(localPath, webPath, photo.type, item.inventoryId, tracking, skipLlm, box, bgRemovalOverride);
                     if (enriched.colors) await logActivity(item.id, 'Colors', `Extracted color palette for photo ID ${photo.id}`, 'success');
                     if (enriched.llmAnalysis) await logActivity(item.id, 'Analysis', `Identified as: ${enriched.categoryName || 'Unknown'}`, 'success');
                     

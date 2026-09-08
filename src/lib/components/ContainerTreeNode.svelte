@@ -39,12 +39,23 @@
                 </div>
             </div>
         </a>
+        <div class="flex items-center gap-1 shrink-0 ml-2 relative z-20">
+            <button type="button" class="btn btn-ghost btn-circle btn-sm text-gray-400 hover:text-primary hover:bg-primary/10 transition-colors" on:click={() => dispatch('move', container)} aria-label="Move Container">
+                <i class="bi bi-arrows-move text-lg"></i>
+            </button>
+            <a href="/container/{encodeURIComponent(container.name)}/edit" class="btn btn-ghost btn-circle btn-sm text-gray-400 hover:text-primary hover:bg-primary/10 transition-colors" aria-label="Edit Container">
+                <i class="bi bi-pencil text-lg"></i>
+            </a>
+            <button type="button" class="btn btn-ghost btn-circle btn-sm text-gray-400 hover:text-error hover:bg-error/10 transition-colors" on:click={() => dispatch('delete', container)} aria-label="Delete Container">
+                <i class="bi bi-trash text-lg"></i>
+            </button>
+        </div>
     </div>
 
     {#if expanded && children.length > 0}
         <div class="flex flex-col pb-2" transition:slide|local={{duration: 200}}>
             {#each children as child (child.id)}
-                <svelte:self container={child} {allContainers} depth={depth + 1} on:delete />
+                <svelte:self container={child} {allContainers} depth={depth + 1} on:delete on:move />
             {/each}
         </div>
     {/if}

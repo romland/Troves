@@ -45,7 +45,7 @@ export const actions = {
         const data = await request.formData();
         const name = data.get('name') as string;
         
-        if (name) {
+        if (name !== null && name !== undefined) {
             await db.container.delete({ where: { inventoryId_name: { inventoryId: locals.activeInventoryId, name } } });
         }
     }

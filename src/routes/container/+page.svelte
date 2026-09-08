@@ -4,6 +4,7 @@
     import { slide } from 'svelte/transition';
     import Notifications from "$lib/components/Notifications.svelte";
     import ContainerTreeNode from "$lib/components/ContainerTreeNode.svelte";
+    import MoveContainerModal from "$lib/components/MoveContainerModal.svelte";
 
     export let data: PageServerData;
     import pageTitle from '$lib/stores';
@@ -18,6 +19,7 @@
 
     let containerToDelete: any = null;
     let confirmModal: HTMLDialogElement;
+    let moveModal: MoveContainerModal;
     let isDeleting = false;
     let notifications: any[] = [];
 
@@ -56,12 +58,12 @@
             {#if searchQuery}
                 <!-- Flat rendering when searching to avoid broken tree structure -->
                 {#each filteredContainers as cont (cont.id)}
-                    <ContainerTreeNode container={cont} allContainers={[]} depth={0} on:delete={(e) => containerToDelete = e.detail} />
+                    <ContainerTreeNode container={cont} allContainers={[]} depth={0} on:delete={(e) => containerToDelete = e.detail} on:move={(e) => moveModal.show(e.detail)} />
                 {/each}
             {:else}
                 <!-- Full visual tree rendering -->
                 {#each filteredContainers.filter(c => c.parentId === null) as rootCont (rootCont.id)}
-                    <ContainerTreeNode container={rootCont} allContainers={data.containers} depth={0} on:delete={(e) => containerToDelete = e.detail} />
+                    <ContainerTreeNode container={rootCont} allContainers={data.containers} depth={0} on:delete={(e) => containerToDelete = e.detail} on:move={(e) => moveModal.show(e.detail)} />
                 {/each}
             {/if}
         {:else}
@@ -108,5 +110,7 @@
         <button disabled={isDeleting}>close</button>
     </form>
 </dialog>
+
+<MoveContainerModal bind:this={moveModal} allContainers={data.containers} />
 
 <Notifications bind:notifications />

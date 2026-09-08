@@ -17,6 +17,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     const title = formData.get('title') as string;
     const description = formData.get('description') as string;
     const skipVision = formData.get('skipVision') === 'true';
+    const removeBackground = formData.get('removeBackground') !== 'false';
     
     const taskId = taskManager.start('global', 0, `Creating item from spatial map...`);
     try {
@@ -27,12 +28,20 @@ export const POST: RequestHandler = async ({ request, locals }) => {
             cropWebPath = await cropPolygon(localPath, polygon, slugify(title || 'item', { lower: true, strict: true }));
         }
 
-        const simulatedLlmAnalysis = skipVision ? JSON.stringify({
+        // If we are overriding the background removal, we inject it into the LLM Analysis payload
+        // so `photouploads.ts` picks it up during background processing.
+        const simulatedLlmAnalysis = JSON.stringify({
             photoType: 'product',
             subCategory: 'unknown',
             isNewCategory: false,
-            description: description?.trim() || title?.trim() || 'New Item'
-        }) : undefined;
+            description: description?.trim() || title?.trim() || 'New Item',
+            bgRemovalEnabled: removeBackground
+        });
+        
+        // We write the sidecar immediately so background jobs can grab our overrides, even if skipVision is true
+        if (cropWebPath) {
+            fs.writeFileSync(`data${cropWebPath}.json`, JSON.stringify({ bgRemovalEnabled: removeBackground }), 'utf8');
+        }
 
         const safeTitle = title?.trim() || 'New Item';
         const item = await db.item.create({
@@ -42,7 +51,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
                 slug: slugify(safeTitle, { lower: true, strict: true }) || 'new-item',
                 inventoryId: locals.activeInventoryId,
                 authorId: locals.user.id,
-                photos: cropWebPath ? { create: [{ type: 'product', orgPath: cropWebPath, llmAnalysis: simulatedLlmAnalysis }] } : undefined,
+                photos: cropWebPath ? { create: [{ type: 'product', orgPath: cropWebPath, llmAnalysis: skipVision ? simulatedLlmAnalysis : undefined }] } : undefined,
                 locations: {
                     create: [{
                         containerId: parentContainerId,
