@@ -52,7 +52,7 @@ I use Groq's Whisper 3 for TTS in the search field. It is ridiculously good when
 You can also ask where something is. Try saying: **"Find my grey jeans"** or **"Where is the USB to TTL converter?"**. Your intent will be parsed, located in your database, and audibly speak the location back to you.
 
 ### Here's a text about taxonomy that will be incorporated naturally in this README one day:
-We’re building a self-organizing inventory app. The basic idea is that you take a photo of any object—from a book to a winter coat to a spark plug—and the app automatically figures out what it is, what details matter, and how to file it away.
+We’re building a self-organizing inventory app. The basic idea is that you take a photo of any object, from a book to a winter coat to a spark plug,and the app automatically figures out what it is, what details matter, and how to file it away.
 
 Because it has to handle a bit of everything, we can't pre-program it with rigid spreadsheet columns like "Brand" or "Shoe Size." Instead, the system creates its own structure on the fly. Doing this brings up two practical hurdles:
 
@@ -127,7 +127,7 @@ Troves doesn't just track *which* drawer an item is in; it can track exactly *wh
 
 * **Mapping the Drawer:** When viewing a container, click "Edit Map" and use the "Warp Grid" tool. Just drag the four outer corners to match the edges of your drawer, specify the number of rows and columns, and Troves will project a grid over your compartments.
 * **Deep Scan:** Instead of manually logging 60 different resistors or screws, tap **✨ Deep Scan Grid**. The Vision Model analyzes the entire drawer in one go, reading printed labels and identifying the physical components in each specific slot.
-* **Triage & Save:** Troves then opens a triage screen where you can quickly step through the results. It zooms in on the active cell, complete with a minimap so you don't lose your bearings—allowing you to verify or edit the model's guess. Hit 'Accept' to log it to your inventory.
+* **Triage & Save:** Troves then opens a triage screen where you can quickly step through the results. It zooms in on the active cell, complete with a minimap so you don't lose your bearings, allowing you to verify or edit the model's guess. Hit 'Accept' to log it to your inventory.
 * **Finding Your Stuff:** Items mapped this way display a glowing outline on their thumbnails. Clicking the thumbnail opens a full-screen map of the container, highlighting exactly which slot to pull from. If you run a missing-items audit against the container, Troves will show you the photo with the exact empty slots glowing red.
 
 #### A few clips to demonstrate spatial mapping
@@ -182,7 +182,7 @@ To make this actually work for hardware, electronics, and tools, the matching en
 * **Text Debug Mode:** You can test the intent parser and see exactly how it tokenizes queries without a microphone by prefixing your search with `/v ` (e.g., `/v where are my 10k ohm resistors?`).
 
 #### Extending to Other Domains (Apparel, Wine, etc.)
-Because the Voice Engine relies on dictionaries and regular expressions rather than rigid database schemas, extending it to entirely different trove, like a wardrobe or a wine cellar—only requires expanding the pre-processing maps in `VoiceEngine.ts`.
+Because the Voice Engine relies on dictionaries and regular expressions rather than rigid database schemas, extending it to entirely different trove, like a wardrobe or a wine cellar, only requires expanding the pre-processing maps in `VoiceEngine.ts`.
 
 * **Domain-Specific Phonetics:** You add new regex rules to `preprocessText` and `phoneticizeForTTS` to bridge domain shorthands. For clothes, `XL` expands to `extra large` and `32x34` (pants) to `waist 32 length 34`. For wine, `750ml` becomes `750 milliliter`, `Cab Sauv` maps to `Cabernet Sauvignon`, and notoriously difficult French varietals get phonetic spellings specifically for the TTS output.
 * **Custom Intents:** While standard triggers ("Where is", "How many") work globally, you can add custom intent regexes to catch domain-specific phrasing, such as *"Which red wines do I have from 2015?"* or *"List all my size medium jackets."*
@@ -321,14 +321,14 @@ If a specific task override is omitted, Troves automatically falls back to the b
 * `SUMMARY` (Summarizing parsed webpages and documents)
 * `PARSER` (Structuring OCR data and reverse image search results)
 * `TAXONOMY` (Generating new EAV schemas and categories)
-* `QNA` (Ask Troves—used when answering questions *without* photo context)
+* `QNA` (Ask Troves, used when answering questions *without* photo context)
 
 
 * **Vision (`AI_VISION_[TASK]_...`):**
 * `MULTISCAN` (Counting and bounding-box extraction for bulk collections)
 * `CLASSIFY` (Standard single-item analysis)
 * `GUESS` (Refining items based on user hints)
-* `QNA` (Ask Troves—used when answering questions *with* photo context)
+* `QNA` (Ask Troves, used when answering questions *with* photo context)
 
 
 * **Audio (`AI_AUDIO_[TASK]_...`):**
