@@ -145,7 +145,7 @@
             {#if aiSuggestedTitle}
                 <div class="bg-primary/10 border border-primary/20 text-primary px-4 py-3 rounded-xl flex items-center justify-between">
                     <span class="font-bold text-sm">"{aiSuggestedTitle}"</span>
-                    <span class="text-[10px] uppercase font-bold tracking-wider opacity-60">AI Suggestion</span>
+                    <span class="text-[10px] uppercase font-bold tracking-wider opacity-60">Suggestion</span>
                 </div>
             {/if}
 

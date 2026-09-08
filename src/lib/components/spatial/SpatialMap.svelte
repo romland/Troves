@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { createEventDispatcher } from 'svelte';
+    import { createEventDispatcher, onMount } from 'svelte';
     import { computePerspectiveGrid } from './perspective';
     const dispatch = createEventDispatcher();
 
@@ -15,6 +15,33 @@
     
     const SNAP_THRESHOLD = 15; // 1.5% of viewBox
     let zoomLevel = 100;
+
+    // History Management (Undo/Reset)
+    let history: string[] = [];
+    let initialPolygonsStr: string = "[]";
+    
+    onMount(() => {
+        initialPolygonsStr = JSON.stringify(polygons);
+    });
+
+    function saveHistory() {
+        history.push(JSON.stringify(polygons));
+        if (history.length > 20) history.shift();
+        history = history;
+    }
+
+    export function undo() {
+        if (history.length > 0) {
+            polygons = JSON.parse(history.pop()!);
+            dispatch('change', polygons);
+        }
+    }
+
+    export function reset() {
+        polygons = JSON.parse(initialPolygonsStr);
+        history = [];
+        dispatch('change', polygons);
+    }
 
     // Perspective Warp Mode State
     export let isWarpMode = false;
@@ -54,6 +81,7 @@
         if (readonly || activePolyIndex !== polyIdx) return;
         const pt = getSvgPoint(e);
         if (!pt) return;
+        saveHistory();
         draggingPoly = { polyIdx, startX: pt.x, startY: pt.y, initialPoints: JSON.parse(JSON.stringify(polygons[polyIdx])) };
         e.stopPropagation();
         (e.target as Element).setPointerCapture(e.pointerId);
@@ -115,7 +143,11 @@
 
     function handlePointerUp(e: PointerEvent) {
         if (draggingPoint || draggingPoly) {
-            (e.target as Element).releasePointerCapture(e.pointerId);
+            try {
+                if ((e.target as Element).hasPointerCapture(e.pointerId)) {
+                    (e.target as Element).releasePointerCapture(e.pointerId);
+                }
+            } catch (err) {}
             draggingPoint = null;
             draggingPoly = null;
             if (isWarpMode) {
@@ -123,6 +155,13 @@
             } else {
                 dispatch('change', polygons);
             }
+        }
+    }
+
+    function handleKeydown(e: KeyboardEvent) {
+        if (!readonly && (e.ctrlKey || e.metaKey) && e.key === 'z') {
+            e.preventDefault();
+            undo();
         }
     }
 
@@ -140,6 +179,7 @@
     }
 
     export function generateGhostGrid(cols: number, rows: number) {
+        saveHistory();
         const newPolys: number[][][] = [];
         const cellW = 1000 / cols;
         const cellH = 1000 / rows;
@@ -158,6 +198,7 @@
     }
 
     export function bakeWarpGrid() {
+        saveHistory();
         polygons = computePerspectiveGrid(warpCols, warpRows, warpCorners);
         isWarpMode = false;
         dispatch('change', polygons);
@@ -173,14 +214,23 @@
                 if (pt[1] > maxY) maxY = pt[1];
             }));
             warpCorners = [[minX, minY], [maxX, minY], [maxX, maxY], [minX, maxY]];
+        } else {
+            warpCorners = [[100, 100], [900, 100], [900, 900], [100, 900]];
         }
         isWarpMode = true;
     }
 </script>
 
+<svelte:window 
+    on:pointermove={handlePointerMove}
+    on:pointerup={handlePointerUp}
+    on:pointercancel={handlePointerUp}
+    on:keydown={handleKeydown}
+/>
+
 <div class="relative w-full h-[50vh] sm:h-[65vh] bg-base-300 rounded-[2rem] overflow-hidden shadow-inner border border-base-200">
     <!-- Floating Apple-Style Zoom Pill -->
-    <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 flex gap-2 bg-base-100/60 hover:bg-base-100/95 backdrop-blur-xl p-1.5 rounded-full shadow-lg border border-base-200/50 items-center transition-all">
+    <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-40 flex gap-2 bg-base-100/60 hover:bg-base-100/95 backdrop-blur-xl p-1.5 rounded-full shadow-lg border border-base-200/50 items-center transition-all">
         <!-- svelte-ignore a11y_consider_explicit_label -->
         <button class="btn btn-circle btn-sm btn-ghost text-base-content/70" on:click|stopPropagation={() => zoomLevel = Math.max(100, zoomLevel - 50)}><i class="bi bi-dash text-lg"></i></button>
         <div class="text-xs font-bold w-12 text-center select-none text-base-content/80">{zoomLevel}%</div>
@@ -188,10 +238,40 @@
         <button class="btn btn-circle btn-sm btn-ghost text-base-content/70" on:click|stopPropagation={() => zoomLevel = Math.min(500, zoomLevel + 50)}><i class="bi bi-plus text-lg"></i></button>
     </div>
 
+    {#if history.length > 0 && !isWarpMode && !readonly}
+        <div class="absolute top-6 left-6 z-40 flex gap-2 animate-fade-in">
+            <button class="btn btn-circle btn-sm btn-ghost bg-base-100/80 backdrop-blur-xl shadow-md border border-base-200" on:click|stopPropagation={undo} title="Undo (Ctrl+Z)"><i class="bi bi-arrow-counterclockwise text-base-content/70"></i></button>
+            <button class="btn btn-circle btn-sm btn-ghost bg-base-100/80 backdrop-blur-xl shadow-md border border-base-200" on:click|stopPropagation={reset} title="Reset to last save"><i class="bi bi-trash text-error/70"></i></button>
+        </div>
+    {/if}
+
+    <!-- Floating Apple-Style Warp HUD -->
+    {#if isWarpMode}
+    <div class="absolute top-6 left-1/2 -translate-x-1/2 z-50 flex flex-col sm:flex-row gap-3 bg-base-100/80 backdrop-blur-2xl p-2 rounded-3xl shadow-[0_10px_40px_rgba(0,0,0,0.3)] border border-base-200/50 items-center animate-fade-in">
+        <div class="flex items-center gap-2 px-2">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-base-content/60">Cols</span>
+            <button class="btn btn-circle btn-sm btn-ghost bg-base-200/50" on:click={() => warpCols = Math.max(1, warpCols - 1)}><i class="bi bi-dash"></i></button>
+            <span class="font-mono w-4 text-center font-bold text-base-content">{warpCols}</span>
+            <button class="btn btn-circle btn-sm btn-ghost bg-base-200/50" on:click={() => warpCols++}><i class="bi bi-plus"></i></button>
+        </div>
+        <div class="w-px h-6 bg-base-300 hidden sm:block"></div>
+        <div class="flex items-center gap-2 px-2">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-base-content/60">Rows</span>
+            <button class="btn btn-circle btn-sm btn-ghost bg-base-200/50" on:click={() => warpRows = Math.max(1, warpRows - 1)}><i class="bi bi-dash"></i></button>
+            <span class="font-mono w-4 text-center font-bold text-base-content">{warpRows}</span>
+            <button class="btn btn-circle btn-sm btn-ghost bg-base-200/50" on:click={() => warpRows++}><i class="bi bi-plus"></i></button>
+        </div>
+        <div class="flex gap-2 w-full sm:w-auto px-1">
+            <button class="btn btn-ghost btn-sm rounded-xl flex-1 hover:bg-base-200" on:click={() => { isWarpMode = false; }}>Cancel</button>
+            <button class="btn btn-primary btn-sm rounded-xl shadow-sm flex-1" on:click={bakeWarpGrid}>Apply Grid</button>
+        </div>
+    </div>
+    {/if}
+
     <!-- Scrollable Canvas -->
     <!-- svelte-ignore a11y_click_events_have_key_events -->
     <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <div class="w-full h-full overflow-auto custom-scrollbar p-16 sm:p-32" on:click={() => activePolyIndex = null}>
+    <div class="w-full h-full overflow-auto custom-scrollbar p-8 sm:p-24 pb-20 sm:pb-32" on:click={() => activePolyIndex = null}>
         <div class="relative origin-top-left transition-all duration-200 mx-auto shadow-2xl ring-1 ring-black/5" style="width: {zoomLevel}%;">
             <img src={imageUrl} alt="Container map" class="w-full h-auto block pointer-events-none" />
             
@@ -200,9 +280,6 @@
                 viewBox="0 0 1000 1000" 
                 preserveAspectRatio="none" 
                 class="absolute inset-0 w-full h-full cursor-crosshair z-10 overflow-visible"
-                on:pointermove={handlePointerMove}
-                on:pointerup={handlePointerUp}
-                on:pointercancel={handlePointerUp}
             >
                 {#if isWarpMode}
                     <!-- Render the Projected Inner Grid as a Preview -->
@@ -227,6 +304,11 @@
                             on:dragover|preventDefault
                             on:drop={(e) => handleDrop(i, e)}
                         />
+                        {#if zoomLevel >= 250 && isMapped}
+                            <text x={cx} y={cy} text-anchor="middle" dominant-baseline="middle" class="fill-white text-[12px] font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] hidden md:block pointer-events-none">
+                                {mappedEntities[i].title || mappedEntities[i].name}
+                            </text>
+                        {/if}
                     {/each}
                 {/if}
             </svg>

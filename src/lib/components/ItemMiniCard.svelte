@@ -28,14 +28,21 @@
                 <div class="absolute inset-0 opacity-30 pointer-events-none" style="background: linear-gradient(135deg, {cols[0]}, {cols[1] || cols[0]});"></div>
             {/if}
         {#if polyMap && srcUrl}
-            <div class="relative max-w-full max-h-full flex items-center justify-center">
-                <img src="{srcUrl}{cb}" alt={item.title} loading={imgLoadStrategy} class="block max-w-full max-h-full mix-blend-multiply dark:mix-blend-normal relative z-10 drop-shadow-md" />
-                <svg viewBox="0 0 1000 1000" preserveAspectRatio="none" class="absolute inset-0 w-full h-full pointer-events-none drop-shadow-lg z-20">
-                    <polygon points={polyMap.map(p => p.join(',')).join(' ')} vector-effect="non-scaling-stroke" class="fill-primary/40 stroke-primary stroke-[3px] animate-pulse" />
+            {@const clipPathStr = `polygon(${polyMap.map(p => `${(p[0]/10).toFixed(2)}% ${(p[1]/10).toFixed(2)}%`).join(', ')})`}
+            <div class="relative w-full h-full flex items-center justify-center bg-base-300">
+                <!-- Background: Dimmed & Blurred -->
+                <img class="absolute inset-0 w-full h-full object-cover blur-[1px] brightness-[0.75] saturate-[0.8]" src="{srcUrl}{cb}" alt="Background" />
+                
+                <!-- Foreground: Spotlight Clipped -->
+                <img src="{srcUrl}{cb}" alt={item.title} loading={imgLoadStrategy} class="absolute inset-0 w-full h-full object-cover drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)] z-10 scale-[1.02]" style="clip-path: {clipPathStr};" />
+                
+                <!-- Subtle Outer Glow Rim -->
+                <svg viewBox="0 0 1000 1000" preserveAspectRatio="none" class="absolute inset-0 w-full h-full pointer-events-none z-20 scale-[1.02]">
+                    <polygon points={polyMap.map(p => p.join(',')).join(' ')} class="fill-transparent stroke-white/80 drop-shadow-[0_0_2px_rgba(255,255,255,0.8)]" stroke-width="3" vector-effect="non-scaling-stroke" />
                 </svg>
             </div>
         {:else if srcUrl}
-            <img src="{srcUrl}{cb}" alt={item.title} loading={imgLoadStrategy} class="w-full h-full object-cover mix-blend-multiply dark:mix-blend-normal relative z-10 drop-shadow-md" />
+            <img src="{srcUrl}{cb}" alt={item.title} loading={imgLoadStrategy} class="w-full h-full object-cover mix-blend-multiply dark:mix-blend-normal relative z-10" />
         {:else}
             <i class="bi bi-box text-xl text-gray-400 relative z-10"></i>
         {/if}

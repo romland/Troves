@@ -6,10 +6,12 @@
     import Navigation from "$lib/components/navigation.svelte";
     import { enhance } from "$app/forms";
     import { notify } from "$lib/client/notifications";
+    import SpatialGridMap from "$lib/components/spatial/SpatialGridMap.svelte";
     import SpatialMap from "$lib/components/spatial/SpatialMap.svelte";
     import PolygonActionSheet from "$lib/components/spatial/PolygonActionSheet.svelte";
     import FormInput from "$lib/components/FormInput.svelte";
     import { saveToQueue } from "$lib/client/offlineQueue";
+    import { invalidateAll } from '$app/navigation';
 
     export let data: PageServerData;
 
@@ -59,13 +61,18 @@
     }
 
     async function triggerDeepScan() {
-        if (polygons.length === 0) return notify('warning', 'Map the container slots first.');
+        const emptySlots = polygons
+            .map((p, i) => ({ polygon: p, originalIndex: i }))
+            .filter((_, i) => !mappedEntities[i]);
+            
+        if (emptySlots.length === 0) return notify('info', 'All slots are already mapped.');
+
         isDeepScanning = true;
         try {
             const res = await fetch('/api/container-deep-scan', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ imagePath: data.item?.photoPath, polygons })
+                body: JSON.stringify({ imagePath: data.item?.photoPath, slots: emptySlots })
             });
             const json = await res.json();
             if (json.items && json.items.length > 0) {
@@ -148,26 +155,15 @@
             <div class="flex justify-between items-end px-2">
                 <h3 class="font-bold text-lg">Spatial Map</h3>
                 <div class="flex gap-2">
-                    {#if isWarpMode}
-                        <button class="btn btn-sm btn-secondary text-secondary-content shadow-md rounded-xl" on:click={() => spatialMapRef?.bakeWarpGrid()}><i class="bi bi-magic"></i> Bake Perspective</button>
-                        <button class="btn btn-sm btn-ghost" on:click={() => isWarpMode = false}>Cancel</button>
-                    {:else if polygons.length === 0}
-                        <button class="btn btn-sm btn-primary shadow-sm rounded-xl" on:click={triggerAiMapping} disabled={isMapping}>
-                            {#if isMapping}<span class="loading loading-spinner loading-xs"></span>{:else}<i class="bi bi-stars"></i> Auto-Map AI{/if}
-                        </button>
-                        <div class="dropdown dropdown-end">
-                            <button tabindex="0" class="btn btn-sm btn-ghost border-base-300 rounded-xl"><i class="bi bi-grid-3x3"></i> Grid</button>
-                            <div tabindex="-1" class="dropdown-content z-50 p-4 shadow-xl bg-base-100 border border-base-200 rounded-2xl w-64 mt-2 flex flex-col gap-3">
-                                <div class="text-[10px] font-bold uppercase text-gray-500">Overlay Grid</div>
-                                <div class="flex gap-2">
-                                    <FormInput type="number" bind:value={gridCols} label="Cols" inputClass="input-sm" />
-                                    <FormInput type="number" bind:value={gridRows} label="Rows" inputClass="input-sm" />
-                                </div>
-                                <button class="btn btn-sm btn-neutral w-full mt-1" on:click={() => { isWarpMode = true; (document.activeElement as HTMLElement)?.blur(); }}>Start Warp Mode</button>
-                                <button class="btn btn-xs btn-ghost w-full" on:click={() => { spatialMapRef?.generateGhostGrid(gridCols, gridRows); (document.activeElement as HTMLElement)?.blur(); }}>Apply Flat Grid</button>
-                            </div>
-                        </div>
-                    {:else}
+                    {#if !isWarpMode}
+                        {#if polygons.length === 0}
+                            <button class="btn btn-sm btn-primary shadow-sm rounded-xl" on:click={triggerAiMapping} disabled={isMapping}>
+                                {#if isMapping}<span class="loading loading-spinner loading-xs"></span>{:else}<i class="bi bi-stars"></i> Auto-Map AI{/if}
+                            </button>
+                            <button class="btn btn-sm btn-outline border-base-300 rounded-xl" on:click={() => { spatialMapRef?.enterWarpMode(); }}>
+                                <i class="bi bi-grid-3x3"></i> Draw Grid
+                            </button>
+                        {:else}
                         <div class="dropdown dropdown-end">
                             <button tabindex="0" class="btn btn-sm btn-outline border-base-300 rounded-xl"><i class="bi bi-pencil-square"></i> Edit Map</button>
                             <div tabindex="-1" class="dropdown-content z-50 p-4 shadow-xl bg-base-100 border border-base-200 rounded-2xl w-64 mt-2 flex flex-col gap-3">
@@ -187,14 +183,15 @@
                                 </form>
                             </div>
                         </div>
-                    {/if}
-                    {#if isMapDirty}
-                        <form method="POST" action="?/saveSpatialMap" use:enhance={() => {
-                            return async ({ update }) => { isMapDirty = false; notify('success', 'Map saved!'); await update({ reset: false }); };
-                        }}>
-                            <input type="hidden" name="spatialMap" value={JSON.stringify(polygons)}>
-                            <button type="submit" class="btn btn-sm btn-success text-white rounded-xl shadow-sm"><i class="bi bi-check-lg"></i> Save Layout</button>
-                        </form>
+                        {/if}
+                        {#if isMapDirty}
+                            <form method="POST" action="?/saveSpatialMap" use:enhance={() => {
+                                return async ({ update }) => { isMapDirty = false; notify('success', 'Map saved!'); await update({ reset: false }); };
+                            }}>
+                                <input type="hidden" name="spatialMap" value={JSON.stringify(polygons)}>
+                                <button type="submit" class="btn btn-sm btn-success text-white rounded-xl shadow-sm"><i class="bi bi-check-lg"></i> Save Layout</button>
+                            </form>
+                        {/if}
                     {/if}
                 </div>
             </div>
@@ -265,9 +262,12 @@
         {#if deepScanItems.length > 0 && deepScanItems[currentTriageIdx]}
             {@const currentItem = deepScanItems[currentTriageIdx]}
             {@const poly = polygons[currentItem.slotIndex]}
-            <div class="p-4 border-b border-base-200 flex justify-between items-center bg-base-200/30">
-                <h3 class="font-bold text-lg"><i class="bi bi-robot text-primary mr-1"></i> Triage Scan</h3>
-                <div class="badge badge-primary badge-outline font-bold">{currentTriageIdx + 1} of {deepScanItems.length}</div>
+            <div class="p-4 border-b border-base-200 bg-base-200/30 flex flex-col gap-1">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-bold text-lg"><i class="bi bi-robot text-primary mr-1"></i> Review Scanned Items</h3>
+                    <div class="badge badge-primary badge-outline font-bold">{currentTriageIdx + 1} of {deepScanItems.length}</div>
+                </div>
+                <div class="text-[10px] uppercase font-bold text-gray-500 tracking-wider">in {data.item?.name}</div>
             </div>
             
             {#if poly}
@@ -301,17 +301,19 @@
                         <polygon points={poly.map(pt => pt.join(',')).join(' ')} class="fill-primary/20 stroke-primary stroke-[5px]" vector-effect="non-scaling-stroke" />
                     </svg>
                     
-                    <!-- Minimap Context Overlay -->
-                    <div class="absolute top-3 right-3 w-20 h-20 sm:w-24 sm:h-24 bg-base-100/90 backdrop-blur-md rounded-2xl border border-base-300 shadow-xl overflow-hidden p-1.5 z-20">
-                        <svg viewBox="0 0 1000 1000" class="w-full h-full drop-shadow-sm">
-                            {#each polygons as p, pIdx}
-                                <polygon points={p.map(pt => pt.join(',')).join(' ')} class="transition-colors {pIdx === currentItem.slotIndex ? 'fill-primary stroke-primary' : 'fill-base-content/10 stroke-base-content/30'}" stroke-width="10" />
-                            {/each}
-                        </svg>
+                    <!-- Minimap Abstract Context Overlay -->
+                    <div class="absolute top-3 right-3 w-24 sm:w-32 z-20 shadow-[0_10px_20px_rgba(0,0,0,0.3)] rounded-2xl ring-4 ring-base-100/50">
+                        <SpatialGridMap 
+                            activeIndex={currentItem.slotIndex} 
+                            mappedIndices={mappedEntities.map((e, idx) => e ? idx : -1).filter(idx => idx !== -1)}
+                            polygons={polygons} 
+                            referenceImage={data.item?.photoPath} 
+                        />
                     </div>
+            
                 </div>
             {/if}
-            
+
             <div class="p-6 flex flex-col gap-3">
                 <FormInput label="Suggested Title" bind:value={currentItem.title} required />
                 <FormInput label="Description (Optional)" bind:value={currentItem.description} />

@@ -9,16 +9,16 @@ import fs from 'fs';
 
 export const POST: RequestHandler = async ({ request, locals }) => {
     assertCanMutate(locals);
-    const { imagePath, polygons } = await request.json();
+    const { imagePath, slots } = await request.json();
     
-    if (!imagePath || !polygons || polygons.length === 0) {
-        return json({ error: 'Missing image or polygons' }, { status: 400 });
+    if (!imagePath || !slots || slots.length === 0) {
+        return json({ error: 'Missing image or slots' }, { status: 400 });
     }
 
     const localPath = `data${imagePath}`;
     if (!fs.existsSync(localPath)) return json({ error: 'Image not found' }, { status: 404 });
 
-    const taskId = taskManager.start('global', 0, `Deep scanning ${polygons.length} compartments...`);
+    const taskId = taskManager.start('global', 0, `Deep scanning ${slots.length} compartments...`);
     
     try {
         // 1. Generate SVG Overlay to "Burn In" numbers onto the image for the LLM
@@ -30,7 +30,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
         const fontSize = radius * 1.2;
         
         let svgElements = '';
-        polygons.forEach((poly: number[][], i: number) => {
+        slots.forEach((slot: any) => {
+            const poly = slot.polygon;
+            const i = slot.originalIndex;
             // Find the center (centroid) of the 4-point polygon
             const cx = (poly[0][0] + poly[1][0] + poly[2][0] + poly[3][0]) / 4;
             const cy = (poly[0][1] + poly[1][1] + poly[2][1] + poly[3][1]) / 4;
@@ -49,7 +51,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
             .toBuffer();
 
         // 2. Call Vision Model
-        const prompt = `Attached is a top-down photo of a storage container. I have overlaid red circles with numbers (0 through ${polygons.length - 1}) in the center of each compartment.
+        // const prompt = `Attached is a top-down photo of a storage container. I have overlaid red circles with numbers (0 through ${polygons.length - 1}) in the center of each compartment.
+        const prompt = `Attached is a top-down photo of a storage container. I have overlaid red circles with numbers in the center of specific compartments.
         Look at each numbered compartment. Identify what is inside.
         1. Look at the physical item itself.
         2. Look for printed labels (Dymo/Brother tape) which may be slightly outside or overlapping the box boundary, but clearly belong to that numbered slot.

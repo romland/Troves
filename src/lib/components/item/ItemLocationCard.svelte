@@ -104,10 +104,15 @@
                 <!-- svelte-ignore a11y_click_events_have_key_events --><!-- svelte-ignore a11y_interactive_supports_focus -->
                 <div class="w-14 h-14 shrink-0 rounded-lg overflow-hidden border border-base-200 bg-base-50 flex items-center justify-center relative cursor-zoom-in hover:opacity-80 transition-opacity" on:click={() => openMapModal(loc)} role="button">
                     {#if polyMap && (loc.container.parent?.photoPath || loc.container?.photoPath)}
+                        {@const src = loc.container.parent?.photoPath ? loc.container.parent.photoPath.replace(/\.[^/.]+$/, '_thumb.webp') : loc.container.photoPath.replace(/\.[^/.]+$/, '_thumb.webp')}
+                        {@const clipPathStr = `polygon(${polyMap.map(p => `${(p[0]/10).toFixed(2)}% ${(p[1]/10).toFixed(2)}%`).join(', ')})`}
                         <div class="relative max-w-full max-h-full flex items-center justify-center">
-                            <img class="block max-w-full max-h-full" src="{loc.container.parent?.photoPath ? loc.container.parent.photoPath.replace(/\.[^/.]+$/, '_thumb.webp') : loc.container.photoPath.replace(/\.[^/.]+$/, '_thumb.webp')}" alt="Container thumbnail" on:error={(e) => { if (!(e.currentTarget).dataset.fb) { (e.currentTarget).dataset.fb = '1'; (e.currentTarget).src = loc.container.parent?.photoPath || loc.container.photoPath; } }}/>
-                            <svg viewBox="0 0 1000 1000" preserveAspectRatio="none" class="absolute inset-0 w-full h-full pointer-events-none drop-shadow-lg">
-                                <polygon points={polyMap.map(p => p.join(',')).join(' ')} vector-effect="non-scaling-stroke" class="fill-primary/40 stroke-primary stroke-[3px] animate-pulse" />
+                            <img class="block max-w-full max-h-full blur-[1px] brightness-[0.75] saturate-[0.8]" src="{src}" alt="Background" on:error={(e) => { if (!(e.currentTarget).dataset.fb) { (e.currentTarget).dataset.fb = '1'; (e.currentTarget).src = loc.container.parent?.photoPath || loc.container.photoPath; } }}/>
+                            
+                            <img class="absolute top-0 left-0 w-full h-full object-fill drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)] z-10 scale-[1.02]" style="clip-path: {clipPathStr};" src="{src}" alt="Focus" />
+                            
+                            <svg viewBox="0 0 1000 1000" preserveAspectRatio="none" class="absolute inset-0 w-full h-full pointer-events-none z-20 scale-[1.02]">
+                                <polygon points={polyMap.map(p => p.join(',')).join(' ')} class="fill-transparent stroke-white/80 drop-shadow-[0_0_2px_rgba(255,255,255,0.8)]" stroke-width="3" vector-effect="non-scaling-stroke" />
                             </svg>
                         </div>
                     {:else if loc.container.parent?.photoPath || loc.container?.photoPath}
@@ -216,10 +221,15 @@
                 <!-- svelte-ignore a11y_no_noninteractive_element_to_interactive_role -->
                 <figure class="w-full h-20 border-b border-base-200 bg-base-200 m-0 flex items-center justify-center cursor-zoom-in hover:opacity-80 transition-opacity" on:click={() => openMapModal(loc)} role="button">
                     {#if polyMap && (loc.container.parent?.photoPath || loc.container?.photoPath)}
+                        {@const src = loc.container.parent?.photoPath ? loc.container.parent.photoPath.replace(/\.[^/.]+$/, '_thumb.webp') : loc.container.photoPath.replace(/\.[^/.]+$/, '_thumb.webp')}
+                        {@const clipPathStr = `polygon(${polyMap.map(p => `${(p[0]/10).toFixed(2)}% ${(p[1]/10).toFixed(2)}%`).join(', ')})`}
                         <div class="relative max-w-full max-h-full flex items-center justify-center">
-                            <img class="block max-w-full max-h-full" src="{loc.container.parent?.photoPath ? loc.container.parent.photoPath.replace(/\.[^/.]+$/, '_thumb.webp') : loc.container.photoPath.replace(/\.[^/.]+$/, '_thumb.webp')}" alt="Container thumbnail" on:error={(e) => { if (!(e.currentTarget).dataset.fb) { (e.currentTarget).dataset.fb = '1'; (e.currentTarget).src = loc.container.parent?.photoPath || loc.container.photoPath; } }}/>
-                            <svg viewBox="0 0 1000 1000" preserveAspectRatio="none" class="absolute inset-0 w-full h-full pointer-events-none drop-shadow-lg">
-                                <polygon points={polyMap.map(p => p.join(',')).join(' ')} vector-effect="non-scaling-stroke" class="fill-primary/40 stroke-primary stroke-[3px] animate-pulse" />
+                            <img class="block max-w-full max-h-full blur-[1px] brightness-[0.75] saturate-[0.8]" src="{src}" alt="Background" on:error={(e) => { if (!(e.currentTarget).dataset.fb) { (e.currentTarget).dataset.fb = '1'; (e.currentTarget).src = loc.container.parent?.photoPath || loc.container.photoPath; } }}/>
+                            
+                            <img class="absolute top-0 left-0 w-full h-full object-fill drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)] z-10 transition-transform scale-[1.02]" style="clip-path: {clipPathStr};" src="{src}" alt="Focus" />
+                            
+                            <svg viewBox="0 0 1000 1000" preserveAspectRatio="none" class="absolute inset-0 w-full h-full pointer-events-none z-20 transition-transform scale-[1.02]">
+                                <polygon points={polyMap.map(p => p.join(',')).join(' ')} class="fill-transparent stroke-white/80 drop-shadow-[0_0_2px_rgba(255,255,255,0.8)]" stroke-width="3" vector-effect="non-scaling-stroke" />
                             </svg>
                         </div>
                     {:else if loc.container.parent?.photoPath || loc.container?.photoPath}
@@ -280,17 +290,25 @@
 
 <Modal bind:this={mapModal} title="" position="bottom" boxClass="p-0 overflow-hidden bg-base-100 shadow-2xl sm:rounded-[2.5rem] border border-base-200">
     {#if activeMapLoc}
-        <div class="relative w-full h-[50vh] sm:h-[60vh] bg-base-300 flex items-center justify-center border-b border-base-200 p-2 sm:p-4">
+        <div class="relative w-full aspect-square sm:aspect-video max-h-[65vh] bg-base-300 flex items-center justify-center border-b border-base-200 overflow-hidden">
             {#if activeMapLoc.container.parent?.photoPath || activeMapLoc.container?.photoPath}
-                <div class="relative max-w-full max-h-full flex items-center justify-center">
-                    <img src={activeMapLoc.container.parent?.photoPath || activeMapLoc.container?.photoPath} class="block max-w-full max-h-full drop-shadow-md" alt="Container" />
+                {@const src = activeMapLoc.container.parent?.photoPath || activeMapLoc.container?.photoPath}
+                <div class="relative max-w-full max-h-full flex items-center justify-center shadow-[0_20px_50px_rgba(0,0,0,0.5)] rounded-2xl overflow-hidden m-2 sm:m-4">
+                    <img src={src} class="block max-w-full max-h-full" alt="Container Base" />
                     {#if activePolyMap}
-                        {@const cx = (activePolyMap[0][0] + activePolyMap[1][0] + activePolyMap[2][0] + activePolyMap[3][0]) / 4}
-                        {@const cy = (activePolyMap[0][1] + activePolyMap[1][1] + activePolyMap[2][1] + activePolyMap[3][1]) / 4}
-                        <svg viewBox="0 0 1000 1000" preserveAspectRatio="none" class="absolute inset-0 w-full h-full z-10 pointer-events-none drop-shadow-lg">
-                            <polygon points={activePolyMap.map(p => p.join(',')).join(' ')} class="fill-primary/40 stroke-primary stroke-[6px] animate-pulse" vector-effect="non-scaling-stroke" />
-                            <text x={cx} y={cy} font-family="sans-serif" font-weight="900" font-size="40" fill="white" stroke="rgba(0,0,0,0.8)" stroke-width="8" paint-order="stroke fill" text-anchor="middle" dominant-baseline="middle" class="drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)]">{item.title}</text>
+                        {@const clipPathStr = `polygon(${activePolyMap.map(p => `${(p[0]/10).toFixed(2)}% ${(p[1]/10).toFixed(2)}%`).join(', ')})`}
+                        
+                        <div class="absolute inset-0 bg-black/30 backdrop-blur-[2px] z-10 pointer-events-none transition-all duration-500"></div>
+                        
+                        <img src={src} class="absolute top-0 left-0 w-full h-full object-fill z-20 drop-shadow-[0_10px_30px_rgba(0,0,0,0.8)] scale-[1.01]" style="clip-path: {clipPathStr};" alt="Lifted Cell" />
+                        
+                        <svg viewBox="0 0 1000 1000" preserveAspectRatio="none" class="absolute inset-0 w-full h-full z-30 pointer-events-none scale-[1.01]">
+                            <polygon points={activePolyMap.map(p => p.join(',')).join(' ')} class="fill-transparent stroke-white/80 drop-shadow-[0_0_4px_rgba(255,255,255,0.8)]" stroke-width="4" vector-effect="non-scaling-stroke" />
                         </svg>
+                        
+                        <div class="absolute z-40 top-4 left-1/2 -translate-x-1/2 px-4 py-2 bg-base-100/95 backdrop-blur-xl rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.5)] border border-base-content/10 text-base-content font-bold text-sm sm:text-base flex items-center gap-2 pointer-events-none">
+                            <i class="bi bi-geo-alt-fill text-primary"></i> {item.title}
+                        </div>
                     {/if}
                 </div>
             {:else}
