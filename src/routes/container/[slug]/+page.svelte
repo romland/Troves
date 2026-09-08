@@ -10,6 +10,7 @@
     import SpatialMap from "$lib/components/spatial/SpatialMap.svelte";
     import PolygonActionSheet from "$lib/components/spatial/PolygonActionSheet.svelte";
     import FormInput from "$lib/components/FormInput.svelte";
+     import Modal from "$lib/components/Modal.svelte";
     import { saveToQueue } from "$lib/client/offlineQueue";
     import { invalidateAll } from '$app/navigation';
 
@@ -32,6 +33,7 @@
     let isWarpMode = false;
 
     // Deep Scan Triage State
+    let postSaveWizard: Modal;
     let triageModal: HTMLDialogElement;
     let isDeepScanning = false;
     let deepScanItems: any[] = [];
@@ -226,7 +228,16 @@
                         {/if}
                         {#if isMapDirty}
                             <form method="POST" action="?/saveSpatialMap" use:enhance={() => {
-                                return async ({ update }) => { isMapDirty = false; notify('success', 'Map saved!'); await update({ reset: false }); };
+                                return async ({ update }) => { 
+                                    isMapDirty = false; 
+                                    await update({ reset: false }); 
+                                    const hasMapped = mappedEntities.some(e => e !== null);
+                                    if (polygons.length > 0 && !hasMapped) {
+                                        postSaveWizard.showModal();
+                                    } else {
+                                        notify('success', 'Map saved!'); 
+                                    }
+                                };
                             }}>
                                 <input type="hidden" name="spatialMap" value={JSON.stringify({ polygons, warpMap: { cols: gridCols, rows: gridRows, corners: warpCorners } })}>
                                 <button type="submit" class="btn btn-sm btn-success text-white rounded-xl shadow-sm"><i class="bi bi-check-lg"></i> Save Layout</button>
@@ -376,6 +387,7 @@
                         fd.append('parentImagePath', data.item?.photoPath);
                         fd.append('title', currentItem.title);
                         if (currentItem.description) fd.append('description', currentItem.description);
+                        fd.append('skipVision', 'true');
                         await saveToQueue('/api/spatial-quick-create', fd);
                         window.dispatchEvent(new CustomEvent('outbox-trigger'));
                         notify('success', 'Added to Queue');
@@ -387,3 +399,24 @@
     </div>
     <form method="dialog" class="modal-backdrop"><button>close</button></form>
 </dialog>
+
+<Modal bind:this={postSaveWizard} position="bottom" boxClass="p-0 overflow-hidden bg-base-100 shadow-2xl border border-base-200 sm:rounded-[2.5rem]">
+    <div class="flex flex-col items-center text-center gap-4 py-10 px-6">
+        <div class="w-20 h-20 bg-success/10 text-success rounded-full flex items-center justify-center mb-2 shadow-inner">
+            <i class="bi bi-grid-3x3-gap-fill text-4xl"></i>
+        </div>
+        <div>
+            <h3 class="text-3xl font-bold tracking-tight text-base-content mb-3">Layout Saved</h3>
+            <p class="text-gray-500 text-sm max-w-sm leading-relaxed">Your grid is ready. Would you like Troves Vision AI to scan the compartments and automatically detect the items inside?</p>
+        </div>
+        
+        <div class="flex flex-col gap-3 w-full max-w-xs mt-4">
+            <button class="btn btn-primary rounded-2xl shadow-lg w-full text-base h-14" on:click={() => { postSaveWizard.close(); triggerDeepScan(); }}>
+                <i class="bi bi-stars text-xl"></i> Auto-Scan Compartments
+            </button>
+            <button class="btn btn-ghost rounded-2xl w-full text-gray-500 font-semibold h-12" on:click={() => { postSaveWizard.close(); notify('success', 'Ready for manual mapping.'); }}>
+                I'll map them manually
+            </button>
+        </div>
+    </div>
+</Modal>

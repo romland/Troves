@@ -123,11 +123,11 @@ It performs set math between what your camera sees (**Set A**) and what your dat
 
 
 ### Spatial Mapping & The Deep Scan Grid
-Troves doesn't just track *which* box an item is in; it tracks exactly *where* it is inside that box. If you use tackle boxes, Gridfinity, organizer drawers, or subdivided shelves, you can map their physical layouts directly onto a top-down photograph.
+Troves doesn't just track *which* drawer an item is in; it can track exactly *where* it is inside that drawer. If you use tackle boxes, Gridfinity, organizer drawers, or subdivided shelves, you can map their physical layouts directly onto a top-down photograph.
 
 * **Mapping the Drawer:** When viewing a container, click "Edit Map" and use the "Warp Grid" tool. Just drag the four outer corners to match the edges of your drawer, specify the number of rows and columns, and Troves will project a grid over your compartments.
 * **Deep Scan:** Instead of manually logging 60 different resistors or screws, tap **✨ Deep Scan Grid**. The Vision Model analyzes the entire drawer in one go, reading printed labels and identifying the physical components in each specific slot.
-* **Triage & Save:** Troves then opens a triage screen where you can quickly step through the results. It zooms in on the active cell—complete with a minimap so you don't lose your bearings—allowing you to verify or edit the model's guess. Hit 'Accept' to log it to your inventory.
+* **Triage & Save:** Troves then opens a triage screen where you can quickly step through the results. It zooms in on the active cell, complete with a minimap so you don't lose your bearings—allowing you to verify or edit the model's guess. Hit 'Accept' to log it to your inventory.
 * **Finding Your Stuff:** Items mapped this way display a glowing outline on their thumbnails. Clicking the thumbnail opens a full-screen map of the container, highlighting exactly which slot to pull from. If you run a missing-items audit against the container, Troves will show you the photo with the exact empty slots glowing red.
 
 

@@ -16,6 +16,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     const parentImagePath = formData.get('parentImagePath') as string;
     const title = formData.get('title') as string;
     const description = formData.get('description') as string;
+    const skipVision = formData.get('skipVision') === 'true';
     
     const taskId = taskManager.start('global', 0, `Creating item from spatial map...`);
     try {
@@ -26,6 +27,13 @@ export const POST: RequestHandler = async ({ request, locals }) => {
             cropWebPath = await cropPolygon(localPath, polygon, slugify(title || 'item', { lower: true, strict: true }));
         }
 
+        const simulatedLlmAnalysis = skipVision ? JSON.stringify({
+            photoType: 'product',
+            subCategory: 'unknown',
+            isNewCategory: false,
+            description: description?.trim() || title?.trim() || 'New Item'
+        }) : undefined;
+
         const safeTitle = title?.trim() || 'New Item';
         const item = await db.item.create({
             data: {
@@ -34,7 +42,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
                 slug: slugify(safeTitle, { lower: true, strict: true }) || 'new-item',
                 inventoryId: locals.activeInventoryId,
                 authorId: locals.user.id,
-                photos: cropWebPath ? { create: [{ type: 'product', orgPath: cropWebPath }] } : undefined,
+                photos: cropWebPath ? { create: [{ type: 'product', orgPath: cropWebPath, llmAnalysis: simulatedLlmAnalysis }] } : undefined,
                 locations: {
                     create: [{
                         containerId: parentContainerId,
