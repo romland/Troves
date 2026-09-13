@@ -126,10 +126,10 @@ export const POST: RequestHandler = async ({ request, locals }) => {
                     duplicateStatus: item.resolution === 'new' ? 'DISMISSED' : (item.isDuplicate ? 'FLAGGED' : 'NONE')
                 });
 
-                // QUEUE BACKGROUND REMOVAL & ML PROCESSING!
-                const { processItemPhotosBackground } = await import('$lib/server/photouploads');
-                const itemForBg = await db.item.findUnique({ where: { id: createdItem.id }, include: { photos: true } });
-                if (itemForBg) processItemPhotosBackground(itemForBg).catch(e => console.error(e));
+                // // QUEUE BACKGROUND REMOVAL & ML PROCESSING!
+                // const { processItemPhotosBackground } = await import('$lib/server/photouploads');
+                // const itemForBg = await db.item.findUnique({ where: { id: createdItem.id }, include: { photos: true } });
+                // if (itemForBg) processItemPhotosBackground(itemForBg).catch(e => console.error(e));
             }
         } catch (e) {
             console.error("Bulk processing failed:", e);
