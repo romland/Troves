@@ -7,6 +7,7 @@
     import { notify } from "$lib/client/notifications";
 	import PromptModal from "$lib/components/PromptModal.svelte";
     import { isVideo } from "$lib/shared/fileutils";
+    import { getHighlightStyle } from '$lib/shared/boundingBox';
 
     export let itemTitle = "";
     export let categories: any[] = [];
@@ -700,12 +701,15 @@
                             draggable="false"
                         />
                     {#if photo?.box}
-                        <!-- The massive box-shadow dims everything OUTSIDE the bounding box -->
-                        <div class="absolute border-4 border-primary z-10 pointer-events-none shadow-[0_0_0_9999px_rgba(0,0,0,0.8)]"
-                             style="top:{photo.box[0]/10}%; left:{photo.box[1]/10}%; width:{(photo.box[3]-photo.box[1])/10}%; height:{(photo.box[2]-photo.box[0])/10}%">
-                            <!-- Inner pulsing reticle -->
-                            <div class="absolute inset-0 border-2 border-white/60 animate-pulse"></div>
-                        </div>
+                        {@const hlStyle = getHighlightStyle(photo.box)}
+                        {#if hlStyle}
+                            <!-- The massive box-shadow dims everything OUTSIDE the bounding box -->
+                            <div class="absolute border-4 border-primary z-10 pointer-events-none shadow-[0_0_0_9999px_rgba(0,0,0,0.8)]"
+                                 style={hlStyle}>
+                                <!-- Inner pulsing reticle -->
+                                <div class="absolute inset-0 border-2 border-white/60 animate-pulse"></div>
+                            </div>
+                        {/if}
                     {/if}
                 </div>
             </div>

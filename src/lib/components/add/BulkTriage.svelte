@@ -14,6 +14,7 @@
     import { pluralize } from '$lib/client/utils';
 	import ConfirmModal from "$lib/components/ConfirmModal.svelte";
     import FormInput from "$lib/components/FormInput.svelte";
+    import { getCropStyle } from '$lib/shared/boundingBox';
 
     export let isDirty = false;
     export let containers: any[] = [];
@@ -327,12 +328,7 @@
         <!-- The Interactive List -->
         <div class="flex flex-col gap-0 pb-8">
             {#each items as item (item.id)}
-                {@const ymin = Math.max(0, item.box[0] - 25)}
-                {@const xmin = Math.max(0, item.box[1] - 25)}
-                {@const ymax = Math.min(1000, item.box[2] + 25)}
-                {@const xmax = Math.min(1000, item.box[3] + 25)}
-                {@const w = Math.max(1, xmax - xmin)}
-                {@const h = Math.max(1, ymax - ymin)}
+                {@const cropStyle = getCropStyle(item.box)}
 
                 <div animate:flip={{duration: 250}} class="mb-4">
                     <!-- Swipe container - pan-y stops mobile Safari backwards nav! -->
@@ -370,9 +366,13 @@
                         >
                             <!-- The Magic Zoom -->
                             <button type="button" class="relative w-16 h-20 overflow-hidden rounded-lg shrink-0 bg-base-300 border-none p-0 cursor-zoom-in block" on:click|stopPropagation={() => lightbox.open({ orgPath: draftPath, thumbPath: draftPath, showOriginal: true, box: item.box })}>
+                                {#if cropStyle}
                                 <img src="{draftPath}" class="absolute max-w-none origin-top-left object-cover"
-                                    style="width: {100000 / w}%; height: {100000 / h}%; left: -{(xmin / w) * 100}%; top: -{(ymin / h) * 100}%;" 
+                                    style={cropStyle} 
                                     alt="{item.title}" />
+                                {:else}
+                                <img src="{draftPath}" class="w-full h-full object-cover" alt="{item.title}" />
+                                {/if}
                             </button>
 
                             <div class="flex-1 min-w-0 pr-2">

@@ -3,18 +3,12 @@
     import ItemMiniCard from '../ItemMiniCard.svelte';
     import ColorMixBar from '../ColorMixBar.svelte';
     import Badge from '../Badge.svelte';
+    import { getCropStyle } from '$lib/shared/boundingBox';
     export let item: any;
     export let type: 'unregistered' | 'missing' | 'elsewhere' | 'correct';
     export let draftPath: string;
     
     const dispatch = createEventDispatcher();
-    
-    $: ymin = Math.max(0, (item.box?.[0] || 0) - 25);
-    $: xmin = Math.max(0, (item.box?.[1] || 0) - 25);
-    $: ymax = Math.min(1000, (item.box?.[2] || 1000) + 25);
-    $: xmax = Math.min(1000, (item.box?.[3] || 1000) + 25);
-    $: w = Math.max(1, xmax - xmin);
-    $: h = Math.max(1, ymax - ymin);
 
     // Swipe Physics State
     let touchStartX = 0;
@@ -59,6 +53,7 @@
          style="transform: translateX({swipeOffset}px); transition: {isSwiping ? 'none' : 'transform 0.2s cubic-bezier(0.1, 0.7, 0.1, 1)'}"
     >
         {#if item.box}
+            {@const cropStyle = getCropStyle(item.box)}
             <button type="button" class="relative w-16 h-20 overflow-visible shrink-0 border-none p-0 cursor-zoom-in block" on:click|stopPropagation={() => dispatch('zoom', item)}>
                 {#if item.count > 1}
                     <div class="absolute -top-2 -left-2 z-20 bg-neutral text-neutral-content text-[11px] font-black px-2 py-0.5 rounded-lg shadow-md border border-base-100">
@@ -66,9 +61,13 @@
                     </div>
                 {/if}
                 <div class="w-full h-full overflow-hidden rounded-lg bg-base-300 relative">
-                    <img src="{draftPath}" class="absolute max-w-none origin-top-left object-cover"
-                         style="width: {100000 / w}%; height: {100000 / h}%; left: -{(xmin / w) * 100}%; top: -{(ymin / h) * 100}%;" 
-                         alt="{item.title}" />
+                    {#if cropStyle}
+                        <img src="{draftPath}" class="absolute max-w-none origin-top-left object-cover"
+                             style={cropStyle} 
+                             alt="{item.title}" />
+                    {:else}
+                        <img src="{draftPath}" class="w-full h-full object-cover" alt="{item.title}" />
+                    {/if}
                 </div>
             </button>
         {:else if item.thumbPath}

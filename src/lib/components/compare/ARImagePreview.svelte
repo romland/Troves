@@ -3,6 +3,7 @@
     export let boxes: { box: number[], colorClass: string, id: string }[] = [];
     
     import { createEventDispatcher } from 'svelte';
+    import { getHighlightStyle } from '$lib/shared/boundingBox';
     const dispatch = createEventDispatcher();
 </script>
 
@@ -10,11 +11,12 @@
     <img {src} alt="Scan preview" class="w-full h-auto block object-contain max-h-[40vh]" />
     
     {#each boxes as b}
-        {#if b.box}
+        {@const hlStyle = getHighlightStyle(b.box)}
+        {#if hlStyle}
             <!-- svelte-ignore a11y-click-events-have-key-events -->
             <!-- svelte-ignore a11y-no-static-element-interactions -->
             <div class="absolute border-[3px] {b.colorClass} bg-transparent cursor-pointer transition-transform hover:scale-105 hover:bg-white/30 backdrop-contrast-125"
-                 style="top:{b.box[0]/10}%; left:{b.box[1]/10}%; width:{(b.box[3]-b.box[1])/10}%; height:{(b.box[2]-b.box[0])/10}%"
+                 style={hlStyle}
                  on:click={() => dispatch('clickBox', b.id)}>
             </div>
         {/if}

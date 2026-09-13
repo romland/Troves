@@ -5,6 +5,7 @@ import { env } from '$env/dynamic/private';
 import { analyzeImage } from './ai/index';
 import { getImageMimeType } from './fsUtils';
 import type { TaskContext } from './taskManager';
+import { parseBoundingBox } from '$lib/shared/boundingBox';
 
 export interface ImageAnalysisResult {
   photoType: 'product' | 'invoice' | 'information' | 'other';
@@ -125,6 +126,10 @@ TASKS:
   
   const result = JSON.parse(rawText);
 
+  if (result.foregroundBox) {
+      result.foregroundBox = parseBoundingBox(result.foregroundBox);
+  }
+
   // Convert the array of {key, value} objects back into a standard dictionary object for the rest of the app
   if (Array.isArray(result.extractedAttributes)) {
       const mappedAttrs: Record<string, string> = {};
@@ -220,5 +225,13 @@ For each item:
 
   const jsonSchema = { type: 'object', properties: { totalVisibleCount: { type: 'integer', description: 'The total number of items you counted' }, collectionType: { type: 'string' }, items: { type: 'array', items: { type: 'object', properties: { title: { type: 'string' }, subtitle: { type: 'string' }, category: { type: 'string' }, rawText: { type: 'string' }, color_mix: { type: 'array', items: { type: 'object', properties: { color: { type: 'string' }, pct: { type: 'number' } } } }, prominent_text_or_graphic: { type: 'string' }, distinctive_blemishes_or_wear: { type: 'string' }, physical_traits: { type: 'array', items: { type: 'string' } }, extractedAttributes: { type: 'object' }, box: { type: 'array', items: { type: 'array', items: { type: 'number' } }, description: '[[x1,y1], [x2,y2], [x3,y3], [x4,y4]] normalized 0-1000' }, low_confidence: { type: 'boolean' } }, required: ['title', 'category', 'color_mix', 'prominent_text_or_graphic', 'distinctive_blemishes_or_wear', 'physical_traits', 'extractedAttributes', 'box'] } } }, required: ['totalVisibleCount', 'items'] };
   const rawText = await analyzeImage(promptText, mimeType, base64Data, true, jsonSchema, 'Bulk Collection Analysis', tracking, 'MULTISCAN');
-  return JSON.parse(rawText);
+  const result = JSON.parse(rawText);
+
+  if (result.items && Array.isArray(result.items)) {
+      result.items.forEach((item: any) => {
+          if (item.box) item.box = parseBoundingBox(item.box);
+      });
+  }
+
+  return result;
 }

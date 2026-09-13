@@ -163,6 +163,10 @@ export async function extractBoundingBox(
     try {
         const { getSafeFilename } = await import('$lib/server/fsUtils');
         const { uploadsDiskFolder, uploadsWebFolder } = await import('$lib/server/constants');
+        const { getBoxMetrics } = await import('$lib/shared/boundingBox');
+
+        const metrics = getBoxMetrics(box);
+        if (!metrics) return null;
 
         const metadata = await sharp(sourceLocalPath).metadata();
         if (!metadata.width || !metadata.height) return null;
@@ -175,10 +179,10 @@ export async function extractBoundingBox(
             h = metadata.width;
         }
 
-        let top = Math.max(0, Math.floor((box[0] / 1000) * h));
-        let left = Math.max(0, Math.floor((box[1] / 1000) * w));
-        let boxW = Math.max(1, Math.floor(((box[3] - box[1]) / 1000) * w));
-        let boxH = Math.max(1, Math.floor(((box[2] - box[0]) / 1000) * h));
+        let top = Math.max(0, Math.floor((metrics.ymin / 1000) * h));
+        let left = Math.max(0, Math.floor((metrics.xmin / 1000) * w));
+        let boxW = Math.max(1, Math.floor((metrics.w / 1000) * w));
+        let boxH = Math.max(1, Math.floor((metrics.h / 1000) * h));
 
         if (left + boxW > w) boxW = w - left;
         if (top + boxH > h) boxH = h - top;
