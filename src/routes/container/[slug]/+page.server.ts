@@ -93,6 +93,9 @@ export const actions = {
         const data = await request.formData();
         const spatialMap = data.get('spatialMap') as string;
         
+        console.log(`\n[DEBUG-MANUAL-GRID] SERVER SAVED SPATIAL MAP FOR '${params.slug}':`);
+        console.log(spatialMap, `\n`);
+
         await db.container.updateMany({
             where: { name: params.slug, inventoryId: locals.activeInventoryId },
             data: { spatialMap }

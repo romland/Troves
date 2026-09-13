@@ -54,6 +54,28 @@
     
     $: previewGrid = isWarpMode ? computePerspectiveGrid(warpCols, warpRows, warpCorners) : [];
 
+    $: isDragging = draggingPoint !== null || draggingPoly !== null;
+
+    // --- INFINITE PAN & ZOOM CAMERA ---
+    let panX = 0;
+    let panY = 0;
+    let isPanning = false;
+    let lastPanX = 0;
+    let lastPanY = 0;
+
+    function startPan(e: PointerEvent) {
+        if (readonly) return;
+        const target = e.target as HTMLElement;
+        // Block pan ONLY on interactive elements: buttons, drag handles, and clickable polygons
+        if (target.closest('button') || target.closest('.cursor-move') || target.closest('.cursor-pointer')) return;
+        
+        isPanning = true;
+        lastPanX = e.clientX;
+        lastPanY = e.clientY;
+        
+        (e.currentTarget as Element).setPointerCapture(e.pointerId);
+    }
+
     function startDrag(polyIdx: number, ptIdx: number, e: PointerEvent) {
         if (readonly) return;
         saveHistory();
@@ -101,16 +123,25 @@
     }
 
     function handlePointerMove(e: PointerEvent) {
+        if (isPanning) {
+            panX += e.clientX - lastPanX;
+            panY += e.clientY - lastPanY;
+            lastPanX = e.clientX;
+            lastPanY = e.clientY;
+            return;
+        }
+
         const svgP = getSvgPoint(e);
         if (!svgP) return;
         
         if (draggingPoint) {
-            // Allow points to be dragged outside the image boundaries (e.g. if container is cropped)
-            let x = Math.max(-1000, Math.min(2000, svgP.x));
-            let y = Math.max(-1000, Math.min(2000, svgP.y));
+            // Unlimited dragging: The auto-framer will keep it in view
+            let x = svgP.x;
+            let y = svgP.y;
 
             if (draggingPoint.polyIdx === -1) {
                 warpCorners[draggingPoint.ptIdx] = [x, y];
+                warpCorners = [...warpCorners]; // Trigger reactivity
                 return; // Trigger reactivity natively
             }
             
@@ -138,14 +169,24 @@
             const dx = svgP.x - draggingPoly.startX;
             const dy = svgP.y - draggingPoly.startY;
             polygons[draggingPoly.polyIdx] = draggingPoly.initialPoints.map(pt => [
-                Math.max(-1000, Math.min(2000, pt[0] + dx)),
-                Math.max(-1000, Math.min(2000, pt[1] + dy))
+                pt[0] + dx,
+                pt[1] + dy
             ]);
             polygons = [...polygons];
         }
     }
 
     function handlePointerUp(e: PointerEvent) {
+        if (isPanning) {
+            isPanning = false;
+            try {
+                if ((e.currentTarget as Element).hasPointerCapture(e.pointerId)) {
+                    (e.currentTarget as Element).releasePointerCapture(e.pointerId);
+                }
+            } catch (err) {}
+            return;
+        }
+
         if (draggingPoint || draggingPoly) {
             try {
                 if ((e.target as Element).hasPointerCapture(e.pointerId)) {
@@ -183,6 +224,7 @@
     }
 
     export function generateGhostGrid(cols: number, rows: number) {
+        console.log(`[DEBUG-SPATIAL-MAP] generateGhostGrid: cols=${cols}, rows=${rows}`);
         saveHistory();
         const newPolys: number[][][] = [];
         const cellW = 1000 / cols;
@@ -198,10 +240,12 @@
             }
         }
         polygons = newPolys;
+        console.log(`[DEBUG-SPATIAL-MAP] Ghost grid generated ${polygons.length} polygons.`);
         dispatch('change', polygons);
     }
 
     export function bakeWarpGrid() {
+        console.log(`[DEBUG-SPATIAL-MAP] bakeWarpGrid triggered. Cols=${warpCols}, Rows=${warpRows}`);
         saveHistory();
         polygons = computePerspectiveGrid(warpCols, warpRows, warpCorners);
         isWarpMode = false;
@@ -234,12 +278,11 @@
     <div
         class="absolute top-6 right-6 z-40 flex gap-2 bg-base-100/80 backdrop-blur-xl p-1.5 rounded-full shadow-lg border border-base-200/50 items-center transition-all">
         <!-- svelte-ignore a11y_consider_explicit_label -->
-        <button class="btn btn-circle btn-sm btn-ghost text-base-content/70" on:click|stopPropagation={()=> zoomLevel =
-            Math.max(100, zoomLevel - 50)}><i class="bi bi-dash text-lg"></i></button>
+        <button class="btn btn-circle btn-sm btn-ghost text-base-content/70" on:click|stopPropagation={()=> zoomLevel = Math.max(25, zoomLevel - 25)}><i class="bi bi-dash text-lg"></i></button>
         <div class="text-xs font-bold w-12 text-center select-none text-base-content/80">{zoomLevel}%</div>
         <!-- svelte-ignore a11y_consider_explicit_label -->
-        <button class="btn btn-circle btn-sm btn-ghost text-base-content/70" on:click|stopPropagation={()=> zoomLevel =
-            Math.min(500, zoomLevel + 50)}><i class="bi bi-plus text-lg"></i></button>
+        <button class="btn btn-circle btn-sm btn-ghost text-base-content/70" on:click|stopPropagation={()=> zoomLevel = Math.min(500, zoomLevel + 25)}><i class="bi bi-plus text-lg"></i></button>
+        <button class="btn btn-circle btn-sm btn-ghost text-base-content/70 ml-1" on:click|stopPropagation={()=> { zoomLevel = 100; panX = 0; panY = 0; }} title="Recenter View"><i class="bi bi-arrows-collapse text-lg"></i></button>
     </div>
 
     {#if history.length > 0 && !isWarpMode && !readonly}
@@ -275,8 +318,9 @@
     <!-- Scrollable Canvas -->
     <!-- svelte-ignore a11y_click_events_have_key_events -->
     <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <div class="w-full h-full overflow-auto custom-scrollbar px-4 sm:px-8 pt-24 sm:pt-28 pb-24 sm:pb-28" on:click={() => activePolyIndex = null}>
-        <div class="relative origin-top-left transition-all duration-200 mx-auto shadow-2xl ring-1 ring-black/5" style="width: {zoomLevel}%;">
+    <div class="w-full h-full relative overflow-hidden bg-base-300 {isPanning ? 'cursor-grabbing' : 'cursor-grab'}" on:pointerdown={startPan} on:click={() => activePolyIndex = null}>
+        <div class="absolute inset-0 flex items-center justify-center p-6 sm:p-12 pointer-events-none">
+            <div class="relative origin-center shadow-2xl ring-1 ring-black/5 shrink-0 pointer-events-auto" style="width: {zoomLevel}%; transform: translate({panX}px, {panY}px); transition: width 0.2s ease-out;">
             <img src={imageUrl} alt="Container map" class="w-full h-auto block pointer-events-none" />
             
             <svg 
@@ -422,6 +466,7 @@
                     {/each}
                 {/if}
             </div>
+        </div>
         </div>
     </div>
 </div>

@@ -3,6 +3,7 @@
  * based strictly on 4 outer corner coordinates.
  */
 export function computePerspectiveGrid(cols: number, rows: number, corners: number[][]): number[][][] {
+    console.log(`[DEBUG-MANUAL-GRID] computePerspectiveGrid called with cols: ${cols}, rows: ${rows}, corners:`, JSON.stringify(corners));
     // corners order: [TopLeft, TopRight, BottomRight, BottomLeft]
     const [x0, y0] = corners[0];
     const [x1, y1] = corners[1];
@@ -43,5 +44,6 @@ export function computePerspectiveGrid(cols: number, rows: number, corners: numb
             ]);
         }
     }
+    console.log(`[DEBUG-MANUAL-GRID] Generated grid with ${grid.length} polygons. First poly:`, JSON.stringify(grid[0]));
     return grid;
 }

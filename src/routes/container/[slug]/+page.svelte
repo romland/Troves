@@ -60,6 +60,13 @@
             const json = await res.json();
             if (json.success) {
                 polygons = json.polygons;
+                if (json.warpMap) {
+                    warpMap = json.warpMap;
+                    gridCols = warpMap.cols;
+                    gridRows = warpMap.rows;
+                    warpCorners = warpMap.corners;
+                    setTimeout(() => { spatialMapRef?.enterWarpMode(); }, 100);
+                }
                 if (json.newPhotoPath) {
                     data.item.photoPath = json.newPhotoPath;
                 }
