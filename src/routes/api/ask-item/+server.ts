@@ -66,7 +66,7 @@ USER QUESTION: ${question}
 
                     answer = await analyzeImage(prompt, mimeType, fileBuffer.toString('base64'), false, undefined, 'AI Assistant Q&A', { itemId }, 'QNA');
                 } catch (err) {
-                    console.error("Failed to load photo for AI context:", err);
+                    console.error("Failed to load photo for Vision Model context:", err);
                 }
             }
         }

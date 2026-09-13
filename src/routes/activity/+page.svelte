@@ -222,7 +222,7 @@
                 <div class="bg-base-200/30 border border-base-200 border-dashed rounded-3xl p-8 text-center text-gray-400 flex flex-col items-center justify-center">
                     <i class="bi bi-chat-square-dots text-4xl mb-2 opacity-50"></i>
                     <p class="font-medium">No LLM Activity</p>
-                    <p class="text-xs">No AI requests have been made since the server started.</p>
+                    <p class="text-xs">No LLM requests have been made since the server started.</p>
                 </div>
             {:else}
                 <div class="flex flex-col gap-4">

@@ -292,7 +292,7 @@
                                     <span class="loading loading-spinner loading-sm text-primary"></span>
                                 {/if}
                                 {#if item.photos?.some(p => !p.thumbPath && p.orgPath)}
-                                    <span class="loading loading-dots loading-xs text-primary" title="Processing AI background tasks"></span>
+                                    <span class="loading loading-dots loading-xs text-primary" title="Processing background tasks"></span>
                                 {/if}
                                 {#if item.isGhost}
                                     <span class="loading loading-ring loading-xs text-gray-400"></span>

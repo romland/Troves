@@ -1,6 +1,6 @@
 /**
  * Automatically reconciles existing database entities (Tray Bank) 
- * with newly generated AI polygons after a container re-scan.
+ * with newly generated polygons after a container re-scan.
  */
 export function autoMatchTrays(
     existingEntities: { id: number, name: string }[],

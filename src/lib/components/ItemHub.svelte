@@ -18,6 +18,7 @@
     import { createEventDispatcher, onMount } from 'svelte';
     import { ambientLocation } from '$lib/client/ambientContext';
     import { page } from '$app/stores';
+    import { notify } from "$lib/client/notifications";
 
     const dispatch = createEventDispatcher();
 
@@ -269,7 +270,7 @@
                 userHint = "";
                 dispatch('success', 'Item details enhanced by model!');
             } else {
-				notify('error', "AI Refinement failed. Check server logs.");
+				notify('error', "Refinement failed. Check server logs.");
                 aiDialog.close();
             }
         } catch (e) {

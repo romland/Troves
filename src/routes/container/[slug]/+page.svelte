@@ -70,7 +70,7 @@
                 if (json.newPhotoPath) {
                     data.item.photoPath = json.newPhotoPath;
                 }
-                notify('success', 'AI Mapping Complete!');
+                notify('success', 'Mapping Complete!');
             } else {
                 notify('warning', json.message || 'No compartments detected.');
             }
@@ -227,7 +227,7 @@
                     {#if !isWarpMode}
                         {#if polygons.length === 0}
                             <button class="btn btn-sm btn-primary shadow-sm rounded-xl" on:click={triggerAiMapping} disabled={isMapping}>
-                                {#if isMapping}<span class="loading loading-spinner loading-xs"></span>{:else}<i class="bi bi-stars"></i> Auto-Map AI{/if}
+                                {#if isMapping}<span class="loading loading-spinner loading-xs"></span>{:else}<i class="bi bi-stars"></i> Map Automatically{/if}
                             </button>
                             <button class="btn btn-sm btn-secondary shadow-sm rounded-xl" on:click={() => auditModal.showModal()}>
                                 <i class="bi bi-camera"></i> Audit

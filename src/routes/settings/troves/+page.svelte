@@ -135,7 +135,7 @@
                         </div>
 
                         <SettingToggle enhanceFn={createEnhancer} id={v.id} action="?/toggleAutoCategories" name="allowNewCategories" checked={v.allowNewCategories} label="Allow automated creation of categories" />
-                        <SettingToggle enhanceFn={createEnhancer} id={v.id} action="?/toggleAutoTaxonomy" name="allowAutoTaxonomy" checked={v.allowAutoTaxonomy} label="Enable AI Taxonomy & Attribute Extractions" />
+                        <SettingToggle enhanceFn={createEnhancer} id={v.id} action="?/toggleAutoTaxonomy" name="allowAutoTaxonomy" checked={v.allowAutoTaxonomy} label="Enable Smart Taxonomy & Attribute Extractions" />
                         <SettingToggle enhanceFn={createEnhancer} id={v.id} action="?/toggleExtractExif" name="extractExif" checked={v.extractExif} label="Extract EXIF data (including GPS) from photos" />
                         <SettingToggle enhanceFn={createEnhancer} id={v.id} action="?/toggleDeepScan" name="deepScan" checked={v.deepScanCollections} label="Deep-scan: extract detailed attributes for all items in multi-scans" />
                         <SettingToggle enhanceFn={createEnhancer} id={v.id} action="?/toggleBgRemoval" name="bgRemovalEnabled" checked={v.bgRemovalEnabled} label="Remove image backgrounds" />
@@ -165,7 +165,7 @@
                             </div>
                             {#if v.showRelatedItems && !v.allowAutoTaxonomy}
                                 <div class="mt-3 text-[10px] text-warning flex items-start gap-1.5 font-bold bg-warning/10 p-2 rounded-lg">
-                                    <i class="bi bi-exclamation-triangle-fill mt-0.5"></i> <span>Related items rely heavily on attributes and semantic tokens. Enable 'AI Taxonomy & Extractions' above for accurate results.</span>
+                                    <i class="bi bi-exclamation-triangle-fill mt-0.5"></i> <span>Related items rely heavily on attributes and semantic tokens. Enable 'Smart Taxonomy & Extractions' above for accurate results.</span>
                                 </div>
                             {/if}
                             {#if v.enableNotebook}

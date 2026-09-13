@@ -92,12 +92,12 @@ Rules:
     };
 
     try {
-        console.log(`[DEBUG-MAPPER] Sending request to AI model...`);
+        console.log(`[DEBUG-MAPPER] Sending request to vision model...`);
         const rawText = await analyzeImage(promptText, mimeType, base64Data, true, jsonSchema, 'Container Compartment Mapping', tracking, 'MULTISCAN');
         const aiResult = JSON.parse(rawText);
         
-        console.log(`[DEBUG-MAPPER] AI Result received. isGrid: ${aiResult.isGrid}, outerCorners length: ${aiResult.outerCorners?.length}, compartments length: ${aiResult.compartments?.length}`);
-        console.log(`[DEBUG-MAPPER] RAW AI outerCorners:`, JSON.stringify(aiResult.outerCorners));
+        console.log(`[DEBUG-MAPPER] Vision Result received. isGrid: ${aiResult.isGrid}, outerCorners length: ${aiResult.outerCorners?.length}, compartments length: ${aiResult.compartments?.length}`);
+        console.log(`[DEBUG-MAPPER] RAW vision outerCorners:`, JSON.stringify(aiResult.outerCorners));
 
         if (!aiResult.isGrid || !aiResult.outerCorners || aiResult.outerCorners.length !== 4 || !aiResult.compartments || aiResult.compartments.length === 0) {
             console.log(`[DEBUG-MAPPER] Not a valid grid or missing data. Returning raw compartments or empty.`);
@@ -221,7 +221,7 @@ Rules:
             }
         }
         
-        console.log(`\n=== CONCISE GRID FOR: AI MAPPER ===`);
+        console.log(`\n=== CONCISE GRID FOR: MAPPER ===`);
         console.log(`Grid: ${cols} cols x ${rows} rows`);
         console.log(`Outer Corners (TL, TR, BR, BL):`);
         console.log(JSON.stringify(warpCorners.map(c => [Math.round(c[0]), Math.round(c[1])])));

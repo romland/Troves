@@ -36,7 +36,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
                 data: { spatialMap: JSON.stringify({ polygons: result.compartments, warpMap: result.warpMap, renderAsGrid: true }) }
             });
 
-            await logActivity(null, 'Spatial Mapping', `AI mapped ${result.compartments.length} compartments in '${container.name}'`, 'success');
+            await logActivity(null, 'Spatial Mapping', `mapped ${result.compartments.length} compartments in '${container.name}'`, 'success');
             return json({ success: true, polygons: result.compartments, warpMap: result.warpMap });
         } else {
             console.log(`[DEBUG-MAPPER] No compartments returned from mapper.`);

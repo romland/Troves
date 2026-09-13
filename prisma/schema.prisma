@@ -77,10 +77,10 @@ model Inventory {
   description         String
   classes             String  // JSON array of ML classes, e.g. ["shoes", "clothes"]
   archetype           String  @default("generic") // "media", "apparel", "hardware", "consumables", "collectibles", "natural", "generic"
-  allowNewCategories  Boolean @default(true) // Whether AI is allowed to invent new sub-categories
-  allowAutoTaxonomy   Boolean @default(false) // Whether AI is allowed to auto-generate taxonomy/EAV rules
+  allowNewCategories  Boolean @default(true) // Whether LLM is allowed to invent new sub-categories
+  allowAutoTaxonomy   Boolean @default(false) // Whether LLM is allowed to auto-generate taxonomy/EAV rules
   extractExif         Boolean @default(true) // Whether to extract EXIF data from uploaded photos in this vault
-  deepScanCollections Boolean @default(false) // Whether to run individual AI analysis on items imported via multi-scan
+  deepScanCollections Boolean @default(false) // Whether to run individual LLM/vision analysis on items imported via multi-scan
   bgRemovalEnabled    Boolean @default(true) // Whether to run background removal
   bgRemovalModel      String  @default("bria-rmbg") // Which model to use: "bria-rmbg", "u2net", etc
   bgRemovalPreCrop    Boolean @default(false) // Whether to crop to foreground box BEFORE background removal

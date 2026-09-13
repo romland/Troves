@@ -203,7 +203,7 @@ on:processingComplete={(ev) => {
             <span class="loading loading-ring loading-lg"></span>
         </div>
         <h2 class="text-2xl font-bold mb-3 tracking-tight">Initializing Vault...</h2>
-        <p class="text-gray-500 mb-8">The AI is currently analyzing your vault's archetype and building a custom taxonomy schema. This usually takes 10-20 seconds.</p>
+        <p class="text-gray-500 mb-8">Troves is currently analyzing your vault's archetype and building a custom taxonomy schema. This usually takes 10ish seconds.</p>
         <button type="button" class="btn btn-outline" on:click={() => window.location.reload()}>
             <i class="bi bi-arrow-clockwise"></i> Refresh Status
         </button>

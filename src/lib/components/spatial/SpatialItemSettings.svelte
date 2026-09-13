@@ -35,7 +35,7 @@
         <input type="checkbox" class="toggle toggle-primary toggle-sm" bind:checked={removeBackground} />
         <span class="label-text text-xs text-gray-500 flex flex-col">
             <span class="font-bold text-base-content">Remove Background</span>
-            <span>Uses AI to cut out the item cleanly, but may struggle with items touching tray walls.</span>
+            <span>Cut out the item cleanly, but may struggle with items touching tray walls.</span>
         </span>
     </label>
 </div>

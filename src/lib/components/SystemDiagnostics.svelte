@@ -47,9 +47,9 @@
         </ul>
     </div>
 
-    <!-- AI Providers -->
+    <!-- Model (vision, language, voice, ...) Providers -->
     <div>
-        <h5 class="text-xs font-bold uppercase tracking-wider text-base-content/50 mb-3">AI Engines</h5>
+        <h5 class="text-xs font-bold uppercase tracking-wider text-base-content/50 mb-3">Model Providers</h5>
         <ul class="flex flex-col gap-3">
             <li class="flex items-start gap-3">
                 <i class="bi {diagnostics.apis.vision.configured ? 'bi-check-circle-fill text-success' : 'bi-x-circle-fill text-error'} text-lg mt-0.5"></i>
