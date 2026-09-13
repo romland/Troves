@@ -74,13 +74,16 @@ export function getCropStyles(boxRaw: any, padding: number = 25) {
     const metrics = getBoxMetrics(boxRaw, padding);
     if (!metrics) return null;
 
-    // The wrapper acts as a viewport that perfectly matches the aspect ratio of the bounding box,
-    // scaling down to fit inside the parent container without distortion (like object-fit: contain).
-    const wrapper = `position: relative; overflow: hidden; width: 10000px; height: 10000px; max-width: 100%; max-height: 100%; aspect-ratio: ${metrics.w} / ${metrics.h}; margin: auto;`;
+    const cx = (metrics.xmin + metrics.w / 2) / 10;
+    const cy = (metrics.ymin + metrics.h / 2) / 10;
     
-    // The image is scaled and shifted so that the bounding box perfectly fills the wrapper div.
-    // Because the wrapper div shares the bounding box's aspect ratio, the image retains its original aspect ratio!
-    const image = `position: absolute; max-width: none; max-height: none; width: ${100000 / metrics.w}%; height: ${100000 / metrics.h}%; left: -${(metrics.xmin / metrics.w) * 100}%; top: -${(metrics.ymin / metrics.h) * 100}%;`;
+    // Zoom to fit the bounding box within the container (simulating object-fit: contain).
+    // Using Math.max ensures the largest relative dimension of the box fits the container.
+    const maxDim = Math.max(1, Math.max(metrics.w, metrics.h));
+    const zoomFactor = 1000 / maxDim;
+
+    const wrapper = `position: relative; overflow: hidden; width: 100%; height: 100%; min-width: 100%; min-height: 100%; flex-shrink: 0; border-radius: inherit;`;
+    const image = `position: absolute; width: ${zoomFactor * 100}%; height: auto; max-width: none; max-height: none; top: 50%; left: 50%; transform: translate(-${cx}%, -${cy}%);`;
 
     return { wrapper, image };
 }
