@@ -14,7 +14,7 @@
     import { pluralize } from '$lib/client/utils';
 	import ConfirmModal from "$lib/components/ConfirmModal.svelte";
     import FormInput from "$lib/components/FormInput.svelte";
-    import { getCropStyle } from '$lib/shared/boundingBox';
+    import { getCropStyles } from '$lib/shared/boundingBox';
 
     export let isDirty = false;
     export let containers: any[] = [];
@@ -328,7 +328,7 @@
         <!-- The Interactive List -->
         <div class="flex flex-col gap-0 pb-8">
             {#each items as item (item.id)}
-                {@const cropStyle = getCropStyle(item.box)}
+                {@const styles = getCropStyles(item.box)}
 
                 <div animate:flip={{duration: 250}} class="mb-4">
                     <!-- Swipe container - pan-y stops mobile Safari backwards nav! -->
@@ -365,13 +365,13 @@
                             role="button" tabindex="0"
                         >
                             <!-- The Magic Zoom -->
-                            <button type="button" class="relative w-16 h-20 overflow-hidden rounded-lg shrink-0 bg-base-300 border-none p-0 cursor-zoom-in block" on:click|stopPropagation={() => lightbox.open({ orgPath: draftPath, thumbPath: draftPath, showOriginal: true, box: item.box })}>
-                                {#if cropStyle}
-                                <img src="{draftPath}" class="absolute max-w-none origin-top-left object-cover"
-                                    style={cropStyle} 
-                                    alt="{item.title}" />
+                            <button type="button" class="relative w-16 h-20 overflow-hidden rounded-lg shrink-0 bg-base-300 border-none p-0 cursor-zoom-in flex items-center justify-center" on:click|stopPropagation={() => lightbox.open({ orgPath: draftPath, thumbPath: draftPath, showOriginal: true, box: item.box })}>
+                                {#if styles}
+                                    <div style={styles.wrapper}>
+                                        <img src="{draftPath}" class="block" style={styles.image} alt="{item.title}" />
+                                    </div>
                                 {:else}
-                                <img src="{draftPath}" class="w-full h-full object-cover" alt="{item.title}" />
+                                    <img src="{draftPath}" class="w-full h-full object-cover" alt="{item.title}" />
                                 {/if}
                             </button>
 

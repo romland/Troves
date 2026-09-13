@@ -3,32 +3,6 @@ export function parseBoundingBox(boxRaw: any): [number, number][] | null {
     try {
         let box = typeof boxRaw === 'string' ? JSON.parse(boxRaw) : boxRaw;
         
-        if (Array.isArray(box)) {
-            // Unwrap hallucinated single-array wraps: [[ymin, xmin, ymax, xmax]]
-            if (box.length === 1 && Array.isArray(box[0]) && box[0].length === 4 && typeof box[0][0] === 'number') {
-                box = box[0];
-            }
-
-            // Backwards compatibility / Flat array handling [ymin, xmin, ymax, xmax]
-            if (box.length === 4 && typeof box[0] === 'number') {
-                const ymin = Number(box[0]);
-                const xmin = Number(box[1]);
-                const ymax = Number(box[2]);
-                const xmax = Number(box[3]);
-                return [
-                    [xmin, ymin], // Top-Left
-                    [xmax, ymin], // Top-Right
-                    [xmax, ymax], // Bottom-Right
-                    [xmin, ymax]  // Bottom-Left
-                ];
-            }
-
-            // Handle the NEW 4-point polygon format: [[x1,y1], [x2,y2], [x3,y3], [x4,y4]]
-            if (box.length >= 4 && Array.isArray(box[0])) {
-                return box.slice(0, 4).map((p: any[]) => [Number(p[0]) || 0, Number(p[1]) || 0]);
-            }
-        }
-        
         // Handle object format: {ymin, xmin, ymax, xmax}
         if (typeof box === 'object' && box !== null && !Array.isArray(box)) {
             if ('ymin' in box && 'xmin' in box && 'ymax' in box && 'xmax' in box) {
@@ -44,6 +18,34 @@ export function parseBoundingBox(boxRaw: any): [number, number][] | null {
                 ];
             }
         }
+
+        if (Array.isArray(box)) {
+            // LLMs hallucinate bracket depth constantly. 
+            // Flatten everything into a 1D array to reliably extract the raw numbers.
+            const nums = box.flat(Infinity).map(Number).filter(n => !isNaN(n));
+            
+            // If we got exactly 8 numbers, it's 4 [x,y] points 
+            // (Works even if the LLM grouped them weirdly like [[x,y,x,y], [x,y,x,y]])
+            if (nums.length === 8) {
+                return [
+                    [nums[0], nums[1]],
+                    [nums[2], nums[3]],
+                    [nums[4], nums[5]],
+                    [nums[6], nums[7]]
+                ];
+            }
+            
+            // If we got exactly 4 numbers, assume legacy flat format [ymin, xmin, ymax, xmax]
+            if (nums.length === 4) {
+                return [
+                    [nums[1], nums[0]], // Top-Left
+                    [nums[3], nums[0]], // Top-Right
+                    [nums[3], nums[2]], // Bottom-Right
+                    [nums[1], nums[2]]  // Bottom-Left
+                ];
+            }
+        }
+        
     } catch (e) {
         console.warn("[boundingBox] Failed to parse box:", boxRaw, e);
     }
@@ -68,10 +70,19 @@ export function getBoxMetrics(boxRaw: any, padding: number = 0) {
     return { xmin, ymin, xmax, ymax, w, h };
 }
 
-export function getCropStyle(boxRaw: any, padding: number = 25): string {
+export function getCropStyles(boxRaw: any, padding: number = 25) {
     const metrics = getBoxMetrics(boxRaw, padding);
-    if (!metrics) return "";
-    return `width: ${100000 / metrics.w}%; height: ${100000 / metrics.h}%; left: -${(metrics.xmin / metrics.w) * 100}%; top: -${(metrics.ymin / metrics.h) * 100}%;`;
+    if (!metrics) return null;
+
+    // The wrapper acts as a viewport that perfectly matches the aspect ratio of the bounding box,
+    // scaling down to fit inside the parent container without distortion (like object-fit: contain).
+    const wrapper = `position: relative; overflow: hidden; width: 10000px; height: 10000px; max-width: 100%; max-height: 100%; aspect-ratio: ${metrics.w} / ${metrics.h}; margin: auto;`;
+    
+    // The image is scaled and shifted so that the bounding box perfectly fills the wrapper div.
+    // Because the wrapper div shares the bounding box's aspect ratio, the image retains its original aspect ratio!
+    const image = `position: absolute; max-width: none; max-height: none; width: ${100000 / metrics.w}%; height: ${100000 / metrics.h}%; left: -${(metrics.xmin / metrics.w) * 100}%; top: -${(metrics.ymin / metrics.h) * 100}%;`;
+
+    return { wrapper, image };
 }
 
 export function getHighlightStyle(boxRaw: any): string {

@@ -3,7 +3,7 @@
     import ItemMiniCard from '../ItemMiniCard.svelte';
     import ColorMixBar from '../ColorMixBar.svelte';
     import Badge from '../Badge.svelte';
-    import { getCropStyle } from '$lib/shared/boundingBox';
+    import { getCropStyles } from '$lib/shared/boundingBox';
     export let item: any;
     export let type: 'unregistered' | 'missing' | 'elsewhere' | 'correct';
     export let draftPath: string;
@@ -53,18 +53,18 @@
          style="transform: translateX({swipeOffset}px); transition: {isSwiping ? 'none' : 'transform 0.2s cubic-bezier(0.1, 0.7, 0.1, 1)'}"
     >
         {#if item.box}
-            {@const cropStyle = getCropStyle(item.box)}
+            {@const styles = getCropStyles(item.box)}
             <button type="button" class="relative w-16 h-20 overflow-visible shrink-0 border-none p-0 cursor-zoom-in block" on:click|stopPropagation={() => dispatch('zoom', item)}>
                 {#if item.count > 1}
                     <div class="absolute -top-2 -left-2 z-20 bg-neutral text-neutral-content text-[11px] font-black px-2 py-0.5 rounded-lg shadow-md border border-base-100">
                         {item.count}x
                     </div>
                 {/if}
-                <div class="w-full h-full overflow-hidden rounded-lg bg-base-300 relative">
-                    {#if cropStyle}
-                        <img src="{draftPath}" class="absolute max-w-none origin-top-left object-cover"
-                             style={cropStyle} 
-                             alt="{item.title}" />
+                <div class="w-full h-full overflow-hidden rounded-lg bg-base-300 relative flex items-center justify-center">
+                    {#if styles}
+                        <div style={styles.wrapper}>
+                            <img src="{draftPath}" class="block" style={styles.image} alt="{item.title}" />
+                        </div>
                     {:else}
                         <img src="{draftPath}" class="w-full h-full object-cover" alt="{item.title}" />
                     {/if}
