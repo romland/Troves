@@ -3,16 +3,18 @@
 
 Inventory management (for at home). There are many like it, but this one is mine.
 
-My use-cases were:  
+My use-cases are:  
 `Do I have that, where the heck is it?` and  
 `What does it do and why did I buy it?` [1]
 
-I am no fan of data-entry, so adding new products/items should be as automated as 
-possible (using any device). Most of the effort of making this app went into creating
-a pleasant and fast work-flow. To achieve this, Troves optionally uses various tools 
-like object classification, OCR, background removal, and language models under the hood.
+I hate data-entry, so creating my inventory and then adding new products/items should be as automated as 
+humanly possible. Most of the effort of making Troves went into creating that pleasant and fast work-flow.
+To achieve this, Troves optionally uses various tools like object classification, OCR, background removal,
+segmentation, vision, voice and language models under the hood.
 
-[1]: There's also a primal satisfaction in simply admiring my stuff; swimming through a hoard of tools, books, and components like Scrooge McDuck. This is the digital equivalent: inspect and appreciate your sh*t without having to drag 20 boxes out of the attic.
+[1]: There's also that primal satisfaction in simply admiring my stuff; swimming through a hoard of tools, 
+books, and components like Scrooge McDuck. This is a digital equivalent: inspect and appreciate your 
+sh*t without having to drag 20 boxes out of the attic.
 
 _This readme is very much a work in progress; it's currently not organized or complete at all._
 _Also: Quite a few of the more recent bits are written by an LLM acting as a sales person, which is very cringe. I will deal with it._
@@ -28,9 +30,9 @@ If feeling particularly ambitious on a day, you can also:
 - add additional photos (using camera or just paste in links)
 - scan QR-codes containing URLs to relevant documents
 - paste in a list of attributes (weight/color/size/etc)
-- **Fuzzy Search Toggles:** Unhappy with search results? The AI stems words (e.g., "Jeans" -> "Jean") which is great for finding electronics or tools but sometimes too broad for clothes. You can toggle "Fuzzy Word Search" off per-inventory in Settings for strict text matching.
+- **Fuzzy Search Toggles:** Unhappy with search results? Words are stemmed (e.g., "Jeans" -> "Jean") which is great for finding electronics or tools but sometimes too broad for clothes. You can toggle "Fuzzy Word Search" off per-inventory in Settings for strict text matching.
 - **Position Persistence:** The reader automatically saves your exact scroll position, PDF page, or EPUB location across sessions. You won't spend half your day scrolling back to where you left off.
-- **Complete AI Transparency:** Troves offers full transparency over what is being sent to external APIs. In the `/activity` dashboard, you can view the exact JSON prompts sent to the Vision model, the raw JSON responses, execution times, and token usage limits.
+- **Complete Token Transparency:** Troves offers full transparency over what is being sent to external APIs. In the `/activity` dashboard, you can view the exact JSON prompts sent to the Vision model, the raw JSON responses, execution times, and token usage limits.
 - **Multiple Categories:** Need an item to exist in two categories? Give it multiple photos and assign a different category to each photo. The engine resolves categories at the photo level.
 - **Changing Categories:** Changing the category of an item is awkward at the moment; go into the image lightbox, use the "..." menu and change the category of the item there (historically it comes from the fact that it's the *photo* that is categorized, not the item).
 - **Just Paste Anything:** The global PasteHandler instantly detects images in your clipboard (uploading them to the current item), raw URLs (fetching the webpage/PDF), and text blocks (creating local Markdown notes analyzed by LLMs). Hit `Ctrl+V` anywhere!
@@ -96,7 +98,7 @@ about the visuals ... But, let's get the ball rolling in 2026, the first screens
 - LLM Summaries (Llama3, Groq)
 - Invoice/receipt data extraction
 - Download-and-store documents (link-rot no more). **EPUB books are supported** and can be read inside the browser using built-in reader. You can bookmark pages or highlight text inside EPUBs, which syncs the surrounding chapter text to Notebook. This makes the exact sections of books fully searchable via Full Text Search (alongside the physical items.
-- **Token & Cost Tracking:** Troves tracks backend AI operations and token counts so you can monitor exactly how much it interacts with external APIs (visible in System Activity).
+- **Token & Cost Tracking:** Troves tracks backend LLM, voice and vision operations and token counts so you can monitor exactly how much it interacts with external APIs (visible in System Activity).
 - Image processing (background removal, thumbnail, etc)
 - Color extraction
 - Collection (bulk/multi-scan) import of CDs, DVDs, books, whiskeys, what have you
