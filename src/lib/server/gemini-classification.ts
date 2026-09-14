@@ -173,10 +173,15 @@ Below is a JSON array representing specific compartments (defined by 4-point pol
 BASELINE MAP:
 ${JSON.stringify(baselineMap, null, 2)}
 
+CRITICAL RULES FOR EXTRACTION:
+1. DO NOT EXPLAIN YOUR REASONING. 
+2. DO NOT WRITE PARAGRAPHS. ZERO CONVERSATIONAL FILLER.
+3. If status is DIFFERENT, 'title' MUST be under 5 words, and 'description' MUST be under 10 words (e.g., "Mixed loose components", "Red wires").
+
 For EACH compartment in the map, verify its contents against the expectation:
 - If the expected item is there, set status to "PRESENT".
 - If the slot is completely empty, set status to "EMPTY".
-- If there is an item but it is clearly NOT the expected item, set status to "DIFFERENT" and provide a brief 'title' and 'description' of what is actually there.
+- If there is an item but it is clearly NOT the expected item, set status to "DIFFERENT" and provide a strict, brief 'title' and 'description' of what is actually there.
 - If the baseline expected nothing (null), but you see an item, set status to "DIFFERENT" and provide the title/description.
 
 Return an array of results that matches the exact order and length of the baseline map.`;
@@ -188,7 +193,11 @@ Return an array of results that matches the exact order and length of the baseli
           type: 'array', 
           items: {
             type: 'object',
-            properties: { status: { type: 'string', enum: ['PRESENT', 'EMPTY', 'DIFFERENT'] }, title: { type: 'string', nullable: true }, description: { type: 'string', nullable: true } },
+            properties: { 
+                status: { type: 'string', enum: ['PRESENT', 'EMPTY', 'DIFFERENT'] }, 
+                title: { type: 'string', nullable: true, description: "Max 5 words. No explanation." }, 
+                description: { type: 'string', nullable: true, description: "Max 10 words. NEVER explain your reasoning." } 
+            },
             required: ['status']
           }
         } 
@@ -197,7 +206,13 @@ Return an array of results that matches the exact order and length of the baseli
   };
 
   const rawText = await analyzeImage(promptText, mimeType, base64Data, true, jsonSchema, 'Spatial Grid Audit', tracking, 'MULTISCAN');
-  return JSON.parse(rawText);
+  
+  try {
+      return JSON.parse(rawText);
+  } catch (e) {
+      console.error("[verifySpatialGrid] Failed to parse JSON. Raw LLM response was truncated or malformed:", rawText);
+      throw new Error("LLM returned malformed or truncated JSON. The model may have hallucinated an excessively long response.");
+  }
 }
 
 

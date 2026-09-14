@@ -5,6 +5,8 @@ import { MediaIngest } from '$lib/server/services/MediaIngest';
 import { verifySpatialGrid } from '$lib/server/gemini-classification';
 import { taskManager } from '$lib/server/taskManager';
 import { getActiveSchema } from '$lib/server/ontology';
+import { alignPolygonsToNewImage } from '$lib/server/vision/pureCv';
+import fs from 'fs';
 
 export const POST = async ({ request, locals }) => {
     assertCanMutate(locals);
@@ -19,18 +21,27 @@ export const POST = async ({ request, locals }) => {
     // 1. Save the new bulk photo to disk
     const { localPath: localDraftPath, webPath: draftPath } = await MediaIngest.saveUploadedImage(file, 'audit');
 
-    // 2. Fetch the container to get the spatial map from the server (secure & payload-light)
+    // 2. Fetch the container to get the spatial map AND the baseline photo
     const container = await db.container.findUnique({
         where: { inventoryId_name: { inventoryId: locals.activeInventoryId, name: scopeValue } }
     });
 
-    if (!container || !container.spatialMap) {
-        return json({ error: 'Container or spatial map not found' }, { status: 404 });
+    if (!container || !container.spatialMap || !container.photoPath) {
+        return json({ error: 'Container, spatial map, or baseline photo not found' }, { status: 404 });
+    }
+
+    const baselinePath = `data${container.photoPath}`;
+    if (!fs.existsSync(baselinePath)) {
+        return json({ error: 'Baseline photo missing from disk' }, { status: 404 });
     }
 
     let parsedMap;
     try { parsedMap = JSON.parse(container.spatialMap); } catch(e) {}
-    const polygons: number[][][] = Array.isArray(parsedMap) ? parsedMap : (parsedMap?.polygons || []);
+    const originalPolygons: number[][][] = Array.isArray(parsedMap) ? parsedMap : (parsedMap?.polygons || []);
+
+    if (originalPolygons.length === 0) {
+        return json({ error: 'No compartments in spatial map' }, { status: 400 });
+    }
 
     const activeSchema = await getActiveSchema(locals.activeInventoryId, null, true);
 
@@ -44,48 +55,63 @@ export const POST = async ({ request, locals }) => {
     const missingFromScope: any[] = [];
     const newToYou: any[] = [];
 
-    const taskId = taskManager.start('global', 0, `Spatial Audit: Processing ${polygons.length} compartments...`);
+    const taskId = taskManager.start('global', 0, `Spatial Audit: Aligning & Processing ${originalPolygons.length} compartments...`);
 
     try {
-        // 1. Build the baseline map for the LLM.
-        // We intentionally filter OUT any polygon that lacks a mapped item in the database.
-        // This prevents unlabelled compartments from constantly triggering as "New" anomalies.
+        // 3. Homography Alignment (Pure TS CV Engine)
+        taskManager.update(taskId, 'Aligning perspective to baseline...');
+        let warpedPolygons: number[][][];
+        try {
+            warpedPolygons = await alignPolygonsToNewImage(baselinePath, localDraftPath, originalPolygons);
+        } catch (cvError: any) {
+            console.error("Homography alignment failed:", cvError);
+            return json({ error: `Alignment failed: ${cvError.message}. Please take a clearer photo from a similar angle.` }, { status: 400 });
+        }
+
+        taskManager.update(taskId, 'Verifying contents...');
+
+        // 4. Build the baseline map for the LLM using the newly WARPED polygons.
+        // We filter OUT any polygon that lacks a mapped item in the database.
         const baselineMap: any[] = [];
         const activePolygons: any[] = [];
         
-        for (let i = 0; i < polygons.length; i++) {
-            const poly = polygons[i];
-            const expectedRecord = mappedItems.find(mi => mi.spatialMap === JSON.stringify(poly));
+        for (let i = 0; i < originalPolygons.length; i++) {
+            const origPoly = originalPolygons[i];
+            const warpedPoly = warpedPolygons[i];
+            const origPolyStr = JSON.stringify(origPoly);
+            
+            const expectedRecord = mappedItems.find(mi => mi.spatialMap === origPolyStr);
             if (!expectedRecord) continue;
             
             baselineMap.push({
                 index: i,
-                polygon: poly,
+                polygon: warpedPoly, // Tell Gemini where to look in the NEW skewed photo
                 expectedTitle: expectedRecord.item.title,
                 expectedDescription: expectedRecord.item.description
             });
-            activePolygons.push({ index: i, poly, expectedItem: expectedRecord.item });
+            
+            // Keep track of both formats: warped for the UI/crops, original string for DB linking
+            activePolygons.push({ index: i, warpedPoly, origPolyStr, expectedItem: expectedRecord.item });
         }
 
         if (baselineMap.length === 0) {
-            return json({ success: true, draftPath, activeSchema, totalDetected: 0, totalVisibleCount: polygons.length, inCollection: [], missingFromScope: [], newToYou: [], scopeType: 'container', scopeValue: container.name });
+            return json({ success: true, draftPath, activeSchema, totalDetected: 0, totalVisibleCount: originalPolygons.length, inCollection: [], missingFromScope: [], newToYou: [], scopeType: 'container', scopeValue: container.name });
         }
 
-        // 2. Single batched API call
+        // 5. Single batched API call to Gemini
         const llmPayload = await verifySpatialGrid(localDraftPath, baselineMap, { targetType: 'global', targetId: 0, description: `Auditing ${baselineMap.length} mapped slots` });
         const bulkResults = llmPayload.results || [];
 
-        // 3. Local reconciliation
+        // 6. Local reconciliation
         for (let i = 0; i < activePolygons.length && i < bulkResults.length; i++) {
-            const { poly, expectedItem } = activePolygons[i];
-            const polyStr = JSON.stringify(poly);
+            const { warpedPoly, origPolyStr, expectedItem } = activePolygons[i];
             const llmResult = bulkResults[i];
 
             // Reconciliation Strategy
             if (llmResult.status === 'PRESENT') {
                 inCollection.push({
                     title: expectedItem.title,
-                    box: poly,
+                    box: warpedPoly, // UI uses this to draw AR glowing box over the new photo
                     category: 'Matched',
                     matchedItem: {
                         id: expectedItem.id,
@@ -102,20 +128,21 @@ export const POST = async ({ request, locals }) => {
                     slug: expectedItem.slug,
                     locationName: container.name,
                     amount: expectedItem.amount,
-                    box: poly,
+                    box: warpedPoly,
                     isShortfall: true,
                     expected: 1,
                     count: 0,
-                    spatialMap: polyStr
+                    spatialMap: origPolyStr // The DB needs the original string to repair/link the slot
                 });
 
                 if (llmResult.status === 'DIFFERENT') {
-                    newToYou.push({ title: llmResult.title || 'Unknown Unexpected Item', subtitle: llmResult.description || 'Found in occupied slot', box: poly, category: 'Anomaly' });
+                    // New unexpected item! The bounding box handles the crop so we can instantly save it to the DB
+                    newToYou.push({ title: llmResult.title || 'Unknown Unexpected Item', subtitle: llmResult.description || 'Found in occupied slot', box: warpedPoly, category: 'Anomaly' });
                 }
             }
         }
 
-        return json({ success: true, draftPath, activeSchema, totalDetected: inCollection.length + newToYou.length, totalVisibleCount: polygons.length, inCollection, missingFromScope, newToYou, scopeType: 'container', scopeValue: container.name });
+        return json({ success: true, draftPath, activeSchema, totalDetected: inCollection.length + newToYou.length, totalVisibleCount: originalPolygons.length, inCollection, missingFromScope, newToYou, scopeType: 'container', scopeValue: container.name });
     } catch (e) {
         console.error("Spatial Audit failed", e);
         return json({ error: 'Spatial Audit failed due to an internal error' }, { status: 500 });
