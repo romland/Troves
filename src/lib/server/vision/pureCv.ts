@@ -397,7 +397,7 @@ export async function alignPolygonsToNewImage(baselinePath: string, newPath: str
     const H = findHomographyRANSAC(absKp1, absKp2, matches, 5000, 15.0);
     if (!H) {
         // CV_HOMOGRAPHY_FAILED
-        throw new Error("Could not compute robust Homography matrix.");
+        throw new Error("Not enough distinct anchor points matched to align the perspective.");
     }
     
     // Sanity Guard: Check if the Homography folded the image or created a micro-singularity

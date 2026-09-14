@@ -276,13 +276,14 @@
     class="relative w-full h-[50vh] sm:h-[65vh] bg-base-300 rounded-[2rem] overflow-hidden shadow-inner border border-base-200">
     <!-- Floating Apple-Style Zoom Pill -->
     <div
-        class="absolute top-6 right-6 z-40 flex gap-2 bg-base-100/80 backdrop-blur-xl p-1.5 rounded-full shadow-lg border border-base-200/50 items-center transition-all">
-        <!-- svelte-ignore a11y_consider_explicit_label -->
-        <button class="btn btn-circle btn-sm btn-ghost text-base-content/70" on:click|stopPropagation={()=> zoomLevel = Math.max(25, zoomLevel - 25)}><i class="bi bi-dash text-lg"></i></button>
-        <div class="text-xs font-bold w-12 text-center select-none text-base-content/80">{zoomLevel}%</div>
+        class="absolute top-1/2 -translate-y-1/2 right-4 z-40 flex flex-col gap-1 bg-base-100/80 backdrop-blur-xl p-1.5 rounded-[1.25rem] shadow-lg border border-base-200/50 items-center transition-all">
         <!-- svelte-ignore a11y_consider_explicit_label -->
         <button class="btn btn-circle btn-sm btn-ghost text-base-content/70" on:click|stopPropagation={()=> zoomLevel = Math.min(500, zoomLevel + 25)}><i class="bi bi-plus text-lg"></i></button>
-        <button class="btn btn-circle btn-sm btn-ghost text-base-content/70 ml-1" on:click|stopPropagation={()=> { zoomLevel = 100; panX = 0; panY = 0; }} title="Recenter View"><i class="bi bi-arrows-collapse text-lg"></i></button>
+        <div class="text-[10px] font-bold w-full text-center select-none text-base-content/80 py-0.5">{zoomLevel}%</div>
+        <!-- svelte-ignore a11y_consider_explicit_label -->
+        <button class="btn btn-circle btn-sm btn-ghost text-base-content/70" on:click|stopPropagation={()=> zoomLevel = Math.max(25, zoomLevel - 25)}><i class="bi bi-dash text-lg"></i></button>
+        <div class="w-6 h-px bg-base-300 my-0.5"></div>
+        <button class="btn btn-circle btn-sm btn-ghost text-base-content/70" on:click|stopPropagation={()=> { zoomLevel = 100; panX = 0; panY = 0; }} title="Recenter View"><i class="bi bi-arrows-collapse text-lg"></i></button>
     </div>
 
     {#if history.length > 0 && !isWarpMode && !readonly}
@@ -294,19 +295,21 @@
 
     <!-- Floating Apple-Style Warp HUD -->
     {#if isWarpMode}
-        <div class="absolute top-6 left-1/2 -translate-x-1/2 z-50 flex flex-col sm:flex-row gap-3 bg-base-100/80 backdrop-blur-2xl p-2 rounded-3xl shadow-[0_10px_40px_rgba(0,0,0,0.3)] border border-base-200/50 items-center animate-fade-in">
-            <div class="flex items-center gap-2 px-2">
-                <span class="text-[10px] font-bold uppercase tracking-wider text-base-content/60">Cols</span>
-                <button class="btn btn-circle btn-sm btn-ghost bg-base-200/50" on:click={() => warpCols = Math.max(1, warpCols - 1)}><i class="bi bi-dash"></i></button>
-                <span class="font-mono w-4 text-center font-bold text-base-content">{warpCols}</span>
-                <button class="btn btn-circle btn-sm btn-ghost bg-base-200/50" on:click={() => warpCols++}><i class="bi bi-plus"></i></button>
-            </div>
-            <div class="w-px h-6 bg-base-300 hidden sm:block"></div>
-            <div class="flex items-center gap-2 px-2">
-                <span class="text-[10px] font-bold uppercase tracking-wider text-base-content/60">Rows</span>
-                <button class="btn btn-circle btn-sm btn-ghost bg-base-200/50" on:click={() => warpRows = Math.max(1, warpRows - 1)}><i class="bi bi-dash"></i></button>
-                <span class="font-mono w-4 text-center font-bold text-base-content">{warpRows}</span>
-                <button class="btn btn-circle btn-sm btn-ghost bg-base-200/50" on:click={() => warpRows++}><i class="bi bi-plus"></i></button>
+        <div class="absolute top-4 sm:top-6 left-1/2 -translate-x-1/2 z-50 flex flex-col sm:flex-row gap-3 bg-base-100/95 backdrop-blur-2xl p-2 rounded-3xl shadow-[0_10px_40px_rgba(0,0,0,0.3)] border border-base-200/50 items-center animate-fade-in w-[95%] max-w-[350px] sm:w-auto">
+            <div class="flex items-center justify-center gap-4 px-2 w-full sm:w-auto">
+                <div class="flex items-center gap-2">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-base-content/60">Cols</span>
+                    <button class="btn btn-circle btn-sm btn-ghost bg-base-200/50" on:click={() => warpCols = Math.max(1, warpCols - 1)}><i class="bi bi-dash"></i></button>
+                    <span class="font-mono w-4 text-center font-bold text-base-content">{warpCols}</span>
+                    <button class="btn btn-circle btn-sm btn-ghost bg-base-200/50" on:click={() => warpCols++}><i class="bi bi-plus"></i></button>
+                </div>
+                <div class="w-px h-6 bg-base-300 hidden sm:block"></div>
+                <div class="flex items-center gap-2">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-base-content/60">Rows</span>
+                    <button class="btn btn-circle btn-sm btn-ghost bg-base-200/50" on:click={() => warpRows = Math.max(1, warpRows - 1)}><i class="bi bi-dash"></i></button>
+                    <span class="font-mono w-4 text-center font-bold text-base-content">{warpRows}</span>
+                    <button class="btn btn-circle btn-sm btn-ghost bg-base-200/50" on:click={() => warpRows++}><i class="bi bi-plus"></i></button>
+                </div>
             </div>
             <div class="flex gap-2 w-full sm:w-auto px-1">
                 <button class="btn btn-ghost btn-sm rounded-xl flex-1 hover:bg-base-200" on:click={() => { isWarpMode = false; }}>Cancel</button>

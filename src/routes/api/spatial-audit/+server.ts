@@ -65,7 +65,7 @@ export const POST = async ({ request, locals }) => {
             warpedPolygons = await alignPolygonsToNewImage(baselinePath, localDraftPath, originalPolygons);
         } catch (cvError: any) {
             console.error("Homography alignment failed:", cvError);
-            return json({ error: `Alignment failed: ${cvError.message}. Please take a clearer photo from a similar angle.` }, { status: 400 });
+            return json({ error: "We couldn't align this photo with your original layout map. Try holding the camera at the same angle and ensure all outer edges of the container are visible." }, { status: 400 });
         }
 
         taskManager.update(taskId, 'Verifying contents...');
