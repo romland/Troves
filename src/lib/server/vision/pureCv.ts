@@ -351,6 +351,7 @@ async function extractImageData(imagePath: string, maxDim: number = 1024) {
         .resize({ width: finalWidth, height: finalHeight, fit: 'inside' })
         .grayscale()
         .normalize() // Pseudo-CLAHE: Maximizes contrast to expose dark plastic seams
+        .blur(0.8) // Defeat WebP compression artifacts that corrupt FAST corners
         .raw()
         .toBuffer();
         
@@ -366,9 +367,9 @@ export async function alignPolygonsToNewImage(baselinePath: string, newPath: str
     const base = await extractImageData(baselinePath);
     const newImg = await extractImageData(newPath);
     
-    // Attempt 1: Strict Tolerance
-    let kp1 = detectFAST(base.data, base.width, base.height, 20);
-    let kp2 = detectFAST(newImg.data, newImg.width, newImg.height, 20);
+    // Attempt 1: Moderate Tolerance
+    let kp1 = detectFAST(base.data, base.width, base.height, 12);
+    let kp2 = detectFAST(newImg.data, newImg.width, newImg.height, 12);
     let desc1 = computeBRIEF(base.data, base.width, base.height, kp1);
     let desc2 = computeBRIEF(newImg.data, newImg.width, newImg.height, kp2);
     
@@ -377,23 +378,23 @@ export async function alignPolygonsToNewImage(baselinePath: string, newPath: str
     // Fallback: If starved for features (poor lighting/blurry), relax the thresholds and try again
     if (matches.length < 20) {
         console.warn(`[CV Pipeline] Strict matching starved (${matches.length} matches). Relaxing constraints...`);
-        kp1 = detectFAST(base.data, base.width, base.height, 12);
-        kp2 = detectFAST(newImg.data, newImg.width, newImg.height, 12);
+        kp1 = detectFAST(base.data, base.width, base.height, 6);
+        kp2 = detectFAST(newImg.data, newImg.width, newImg.height, 6);
         desc1 = computeBRIEF(base.data, base.width, base.height, kp1);
         desc2 = computeBRIEF(newImg.data, newImg.width, newImg.height, kp2);
-        matches = matchFeatures(desc1, desc2, 0.88, 75);
+        matches = matchFeatures(desc1, desc2, 0.92, 90);
     }
     
     if (matches.length < 15) {
-        // CV_INSUFFICIENT_FEATURES
-        throw new Error(`Found only ${matches.length} anchors. Images too dissimilar.`);
+        throw new Error(`Found only ${matches.length} structural anchors. Make sure you hold the camera at the same orientation (Landscape/Portrait) as the original map.`);
     }
     
     // Scale keypoints back to absolute Mega-Pixel resolution before solving Homography
     const absKp1 = kp1.map(p => ({ x: p.x / base.scale, y: p.y / base.scale, score: p.score }));
     const absKp2 = kp2.map(p => ({ x: p.x / newImg.scale, y: p.y / newImg.scale, score: p.score }));
     
-    const H = findHomographyRANSAC(absKp1, absKp2, matches, 3000, 5.0);
+    // Relaxing the RANSAC pixel threshold from 5.0 to 10.0 allows minor distortions to still fit the model
+    const H = findHomographyRANSAC(absKp1, absKp2, matches, 5000, 15.0);
     if (!H) {
         // CV_HOMOGRAPHY_FAILED
         throw new Error("Could not compute robust Homography matrix.");

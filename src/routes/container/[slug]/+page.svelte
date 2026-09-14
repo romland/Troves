@@ -9,6 +9,7 @@
     import SpatialGridMap from "$lib/components/spatial/SpatialGridMap.svelte";
     import SpatialMap from "$lib/components/spatial/SpatialMap.svelte";
     import PolygonActionSheet from "$lib/components/spatial/PolygonActionSheet.svelte";
+    import TrayBank from "$lib/components/spatial/TrayBank.svelte";
     import FormInput from "$lib/components/FormInput.svelte";
     import SpatialItemSettings from "$lib/components/spatial/SpatialItemSettings.svelte";
     import ContainerBreadcrumbs from "$lib/components/ContainerBreadcrumbs.svelte";
@@ -146,6 +147,30 @@
     function handlePolySelect(e: CustomEvent<number>) {
         activePolyIdx = e.detail;
         actionSheet.show();
+    }
+
+    $: allTrayBankEntities = [
+        ...(data.item?.children || []).map((c: any) => ({ id: c.id, type: 'container', name: c.name, hasMap: !!c.spatialMap })),
+        ...(data.items || []).filter((i: any) => i.locations?.some((l: any) => l.containerId === data.item?.id)).map((i: any) => {
+            const loc = i.locations.find((l: any) => l.containerId === data.item?.id);
+            return { id: i.id, type: 'item', name: i.title, hasMap: !!loc.spatialMap };
+        })
+    ].sort((a, b) => {
+        if (a.hasMap === b.hasMap) return a.name.localeCompare(b.name);
+        return a.hasMap ? 1 : -1;
+    });
+
+    async function handleAssign(e: CustomEvent) {
+        const { polygonIndex, polygon, entity } = e.detail;
+        try {
+            const res = await fetch('/api/spatial-assign', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ parentContainerId: data.item?.id, entity, polygon })
+            });
+            if (res.ok) { notify('success', `Mapped ${entity.name}`); invalidateAll(); }
+            else { notify('error', 'Failed to map entity.'); }
+        } catch (err) { notify('error', 'Network error.'); }
     }
 
     // Calculate tray breakdown
@@ -293,11 +318,17 @@
                 mappedEntities={mappedEntities}
                 on:change={() => isMapDirty = true} 
                 on:select={handlePolySelect}
+                on:assign={handleAssign}
                 bind:isWarpMode
                 bind:warpCols={gridCols}
                 bind:warpRows={gridRows}
                 bind:warpCorners={warpCorners}
             />
+            {#if allTrayBankEntities.length > 0}
+                <div class="mt-2 animate-fade-in">
+                    <TrayBank entities={allTrayBankEntities} />
+                </div>
+            {/if}
         </div>
     {/if}
 
@@ -352,6 +383,7 @@
             on:processingStart={(ev) => notify("loading", ev.detail.message, ev.detail.taskId)}
             on:processingComplete={(ev) => notify(ev.detail.status, ev.detail.message, ev.detail.taskId)}
             on:success={(ev) => notify("success", ev.detail)}
+            on:notify={(ev) => notify(ev.detail.status, ev.detail.message)}
         />
     </div>
 </Modal>

@@ -1,5 +1,6 @@
 <script lang="ts">
     import CompareResults from '$lib/components/compare/CompareResults.svelte';
+    import ContentUnavailable from '$lib/components/ContentUnavailable.svelte';
     import { createEventDispatcher, onMount } from 'svelte';
     import { beforeNavigate } from '$app/navigation';
 
@@ -15,6 +16,7 @@
     let fileInputGallery: HTMLInputElement;
     let isScanning = false;
     let scanHint = '';
+    let uploadError = '';
 
     let compareResults: any = null;
 
@@ -54,6 +56,7 @@
         const file = (e.target as HTMLInputElement).files?.[0];
         if (!file) return;
 
+        uploadError = '';
         isScanning = true;
         dispatch('processingStart', { message: 'Comparing with your Trove...', taskId: 'compare' });
 
@@ -82,26 +85,39 @@
                 } else {
                     dispatch('success', `Found ${data.totalDetected} items!`);
                 }
+                dispatch('processingComplete', { taskId: 'compare', status: 'success' });
             } else {
-				dispatch('notify', { status: 'error', message: data.error || 'Comparison failed.' });
+                uploadError = data.error || 'Comparison failed.';
+                dispatch('processingComplete', { taskId: 'compare', status: 'error', message: data.error || 'Comparison failed.' });
             }
         } catch (err) {
-			dispatch('notify', { status: 'error', message: 'Network error while processing comparison.' });
+            uploadError = 'Network error while processing comparison.';
+            dispatch('processingComplete', { taskId: 'compare', status: 'error', message: 'Network error while processing comparison.' });
         } finally {
             isScanning = false;
-            dispatch('processingComplete', { taskId: 'compare', status: 'success' });
             if (wakeLock) try { await wakeLock.release(); } catch (err) {}
         }
     }
 
     export function reset() {
         compareResults = null;
+        uploadError = '';
         if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem('troves_compare_state');
     }
 </script>
 
 <div class="flex flex-col w-full max-w-lg mx-auto">
-    {#if !compareResults}
+    {#if uploadError}
+        <ContentUnavailable 
+            type="error"
+            icon="bi-exclamation-triangle"
+            title="Analysis Interrupted" 
+            message={uploadError} 
+            actionLabel="Try Again" 
+            actionIcon="bi-arrow-counterclockwise"
+            on:click={() => uploadError = ""} 
+        />
+    {:else if !compareResults}
         <div class="text-center mb-6 animate-fade-in">
             <div class="bg-primary/10 text-primary w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm">
                 <i class="bi bi-search-heart text-3xl"></i>

@@ -12,6 +12,7 @@
     import ActionCard from '../ActionCard.svelte';
     import SpatialMap from "$lib/components/spatial/SpatialMap.svelte";
     import { ambientLocation } from '$lib/client/ambientContext';
+    import { saveToQueue } from '$lib/client/offlineQueue';
 
     export let results: {
         draftPath: string;
@@ -188,7 +189,6 @@
 
         try {
             const fd = new FormData();
-            let res;
             if (target === 'inventory') {
                 fd.append('title', item.title);
                 if (item.subtitle) fd.append('description', item.subtitle);
@@ -200,18 +200,17 @@
                 if (scopeType === 'category' && scopeValue) fd.append('categoryName', scopeValue);
                 if (scopeType === 'tag' && scopeValue) fd.append('tagcsv', scopeValue);
                 if (item.extractedAttributes) fd.append('extractedAttributes', JSON.stringify(item.extractedAttributes));
-                res = await fetch('/api/item', { method: 'POST', body: fd });
+                await saveToQueue('/api/item', fd);
             } else {
                 fd.append('content', `${target === 'to buy' ? 'Buy: ' : 'Task: '} ${item.title} ${item.subtitle ? `(${item.subtitle})` : ''}`);
                 fd.append('category', target);
-                res = await fetch('/timeline?/capture', { method: 'POST', body: fd, headers: { 'x-sveltekit-action': 'true', 'accept': 'application/json' } });
+                await saveToQueue('/timeline?/capture', fd);
             }
+            window.dispatchEvent(new CustomEvent('outbox-trigger'));
 
-            if (res.ok) {
-                dispatch('notify', { status: 'success', message: `Added "${item.title}" to ${target === 'inventory' ? 'Collection' : 'Notebook'}` });
-                results.newToYou = results.newToYou.filter(i => i.title !== item.title);
-                if (target === 'inventory') results.inCollection = [{ ...item, matchedItem: { title: item.title, amount: 1 } }, ...results.inCollection];
-            }
+            dispatch('notify', { status: 'success', message: `Added "${item.title}" to ${target === 'inventory' ? 'Collection' : 'Notebook'}` });
+            results.newToYou = results.newToYou.filter(i => i.title !== item.title);
+            if (target === 'inventory') results.inCollection = [{ ...item, matchedItem: { title: item.title, amount: 1 } }, ...results.inCollection];
         } catch (e) {
             dispatch('notify', { status: 'error', message: 'Failed to add item.' });
         } finally {
@@ -229,15 +228,20 @@
         }
     }
 
-    async function quickMove(itemId: number, newContainer: string) {
+    async function quickMove(itemId: number, newContainer: string, spatialMap: any = null, suppressNotify: boolean = false) {
         try {
-            await fetch('/api/item', { 
-                method: 'PATCH', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify({ itemId, newContainer }) 
-            });
+            const fd = new FormData();
+            fd.append('action', 'move');
+            fd.append('itemId', String(itemId));
+            fd.append('newContainer', newContainer);
+            if (spatialMap) fd.append('spatialMap', JSON.stringify(spatialMap));
+            await saveToQueue('/api/item', fd);
+            window.dispatchEvent(new CustomEvent('outbox-trigger'));
+
+            results.inCollection = results.inCollection.map(i => i.matchedItem?.id === itemId ? {...i, matchedItem: {...i.matchedItem, locationName: newContainer}} : i);
+            if (!suppressNotify) dispatch('notify', { status: 'success', message: `Moved to ${newContainer}!` });
         } catch (e) {
-            dispatch('notify', { status: 'error', message: 'Failed to move item.' });
+            if (!suppressNotify) dispatch('notify', { status: 'error', message: 'Failed to move item.' });
         }
     }
 
@@ -402,6 +406,11 @@
                     <div id="card-{item.title.replace(/\s+/g, '-')}" class="scroll-mt-24 transition-transform {activeBoxId === item.title ? 'scale-[1.02] ring-2 ring-warning rounded-2xl' : ''}" on:mouseenter={() => activeBoxId = item.title} on:mouseleave={() => activeBoxId = null}>
                         <CompareItemCard {item} type="elsewhere" draftPath={results.draftPath} on:zoom={() => lightbox.open({ orgPath: results.draftPath, thumbPath: results.draftPath, showOriginal: true, box: item.box })} on:zoomMatch={(e) => lightbox.open({ orgPath: e.detail.thumbPath || e.detail.orgPath, showOriginal: true })}>
                             <div slot="actions" class="flex flex-col sm:flex-row items-center gap-1">
+                                {#if scopeType === 'container'}
+                                    <button type="button" class="btn btn-xs btn-outline btn-warning rounded-lg shadow-sm" title="Move to {scopeValue}" on:click={() => quickMove(item.matchedItem.id, scopeValue, item.box)}>
+                                        <i class="bi bi-box-arrow-in-down"></i> Move Here
+                                    </button>
+                                {/if}
                                 <button type="button" aria-label="Add" class="btn btn-circle btn-ghost btn-sm text-gray-400 hover:text-primary" title="Force add as new" on:click={() => { actionItem = item; actionModal.showModal(); }}><i class="bi bi-plus-lg text-lg"></i></button>
                                 <a href="/{item.matchedItem?.id}/{item.matchedItem?.slug || 'view'}" class="btn btn-ghost btn-xs text-warning">View</a>
                             </div>
@@ -455,9 +464,7 @@
     {#if activeTab === 'elsewhere' && elsewhere.length > 0 && scopeType === 'container'}
         <div class="mt-4 p-4 bg-base-100 border border-base-200 rounded-2xl shadow-sm flex justify-center gap-3 mb-8">
             <button class="btn btn-warning shadow-lg flex-1 max-w-sm rounded-2xl" on:click={async () => {
-                for(let e of elsewhere) await quickMove(e.matchedItem.id, scopeValue);
-                // Update local state instantly to reflect the move
-                results.inCollection = results.inCollection.map(i => elsewhere.includes(i) ? {...i, matchedItem: {...i.matchedItem, locationName: scopeValue}} : i);
+                for(let e of elsewhere) await quickMove(e.matchedItem.id, scopeValue, e.box, true);
                 dispatch('notify', { status: 'success', message: `Moved ${elsewhere.length} items to ${scopeValue}!` });
             }}>
                 <i class="bi bi-arrows-move"></i> Move All to {scopeValue}

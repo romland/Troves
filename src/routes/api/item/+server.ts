@@ -84,6 +84,34 @@ export async function POST({ request, locals }) {
     const tagcsv = formData.get('tagcsv') as string;
     const categoryName = formData.get('categoryName') as string;
 
+    // INTERCEPT: Check if this is a "Move" action routed through the offline queue
+    if (formData.has('action') && formData.get('action') === 'move') {
+        const moveItemId = Number(formData.get('itemId'));
+        const newContainer = formData.get('newContainer') as string;
+        const spatialMapStr = formData.get('spatialMap') as string;
+
+        const itemBelongsToVault = await db.item.findFirst({ where: { id: moveItemId, inventoryId: locals.activeInventoryId } });
+        if (!itemBelongsToVault) return json({ error: 'Item not found in current trove' }, { status: 404 });
+
+        const exists = await db.container.findUnique({ where: { inventoryId_name: { inventoryId: locals.activeInventoryId, name: newContainer } }});
+        
+        if (exists) {
+            await db.item.update({
+                where: { id: moveItemId },
+                data: {
+                    locations: {
+                        deleteMany: {},
+                        create: [{ spatialMap: spatialMapStr || null, container: { connect: { inventoryId_name: { inventoryId: locals.activeInventoryId, name: newContainer } } } }]
+                    }
+                }
+            });
+            await logActivity(moveItemId, 'Location', `Moved to '${newContainer}' via Audit Lens.`, 'success');
+        } else {
+            await logActivity(moveItemId, 'Location', `Failed quick-move: Location '${newContainer}' no longer exists.`, 'error');
+        }
+        return json({ success: true });
+    }
+
     let finalPathForProduct = draftPath;
 
     if (draftPath && boxStr) {
@@ -150,32 +178,3 @@ export async function POST({ request, locals }) {
     return json({ success: true, id: item.id });
 }
 
-export async function PATCH({ request, locals }) {
-    assertCanMutate(locals);
-    const { itemId, newContainer, spatialMap } = await request.json();
-    
-    // IDOR Check: Ensure the item actually belongs to the active inventory
-    const itemBelongsToVault = await db.item.findFirst({ where: { id: itemId, inventoryId: locals.activeInventoryId } });
-    if (!itemBelongsToVault) return json({ error: 'Item not found in current trove' }, { status: 404 });
-
-    const exists = await db.container.findUnique({ where: { inventoryId_name: { inventoryId: locals.activeInventoryId, name: newContainer } }});
-    
-    if (exists) {
-        await db.item.update({
-            where: { id: itemId },
-            data: {
-                locations: {
-                    deleteMany: {},
-                    create: [{ 
-                        spatialMap: spatialMap ? JSON.stringify(spatialMap) : null,
-                        container: { connect: { inventoryId_name: { inventoryId: locals.activeInventoryId, name: newContainer } } } 
-                    }]
-                }
-            }
-        });
-    } else {
-        await logActivity(itemId, 'Location', `Failed quick-move: Location '${newContainer}' no longer exists.`, 'error');
-    }
-
-    return json({ success: true });
-}
