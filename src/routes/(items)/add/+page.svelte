@@ -9,7 +9,6 @@
     import PasteHandler from "$lib/components/PasteHandler.svelte";
     import ItemHub from "$lib/components/ItemHub.svelte";
     import BulkTriage from "$lib/components/add/BulkTriage.svelte";
-    import CompareHub from "$lib/components/compare/CompareHub.svelte";
     import pageTitle from '$lib/stores';
     import { saveToQueue } from '$lib/client/offlineQueue';
     import { goto } from '$app/navigation';
@@ -32,7 +31,6 @@
     let clientId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2);
     
     let bulkTriageComponent: BulkTriage;
-    let compareHubComponent: CompareHub;
     let itemHubComponent: ItemHub;
 	let confirmModal: ConfirmModal;
 	let pendingNav: string | null = null;
@@ -83,9 +81,9 @@
     export let form: ActionData;
     export let data: PageServerData;
     
-    let mode: 'single' | 'collection' | 'compare' | 'rapid' = (data as any).activeAddMode;
+    let mode: 'single' | 'collection' | 'rapid' = (data as any).activeAddMode === 'compare' ? 'single' : (data as any).activeAddMode;
     
-    function setMode(newMode: 'single' | 'collection' | 'compare' | 'rapid') {
+    function setMode(newMode: 'single' | 'collection' | 'rapid') {
         mode = newMode;
         document.cookie = `troves_add_mode=${mode}; path=/; max-age=${60 * 60 * 24 * 365}`;
     }
@@ -93,7 +91,7 @@
     onMount(() => {
         // FIX: Bypass SvelteKit layout caching staleness by reading the real browser cookie.
         const match = document.cookie.match(/(?:^|;\s*)troves_add_mode=([^;]*)/);
-        if (match && match[1] && ['single', 'collection', 'compare', 'rapid'].includes(match[1])) {
+        if (match && match[1] && ['single', 'collection', 'rapid'].includes(match[1])) {
             console.log('[Add Hub] Cookie sync on mount:', match[1]);
             if (mode !== match[1]) mode = match[1] as any;
         }
@@ -164,20 +162,17 @@
     }
     
     pageTitle.set("Add new product");
-    $:  pageTitle.set(mode === 'single' ? "Add new product" : mode === 'collection' ? "Multi-scan" : mode === 'compare' ? "Compare Collection" : "Rapid Intake");
+    $:  pageTitle.set(mode === 'single' ? "Add new product" : mode === 'collection' ? "Multi-scan" : "Rapid Intake");
     
 </script>
 
 <PasteHandler 
 bind:this={pasteHandler}
 formId="eltForm" 
-forcePhotoType={mode === 'collection' || mode === 'compare' ? 'product' : null}
+forcePhotoType={mode === 'collection' ? 'product' : null}
 on:save={(ev) => {
     if (mode === 'collection' && ev.detail.file) {
         bulkTriageComponent?.processPastedFile(ev.detail.file);
-    }
-    else if (mode === 'compare' && ev.detail.file) {
-        compareHubComponent?.processPastedFile(ev.detail.file);
     }
 }}
 on:success={(ev) => { notify("success", ev.detail); isDirty = true; }}
@@ -225,12 +220,7 @@ on:processingComplete={(ev) => {
             }
             isDirty = false;
             setMode('collection');
-        }}>Multi</button>
-        
-        <button type="button" class="flex-1 btn btn-sm border-none {mode === 'compare' ? 'bg-base-100 shadow-sm hover:bg-base-100 text-base-content font-bold text-primary' : 'btn-ghost text-gray-500 hover:text-base-content hover:bg-base-300'}" on:click={() => {
-            isDirty = false;
-            setMode('compare');
-        }}>Compare</button>
+        }}>Multi-scan</button>
         
         <button type="button" class="flex-1 btn btn-sm border-none {mode === 'rapid' ? 'bg-base-100 shadow-sm hover:bg-base-100 text-base-content font-bold text-secondary' : 'btn-ghost text-gray-500 hover:text-base-content hover:bg-base-300'}" on:click={() => {
             isDirty = false;
@@ -275,7 +265,7 @@ on:processingComplete={(ev) => {
                 {/if}
             </p>
 
-            +            <div class="w-full max-w-sm mb-6 bg-base-100 p-4 rounded-2xl border border-base-200 shadow-sm flex flex-col gap-2 text-left">
+            <div class="w-full max-w-sm mb-6 bg-base-100 p-4 rounded-2xl border border-base-200 shadow-sm flex flex-col gap-2 text-left">
                 <div class="flex justify-between items-center">
                     <span class="text-[10px] font-bold uppercase tracking-wider text-gray-500"><i class="bi bi-pin-angle-fill mr-1"></i> Default Location (L)</span>
                     <button type="button" class="btn btn-xs btn-ghost text-primary h-auto min-h-0 py-1" on:click={() => document.getElementById('ambient-container-btn')?.click()}>Change</button>
@@ -308,16 +298,6 @@ on:processingComplete={(ev) => {
             bind:isDirty
             on:processingStart={(ev) => notify("loading", ev.detail.message, ev.detail.taskId)}
             on:processingComplete={(ev) => notify(ev.detail.status, ev.detail.message, ev.detail.taskId)}
-        />
-    {:else}
-        <CompareHub 
-            bind:this={compareHubComponent}
-            containers={data.containers}
-            categories={data.categories}
-            tags={data.tags}
-            on:processingStart={(ev) => notify("loading", ev.detail.message, ev.detail.taskId)}
-            on:processingComplete={(ev) => notify(ev.detail.status, ev.detail.message, ev.detail.taskId)}
-            on:success={(ev) => notify("success", ev.detail)}
         />
     {/if}
 {/if}

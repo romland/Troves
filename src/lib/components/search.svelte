@@ -150,6 +150,7 @@
 	}
 
 	function toggleVoiceSearch() {
+        resultsAsYouType?.classList.remove("dropdown-open");
 		if (isListening && mediaRecorder && mediaRecorder.state !== 'inactive') {
 			mediaRecorder.stop();
 		} else if (!isProcessingAudio) {
@@ -223,8 +224,10 @@
 
     function blur(ev: FocusEvent)
     {
-        // If focus moved to one of our dropdown links, DO NOT close the dropdown
-        if (resultsAsYouType && resultsAsYouType.contains(ev.relatedTarget as Node)) return;
+        // If focus moved to a link inside the actual flyout menu, DO NOT close the dropdown.
+        // (We explicitly ignore the mic/camera buttons which sit outside the flyout).
+        const target = ev.relatedTarget as Element;
+        if (target && target.closest('.dropdown-content')) return;
         
         setTimeout(() => {
             if (resultsAsYouType) resultsAsYouType.classList.remove("dropdown-open");
@@ -285,28 +288,36 @@
                 type="text" 
                 name="q" 
 				placeholder={isListening ? 'Listening...' : (isProcessingAudio ? 'Thinking...' : searchPlaceholder)} 
-				class="input input-bordered md:w-64 w-full {enableVoiceSearch ? 'pr-16' : 'pr-10'} bg-base-200/50 focus:bg-base-100 focus:shadow-inner transition-all duration-200 rounded-xl"
+                class="input input-bordered md:w-64 w-full pr-16 sm:pr-20 bg-base-200/50 focus:bg-base-100 focus:shadow-inner transition-all duration-200 rounded-xl"
 				disabled={isProcessingAudio}
             />
-			<div class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center">
-				{#if enableVoiceSearch}
-					<button type="button" class="btn btn-xs btn-ghost btn-circle text-gray-400 hover:text-primary {isListening ? 'text-error animate-pulse' : ''}" on:click|preventDefault={toggleVoiceSearch} disabled={isProcessingAudio} aria-label="Voice Search">
-						{#if isProcessingAudio}
-							<span class="loading loading-spinner loading-xs text-primary"></span>
-						{:else}
-							<i class="bi {isListening ? 'bi-stop-circle-fill text-error' : 'bi-mic'} text-base"></i>
-						{/if}
-					</button>
-				{/if}
-				{#if q.length > 0 && !isProcessingAudio}
-					<button type="button" class="btn btn-xs btn-ghost btn-circle text-gray-400 hover:text-base-content" on:click|preventDefault={() => { q = ''; query(new Event('input'), ''); document.querySelector('input[name="q"]')?.focus(); }} aria-label="Clear">
-						<i class="bi bi-x-circle-fill text-base"></i>
-					</button>
-				{:else if !enableVoiceSearch && !isProcessingAudio} <!-- actually also hide magnifying glass if we have voice search -->
-					<div class="w-6 h-6 flex items-center justify-center pointer-events-none text-gray-400 mr-1">
-						<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-					</div>
-				{/if}
+            <div class="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-0.5 overflow-hidden">
+                <!-- Voice & Lens (Fades & Slides out to the right when typing) -->
+                <div class="flex items-center gap-0 transition-all duration-300 origin-right {q.length > 0 ? 'scale-90 opacity-0 pointer-events-none w-0 -mr-2' : 'scale-100 opacity-100 w-auto mr-0'}">
+                    {#if enableVoiceSearch}
+                        <button type="button" class="btn btn-xs btn-ghost btn-circle text-gray-400 hover:text-primary {isListening ? 'text-error animate-pulse' : ''}" on:mousedown|preventDefault on:click|preventDefault={toggleVoiceSearch} disabled={isProcessingAudio} aria-label="Voice Search">
+                            {#if isProcessingAudio}
+                                <span class="loading loading-spinner loading-xs text-primary"></span>
+                            {:else}
+                                <i class="bi {isListening ? 'bi-stop-circle-fill text-error' : 'bi-mic'} text-base"></i>
+                            {/if}
+                        </button>
+                    {/if}
+                    <a href="/compare" class="btn btn-xs btn-ghost btn-circle text-gray-400 hover:text-primary" aria-label="Audit Lens" on:mousedown|preventDefault on:click={(e) => { resultsAsYouType?.classList.remove('dropdown-open'); e.currentTarget.blur(); }}>
+                        <i class="bi bi-camera text-base"></i>
+                    </a>
+                </div>
+
+                <!-- Clear Button (Fades & Slides in from the right when typing) -->
+                <div class="transition-all duration-300 origin-right {q.length === 0 ? 'scale-90 opacity-0 pointer-events-none w-0' : 'scale-100 opacity-100 w-auto'}">
+                    {#if !isProcessingAudio}
+                        <button type="button" class="btn btn-xs btn-ghost btn-circle text-gray-400 hover:text-base-content" on:mousedown|preventDefault on:click|preventDefault={() => { q = ''; query(new Event('input'), ''); document.querySelector('input[name="q"]')?.focus(); }} aria-label="Clear">
+                            <i class="bi bi-x-circle-fill text-base"></i>
+                        </button>
+                    {:else}
+                        <span class="loading loading-spinner loading-xs text-primary mx-2"></span>
+                    {/if}
+                </div>
 			</div>
         </div>
 
@@ -364,3 +375,13 @@
     </div>
 </form>
 
+
+<style>
+    /* Kill DaisyUI's native :focus-within behavior to prevent the dropdown from flashing 
+       open when clicking tool buttons (Mic/Camera) inside the search container. */
+    :global(#resultsAsYouType:not(.dropdown-open) .dropdown-content) {
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+    }
+</style>

@@ -113,7 +113,7 @@
         {#if !predefinedScopeType}
             <!-- Step 1: Context Hint -->
             <div class="mb-8">
-                <input type="text" bind:value={scanHint} placeholder="Optional context (e.g. 'Sci-Fi paperbacks', 'Spices')..." class="input input-sm input-bordered w-full rounded-xl bg-base-100 text-xs shadow-inner" />
+                <input type="text" bind:value={scanHint} placeholder="Optional context (e.g. 'Sci-Fi paperbacks', 'Spices', 'Plants')..." class="input input-sm input-bordered w-full rounded-xl bg-base-100 text-xs shadow-inner" />
             </div>
         {/if}
 
