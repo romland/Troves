@@ -23,7 +23,6 @@
         scopeValue?: string;
         activeSchema?: any[];
     };
-    export let containerSpatialBaseline: any[] = [];
     export let containers: any[] = [];
     export let categories: any[] = [];
     export let tags: any[] = [];
@@ -37,6 +36,7 @@
     let isRefiltering = false;
     let autoGuessed = false;
     let strictAuditMode = false;
+    let activeBoxId: string | null = null;
 
     let actionModal: BottomSheet;
     let actionItem: any = null;
@@ -162,9 +162,10 @@
 
     // Map state to colors for AR glowing boxes
     $: arBoxes = [
-        ...unregistered.map(i => ({ box: i.box, colorClass: 'border-primary shadow-[0_0_15px_rgba(var(--p),0.8)]', id: i.title })),
-        ...elsewhere.map(i => ({ box: i.box, colorClass: 'border-warning shadow-[0_0_15px_rgba(var(--wa),0.8)]', id: i.title })),
-        ...correct.map(i => ({ box: i.box, colorClass: 'border-success shadow-[0_0_15px_rgba(var(--su),0.8)]', id: i.title }))
+        ...unregistered.map(i => ({ box: i.box, colorClass: 'border-primary shadow-[0_0_15px_rgba(var(--p),0.8)]', id: i.title, status: 'new' })),
+        ...elsewhere.map(i => ({ box: i.box, colorClass: 'border-warning shadow-[0_0_15px_rgba(var(--wa),0.8)]', id: i.title, status: 'elsewhere' })),
+        ...correct.map(i => ({ box: i.box, colorClass: 'border-success shadow-[0_0_15px_rgba(var(--su),0.8)]', id: i.title, status: 'correct' })),
+        ...missing.map(i => ({ box: i.box, colorClass: 'border-error shadow-[0_0_15px_rgba(var(--er),0.8)]', id: i.title, status: 'missing' }))
     ];
 
     async function quickAdd(item: any, target: 'inventory' | 'to buy' | 'todo', skipHumanCheck = false) {
@@ -293,16 +294,18 @@
         </span>
     </div>
 
-    <ARImagePreview src={results.draftPath} boxes={arBoxes} on:clickBox={(e) => {
-        const title = e.detail;
-        if (unregistered.some(i => i.title === title)) activeTab = 'unregistered';
-        else if (elsewhere.some(i => i.title === title)) activeTab = 'elsewhere';
-        else activeTab = 'correct';
-        
-        setTimeout(() => {
-            document.getElementById('card-' + title.replace(/\s+/g, '-'))?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }, 50);
-    }} />
+    <div class="sticky top-0 z-40 bg-base-100/95 backdrop-blur-xl pt-2 pb-4 -mx-6 px-6">
+        <ARImagePreview src={results.draftPath} boxes={arBoxes} {activeBoxId} on:clickBox={(e) => {
+            const title = e.detail;
+            if (unregistered.some(i => i.title === title)) activeTab = 'unregistered';
+            else if (elsewhere.some(i => i.title === title)) activeTab = 'elsewhere';
+            else activeTab = 'correct';
+            
+            setTimeout(() => {
+                document.getElementById('card-' + title.replace(/\s+/g, '-'))?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 50);
+        }} />
+    </div>
 
     <div class="grid {scopeType === 'container' ? 'grid-cols-2 md:grid-cols-4' : (scopeType !== 'all' ? 'grid-cols-3' : 'grid-cols-2')} gap-1 bg-base-200/80 p-1 rounded-2xl border border-base-300 w-full">
         {#if scopeType !== 'all'}
@@ -347,31 +350,6 @@
 
     {#if activeTab === 'missing'}
         <div class="form-control bg-base-200/50 p-3 rounded-2xl border border-base-200 mb-2">
-            {#if containerSpatialBaseline.length > 0}
-                <div class="mb-6 bg-base-200/50 p-4 rounded-3xl border border-base-200">
-                    <h4 class="font-bold text-sm mb-2 flex items-center gap-2"><i class="bi bi-intersect text-warning"></i> Spatial Audit Baseline</h4>
-                    <div class="text-xs text-gray-500">Comparing scanned photo against {containerSpatialBaseline.length} mapped container slots. Anomalies are color-coded below.</div>
-                
-                <div class="w-full mt-4 relative overflow-hidden shadow-sm border border-base-300 bg-base-300 rounded-[2rem]">
-                     <SpatialMap 
-                         imageUrl={results.draftPath} 
-                         polygons={containerSpatialBaseline} 
-                         readonly={true} 
-                         activePolyIndex={null}
-                         mappedEntities={containerSpatialBaseline.map(p => {
-                              const pStr = JSON.stringify(p);
-                              const m = missing.find(m => m.spatialMap === pStr);
-                              if (m) return { title: m.title, isError: true };
-                              return { title: 'Present', isError: false };
-                         })}
-                     />
-                </div>
-                
-                <button class="btn btn-outline btn-sm w-full mt-4 rounded-xl" on:click={() => dispatch('remap', results.draftPath)}>
-                    <i class="bi bi-bounding-box-circles"></i> Update Map with this Photo
-                </button>
-                </div>
-            {/if}
             <label class="label cursor-pointer py-0">
                 <span class="label-text flex flex-col">
                     <span class="font-bold text-sm">Strict Quantity Audit</span>
@@ -384,7 +362,7 @@
         {#if missing.length === 0} <CompareEmptyState type="missing" /> {:else}
             <div class="flex flex-col gap-2.5">
                 {#each missing as item}
-                    <div id="card-{item.title.replace(/\s+/g, '-')}" class="scroll-mt-24">
+                    <div id="card-{item.title.replace(/\s+/g, '-')}" class="scroll-mt-24 transition-transform {activeBoxId === item.title ? 'scale-[1.02] ring-2 ring-error rounded-2xl' : ''}" on:mouseenter={() => activeBoxId = item.title} on:mouseleave={() => activeBoxId = null}>
                         <CompareItemCard {item} type="missing" draftPath={results.draftPath}
                             on:zoom={() => item.thumbPath ? lightbox.open({ orgPath: item.thumbPath, showOriginal: true }) : lightbox.open({ orgPath: results.draftPath, thumbPath: results.draftPath, showOriginal: true, box: item.box })}
                         >
@@ -400,7 +378,7 @@
         {#if groupedUnregistered.length === 0} <CompareEmptyState type="unregistered" /> {:else}
             <div class="flex flex-col gap-2.5">
                 {#each groupedUnregistered as item}
-                    <div id="card-{item.title.replace(/\s+/g, '-')}" class="scroll-mt-24">
+                    <div id="card-{item.title.replace(/\s+/g, '-')}" class="scroll-mt-24 transition-transform {activeBoxId === item.title ? 'scale-[1.02] ring-2 ring-primary rounded-2xl' : ''}" on:mouseenter={() => activeBoxId = item.title} on:mouseleave={() => activeBoxId = null}>
                         <CompareItemCard {item} type="unregistered" draftPath={results.draftPath} 
                             on:zoom={() => lightbox.open({ orgPath: results.draftPath, thumbPath: results.draftPath, showOriginal: true, box: item.box })}
                             on:discard={(e) => results.newToYou = results.newToYou.filter(i => i.title !== e.detail.title)}
@@ -421,7 +399,7 @@
         {#if groupedElsewhere.length === 0} <CompareEmptyState type="elsewhere" /> {:else}
             <div class="flex flex-col gap-2.5">
                 {#each groupedElsewhere as item}
-                    <div id="card-{item.title.replace(/\s+/g, '-')}" class="scroll-mt-24">
+                    <div id="card-{item.title.replace(/\s+/g, '-')}" class="scroll-mt-24 transition-transform {activeBoxId === item.title ? 'scale-[1.02] ring-2 ring-warning rounded-2xl' : ''}" on:mouseenter={() => activeBoxId = item.title} on:mouseleave={() => activeBoxId = null}>
                         <CompareItemCard {item} type="elsewhere" draftPath={results.draftPath} on:zoom={() => lightbox.open({ orgPath: results.draftPath, thumbPath: results.draftPath, showOriginal: true, box: item.box })} on:zoomMatch={(e) => lightbox.open({ orgPath: e.detail.thumbPath || e.detail.orgPath, showOriginal: true })}>
                             <div slot="actions" class="flex flex-col sm:flex-row items-center gap-1">
                                 <button type="button" aria-label="Add" class="btn btn-circle btn-ghost btn-sm text-gray-400 hover:text-primary" title="Force add as new" on:click={() => { actionItem = item; actionModal.showModal(); }}><i class="bi bi-plus-lg text-lg"></i></button>
@@ -436,7 +414,7 @@
         {#if groupedCorrect.length === 0} <CompareEmptyState type="correct" /> {:else}
             <div class="flex flex-col gap-2.5">
                 {#each groupedCorrect as item}
-                    <div id="card-{item.title.replace(/\s+/g, '-')}" class="scroll-mt-24">
+                    <div id="card-{item.title.replace(/\s+/g, '-')}" class="scroll-mt-24 transition-transform {activeBoxId === item.title ? 'scale-[1.02] ring-2 ring-success rounded-2xl' : ''}" on:mouseenter={() => activeBoxId = item.title} on:mouseleave={() => activeBoxId = null}>
                         <CompareItemCard {item} type="correct" draftPath={results.draftPath} on:zoom={() => lightbox.open({ orgPath: results.draftPath, thumbPath: results.draftPath, showOriginal: true, box: item.box })} on:zoomMatch={(e) => lightbox.open({ orgPath: e.detail.thumbPath || e.detail.orgPath, showOriginal: true })}>
                             <div slot="actions" class="flex flex-col sm:flex-row items-center gap-1">
                                 <button type="button" aria-label="Add" class="btn btn-circle btn-ghost btn-sm text-gray-400 hover:text-primary" title="Force add as new" on:click={() => { actionItem = item; actionModal.showModal(); }}><i class="bi bi-plus-lg text-lg"></i></button>

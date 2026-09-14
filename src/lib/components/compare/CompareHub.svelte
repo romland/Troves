@@ -8,7 +8,7 @@
     export let tags: any[] = [];
     export let predefinedScopeType: string | null = null;
     export let predefinedScopeValue: string | null = null;
-    export let containerSpatialBaseline: any[] = [];
+    export let isSpatialAudit: boolean = false;
     const dispatch = createEventDispatcher();
 
     let fileInputCamera: HTMLInputElement;
@@ -67,7 +67,13 @@
         if (scanHint.trim()) fd.append('hint', scanHint.trim());
 
         try {
-            const res = await fetch('/api/compare-collection', { method: 'POST', body: fd });
+            let res;
+            if (isSpatialAudit && predefinedScopeType === 'container') {
+                res = await fetch('/api/spatial-audit', { method: 'POST', body: fd });
+            } else {
+                res = await fetch('/api/compare-collection', { method: 'POST', body: fd });
+            }
+
             const data = await res.json();
             if (res.ok && data.success) {
                 compareResults = data;
@@ -135,6 +141,6 @@
             <h2 class="text-xl font-bold tracking-tight">Scan Results</h2>
             <button type="button" class="btn btn-sm btn-ghost rounded-xl gap-1 text-gray-500" on:click={reset}><i class="bi bi-arrow-counterclockwise"></i> Scan Again</button>
         </div>
-        <CompareResults results={compareResults} {containers} {categories} {tags} {containerSpatialBaseline} on:notify={(e) => dispatch(e.detail.status, e.detail.message)} on:remap={(e) => dispatch('remap', e.detail)} />
+        <CompareResults results={compareResults} {containers} {categories} {tags} on:notify={(e) => dispatch(e.detail.status, e.detail.message)} />
     {/if}
 </div>

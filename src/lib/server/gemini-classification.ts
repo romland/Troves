@@ -162,6 +162,46 @@ export async function guessProductDetails(localFilePath: string, hint: string = 
   return JSON.parse(rawText);
 }
 
+export async function verifySpatialGrid(localFilePath: string, baselineMap: any[], tracking?: any) {
+  const fileBuffer = fs.readFileSync(localFilePath);
+  const base64Data = fileBuffer.toString('base64');
+  const mimeType = getImageMimeType(localFilePath);
+
+  const promptText = `Analyze this top-down photo of a storage container. 
+Below is a JSON array representing specific compartments (defined by 4-point polygons normalized 0-1000) and the items we EXPECT to find in them based on our database.
+
+BASELINE MAP:
+${JSON.stringify(baselineMap, null, 2)}
+
+For EACH compartment in the map, verify its contents against the expectation:
+- If the expected item is there, set status to "PRESENT".
+- If the slot is completely empty, set status to "EMPTY".
+- If there is an item but it is clearly NOT the expected item, set status to "DIFFERENT" and provide a brief 'title' and 'description' of what is actually there.
+- If the baseline expected nothing (null), but you see an item, set status to "DIFFERENT" and provide the title/description.
+
+Return an array of results that matches the exact order and length of the baseline map.`;
+
+  const jsonSchema = {
+      type: 'object',
+      properties: { 
+        results: { 
+          type: 'array', 
+          items: {
+            type: 'object',
+            properties: { status: { type: 'string', enum: ['PRESENT', 'EMPTY', 'DIFFERENT'] }, title: { type: 'string', nullable: true }, description: { type: 'string', nullable: true } },
+            required: ['status']
+          }
+        } 
+      },
+      required: ['results']
+  };
+
+  const rawText = await analyzeImage(promptText, mimeType, base64Data, true, jsonSchema, 'Spatial Grid Audit', tracking, 'MULTISCAN');
+  return JSON.parse(rawText);
+}
+
+
+
 export async function extractKVPsFromText(text: string): Promise<{ rows: string[][] }> {
   const promptText = `Extract tabular data, specifications, or key-value structures from the following messy text. 
 Return the data as a 2D array of strings ('rows'), where each row represents an item or property line, and columns represent distinct data fields (e.g., Attribute, Value, Units, etc.). 

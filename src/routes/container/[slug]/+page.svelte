@@ -339,7 +339,7 @@
 
 <MoveContainerModal bind:this={moveModal} allContainers={data.allContainers} />
 
-<Modal bind:this={auditModal} position="bottom" boxClass="p-0 overflow-hidden bg-base-100 shadow-2xl border border-base-200 sm:rounded-[2.5rem]">
+<Modal bind:this={auditModal} position="bottom" boxClass="p-0 overflow-y-auto max-h-[90vh] bg-base-100 shadow-2xl border border-base-200 sm:rounded-[2.5rem]">
     <div class="p-6">
         <CompareHub 
             bind:this={compareHubComponent}
@@ -348,20 +348,10 @@
             tags={data.tags}
             predefinedScopeType="container"
             predefinedScopeValue={data.item.name}
-            containerSpatialBaseline={polygons}
+            isSpatialAudit={polygons.length > 0}
             on:processingStart={(ev) => notify("loading", ev.detail.message, ev.detail.taskId)}
             on:processingComplete={(ev) => notify(ev.detail.status, ev.detail.message, ev.detail.taskId)}
             on:success={(ev) => notify("success", ev.detail)}
-            on:remap={async (e) => {
-                const newPhoto = e.detail;
-                auditModal.close();
-                const fd = new FormData();
-                fd.append('photoPath', newPhoto);
-                await fetch('?/updatePhoto', { method: 'POST', body: fd, headers: { 'x-sveltekit-action': 'true' }});
-                data.item.photoPath = newPhoto;
-                notify('success', 'Photo updated. Re-mapping...');
-                triggerAiMapping();
-            }}
         />
     </div>
 </Modal>
