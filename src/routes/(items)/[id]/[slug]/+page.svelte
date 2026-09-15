@@ -367,9 +367,9 @@ $: if (data.duplicateItemDetails?.debugTrace) {
                 </div>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {#each data.relatedItems as related}
-                        <a href="/{related.id}/{related.slug}" class="block hover:scale-[1.02] transition-transform">
+                        <div class="block hover:scale-[1.02] transition-transform">
                             <ItemMiniCard item={related} />
-                        </a>
+                        </div>
                     {/each}
                 </div>
             </div>
