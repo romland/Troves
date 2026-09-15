@@ -231,7 +231,19 @@ export function evaluateTextIdentity(scanTitle: string, scanDesc: string, dbTitl
         }
     }
 
-    return { isStrongTextMatch, isCompositeVeto, isGenericTitle, titleSim, normScanTitle, normDbTitle, normScanDesc, normDbDesc };
+    // --- Spec Clash Detection ---
+    // Isolates versions, specs, and model numbers (e.g. '10k', 'm3x10', 'v2', 'ps5')
+    const extractSpecs = (str: string) => (str || '').toLowerCase().match(/\b[a-z]*\d+(?:\.\d+)?[a-z]*\b/g) || [];
+    const scanSpecs = extractSpecs(scanTitle);
+    const dbSpecs = extractSpecs(dbTitle);
+    let isSpecClash = false;
+    if (scanSpecs.length > 0 && dbSpecs.length > 0) {
+        const dbSpecSet = new Set(dbSpecs);
+        const scanSpecSet = new Set(scanSpecs);
+        if (scanSpecs.some(s => !dbSpecSet.has(s)) && dbSpecs.some(s => !scanSpecSet.has(s))) isSpecClash = true;
+    }
+
+    return { isStrongTextMatch, isCompositeVeto, isGenericTitle, titleSim, normScanTitle, normDbTitle, normScanDesc, normDbDesc, isSpecClash };
 }
 
 export function computeMatch(
@@ -443,6 +455,19 @@ export function computeMatch(
         if (textEval.titleSim < 0.35 && !textEval.normDbTitle.includes(textEval.normScanTitle) && !textEval.normScanTitle.includes(textEval.normDbTitle)) {
             strictFailures += 1;
             debugTrace.push(`[VETO: TITLE] Specific identities clash ('${scan.title}' vs '${dbItem.title}')`);
+        }
+    }
+
+    if (textEval.isSpecClash) {
+        strictFailures += 1.5;
+        debugTrace.push(`[VETO: SPEC CLASH] Distinct numerical specs conflict in titles ('${scan.title}' vs '${dbItem.title}')`);
+    }
+
+    const isSparse = (!scan.extractedAttributes || Object.keys(scan.extractedAttributes).length === 0) && (!dbItem.attributes || dbItem.attributes.length === 0);
+    if (isSparse && !isMedia) {
+        if (!textEval.isStrongTextMatch && fuzzyMatches < 4.0) {
+            strictFailures += 1.0;
+            debugTrace.push(`[SPARSITY PENALTY] Items lack structured attributes. Requiring higher confidence.`);
         }
     }
 
