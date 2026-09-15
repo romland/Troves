@@ -147,23 +147,28 @@ export async function downloadAndStoreDocuments(target: { itemId?: number, timel
 					await logActivity(target.itemId, 'Video Archiver', `Detected video: "${title}". Starting heavy download...`, 'info');
 				});
 				if (videoData) {
-					await db.document.update({
-						where: { id: document?.id },
-						data: {
-							type: "video",
-							title: videoData.title,
-							path: videoData.path,
-							extracts: JSON.stringify([videoData.description.substring(0, 1000)])
-						}
-					});
-					await logActivity(target.itemId, 'Video Archiver', `Successfully archived video: ${videoData.title}`, 'success');
+                const isDedicatedVideoSite = /youtube\.com|youtu\.be|vimeo\.com|tiktok\.com|twitter\.com|x\.com|instagram\.com|twitch\.tv/i.test(line);
 					
+                let vidDocId = document?.id;
+                if (!isDedicatedVideoSite) {
+                    const vidDoc = await db.document.create({
+                        data: { itemId: target.itemId || null, timelineNoteId: target.timelineNoteId || null, type: "video", title: videoData.title, source: line, path: videoData.path, extracts: JSON.stringify([videoData.description.substring(0, 1000)]) }
+                    });
+                    vidDocId = vidDoc.id;
+                    await logActivity(target.itemId, 'Video Archiver', `Archived embedded video: ${videoData.title}`, 'success');
+                } else {
+                    await db.document.update({ where: { id: document?.id }, data: { type: "video", title: videoData.title, path: videoData.path, extracts: JSON.stringify([videoData.description.substring(0, 1000)]) } });
+                    await logActivity(target.itemId, 'Video Archiver', `Successfully archived video: ${videoData.title}`, 'success');
+                }
+
 					// Fire and forget thumbnail extraction
 					import('$lib/server/thumbExtractor').then(({ generateDocumentThumbnail }) => {
-                        generateDocumentThumbnail(document.id, videoData.path.replace('/images/u', 'data/images/u'), 'video');
+                    generateDocumentThumbnail(vidDocId, videoData.path.replace('/images/u', 'data/images/u'), 'video');
 					});
 					
-					continue; // Skip SingleFile logic
+                if (isDedicatedVideoSite) {
+                    continue; // Skip SingleFile logic ONLY if it's a dedicated video site
+                }
 				}
 			} catch(e) {
 				console.error("Video processing error:", e);
