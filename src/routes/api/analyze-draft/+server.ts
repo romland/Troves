@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { guessProductDetails, analyzePhoto } from '$lib/server/gemini-classification';
+import { guessProductDetails, analyzePhoto } from '$lib/server/vision-classification';
 import { processDraftPhotoBackground, activeDrafts } from '$lib/server/photouploads';
 import { apiQueue } from '$lib/server/queue/index';
 import { getActiveSchema } from '$lib/server/ontology';

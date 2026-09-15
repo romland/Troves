@@ -10,7 +10,7 @@ import { getActiveSchema } from '$lib/server/ontology';
 import { computeMatch, normalizeStr, findBestMatch, computeIdfMap, findBestMatchesForBatch } from '$lib/server/matcher';
 import { withRetry } from '$lib/server/retry';
 import { tokenizeAndStem } from '$lib/server/nlp';
-import { analyzeBulkCollection } from '$lib/server/gemini-classification';
+import { analyzeBulkCollection } from '$lib/server/vision-classification';
 
 
 export const POST: RequestHandler = async ({ request, locals }) => {

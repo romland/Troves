@@ -38,7 +38,7 @@ const ocrCircuitBreaker = {
 import type { Item, Photo } from '@prisma/client';
 import slugify from 'slugify';
 import QRUrlDownloader from "$lib/server/urldownloader";
-// import { analyzePhoto } from '$lib/server/gemini-classification';
+// import { analyzePhoto } from '$lib/server/vision-classification';
 // import { getExistingCategoryNames, getOrCreateCategory } from '$lib/server/categories';
 
 export function readValidSidecar(jsonPath: string) {
@@ -121,7 +121,7 @@ export async function enrichPhotoData(localPath: string, webPath: string, type: 
     if (!skipLlm && (type === 'product' || type === 'information' || type === 'other')) {
         geminiPromise = (async () => {
             try {
-                const { analyzePhoto } = await import('$lib/server/gemini-classification');
+                const { analyzePhoto } = await import('$lib/server/vision-classification');
                 const { getExistingCategoryNames } = await import('$lib/server/categories');
                 const { getActiveSchema } = await import('$lib/server/ontology');
                 const existingCategories = await getExistingCategoryNames(inventoryId);
@@ -386,7 +386,7 @@ export async function processItemPhotosBackground(item: any) {
                             if (!aiTitle) {
                                 await logActivity(item.id, 'Analysis', `Attempting to auto-generate missing Item title...`);
                                 const currentLocalPath = `data${enriched.orgPath || photo.orgPath}`;
-                                const { guessProductDetails } = await import('$lib/server/gemini-classification');
+                                const { guessProductDetails } = await import('$lib/server/vision-classification');
                                 const details = await apiQueue.add(() => guessProductDetails(currentLocalPath, "", item.id));
                                 aiTitle = details?.title;
                                 aiDesc = details?.description;

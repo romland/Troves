@@ -2,7 +2,7 @@ import { json } from '@sveltejs/kit';
 import { db } from '$lib/server/database';
 import { assertCanMutate } from '$lib/server/security';
 import { MediaIngest } from '$lib/server/services/MediaIngest';
-import { verifySpatialGrid } from '$lib/server/gemini-classification';
+import { verifySpatialGrid } from '$lib/server/vision-classification';
 import { taskManager } from '$lib/server/taskManager';
 import { getActiveSchema } from '$lib/server/ontology';
 import { alignPolygonsToNewImage } from '$lib/server/vision/pureCv';

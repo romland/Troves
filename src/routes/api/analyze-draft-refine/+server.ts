@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { guessProductDetails } from '$lib/server/gemini-classification';
+import { guessProductDetails } from '$lib/server/vision-classification';
 import { uploadsDiskFolder } from '$lib/server/constants';
 import path from 'path';
 import { apiQueue } from '$lib/server/queue/index';

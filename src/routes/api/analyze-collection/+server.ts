@@ -11,7 +11,7 @@ import { BASE_COLORS } from '$lib/server/colors';
 import { tokenizeAndStem } from '$lib/server/nlp';
 import { MediaIngest } from '$lib/server/services/MediaIngest';
 import fs from 'fs';
-import { analyzeBulkCollection } from '$lib/server/gemini-classification';
+import { analyzeBulkCollection } from '$lib/server/vision-classification';
 
 
 export const POST: RequestHandler = async ({ request, locals }) => {

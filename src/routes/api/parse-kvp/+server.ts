@@ -1,7 +1,7 @@
 // src/routes/api/parse-kvp/+server.ts
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { extractKVPsFromText } from '$lib/server/gemini-classification';
+import { extractKVPsFromText } from '$lib/server/vision-classification';
 import { apiQueue } from '$lib/server/queue/index';
 
 export const POST: RequestHandler = async ({ request, locals }) => {

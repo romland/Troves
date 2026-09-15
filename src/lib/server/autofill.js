@@ -2,7 +2,7 @@ import { getProductFromReverseImageSearch } from "./llm";
 import { reverseImageSearch } from "./reverseimagesearch";
 import { spawn } from 'child_process'
 import { env } from '$env/dynamic/private';
-import { guessProductDetails } from "./gemini-classification";
+import { guessProductDetails } from "./vision-classification";
 
 
 /*

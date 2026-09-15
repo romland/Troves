@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { guessProductDetails } from '$lib/server/gemini-classification';
+import { guessProductDetails } from '$lib/server/vision-classification';
 import { db } from '$lib/server/database';
 
 export async function POST({ request, locals }) {
