@@ -55,4 +55,13 @@
             {#if isAskingAi}<span class="loading loading-spinner loading-xs"></span>{:else}Ask{/if}
         </button>
     </div>
+    {#if isAskingAi}
+        <div class="mt-4 flex items-start gap-3 animate-fade-in text-sm text-gray-500">
+            <i class="bi bi-robot text-primary/50 animate-pulse text-2xl mt-1"></i>
+            <div class="bg-base-100 px-4 py-3 rounded-2xl rounded-tl-none shadow-sm flex items-center gap-3 border border-base-200">
+                <span class="loading loading-dots loading-xs text-primary"></span>
+                <span class="font-medium text-base-content/80">Analyzing your item...</span>
+            </div>
+        </div>
+    {/if}
 </div>
