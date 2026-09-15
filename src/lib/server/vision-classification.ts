@@ -222,14 +222,14 @@ Return an array of results that matches the exact order and length of the baseli
 
 export async function extractKVPsFromText(text: string): Promise<{ rows: string[][] }> {
 	const promptText = `Extract tabular data, specifications, or key-value structures from the following messy text. 
-Return the data as a 2D array of strings ('rows'), where each row represents an item or property line, and columns represent distinct data fields (e.g., Attribute, Value, Units, etc.). 
+Return the data as a JSON object containing a 2D array of strings ('rows'), where each row represents an item or property line, and columns represent distinct data fields (e.g., Attribute, Value, Units, etc.).
 If it is a simple list of attributes, structure each row with 2 columns: [Attribute, Value].
 	
 TEXT:
 	${text}`;
 	
 	const { generateText } = await import('./ai/index');
-	const resText = await generateText('You are a helpful data extraction assistant.', promptText, true, { type: 'object', properties: { rows: { type: 'array', items: { type: 'array', items: { type: 'string' } } } }, required: ['rows'] }, 'KVP Extraction', undefined, 'PARSER');
+	const resText = await generateText('You are a helpful data extraction assistant.', promptText, true, { type: 'object', properties: { rows: { type: 'array', items: { type: 'array', items: { type: 'string' } } } }, required: ['rows'] }, 'KVP Extraction', undefined, 'KVPPARSER');
 	return JSON.parse(resText);
 }
 

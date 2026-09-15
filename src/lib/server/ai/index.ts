@@ -28,7 +28,8 @@ export function getAIConfig(modality: AIModality, subTask?: string): AIConfig {
     if (!apiKey) {
         if (provider === 'gemini') apiKey = env.GEMINI_API_KEY;
         else if (provider === 'groq') apiKey = env.GROQ_API_TOKEN;
-        else if (provider === 'openai' || provider === 'replicate') apiKey = env.OPENAI_API_TOKEN;
+        else if (provider === 'openai') apiKey = env.OPENAI_API_TOKEN;
+        else if (provider === 'replicate') apiKey = env.REPLICATE_API_KEY;
     }
 
     return {
@@ -107,17 +108,31 @@ export async function generateText(
         if (config.provider === 'groq') {
             const groq = getGroqClient(config);
             // Groq does not support json_schema yet, only json_object
-            const res = await withRetry(() => groq.chat.completions.create({
-                model: config.model || 'llama-3.3-70b-versatile',
-                messages: [
-                    { role: 'system', content: systemPrompt },
-                    { role: 'user', content: userPrompt }
-                ],
-                temperature: 0.0,
-                response_format: jsonMode ? { type: 'json_object' } : undefined
-            }), 3, 2000, taskName, { prompt: systemPrompt + '\n\n' + userPrompt, provider: 'groq', ...tracking });
-            
-            return res.choices[0]?.message?.content || '';
+
+            console.log("\n[GROQ DEBUG] --- INITIATING REQUEST ---");
+            console.log(`[GROQ DEBUG] Model: ${config.model || 'llama-3.3-70b-versatile'}`);
+            console.log(`[GROQ DEBUG] System Prompt length: ${systemPrompt.length} chars`);
+            console.log(`[GROQ DEBUG] User Prompt length: ${userPrompt.length} chars`);
+            console.log(`[GROQ DEBUG] User Prompt Preview:`, userPrompt.substring(0, 300).replace(/\n/g, '\\n') + '...');
+
+            try {
+                const res = await withRetry(() => groq.chat.completions.create({
+                    model: config.model || 'llama-3.3-70b-versatile',
+                    messages: [
+                        { role: 'system', content: systemPrompt },
+                        { role: 'user', content: userPrompt }
+                    ],
+                    temperature: 0.0,
+                    response_format: jsonMode ? { type: 'json_object' } : undefined
+                }), 3, 2000, taskName, { prompt: systemPrompt + '\n\n' + userPrompt, provider: 'groq', ...tracking });
+                
+                return res.choices[0]?.message?.content || '';
+            } catch (err: any) {
+                console.error("\n[GROQ DEBUG] --- FATAL ERROR ---");
+                console.error(JSON.stringify(err.error || err, null, 2));
+                console.error("[GROQ DEBUG] Raw Failed Generation:", err.error?.error?.failed_generation);
+                throw err;
+            }
         }
 
         // Default: Universal OpenAI Format
