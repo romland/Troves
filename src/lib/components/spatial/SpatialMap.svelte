@@ -269,8 +269,12 @@
     }
 </script>
 
-<svelte:window on:pointermove={handlePointerMove} on:pointerup={handlePointerUp} on:pointercancel={handlePointerUp}
-    on:keydown={handleKeydown} />
+<svelte:window
+    on:pointermove={handlePointerMove}
+    on:pointerup={handlePointerUp}
+    on:pointercancel={handlePointerUp}
+    on:keydown={handleKeydown}
+/>
 
 <div
     class="relative w-full h-[50vh] sm:h-[65vh] bg-base-300 rounded-[2rem] overflow-hidden shadow-inner border border-base-200">
@@ -324,143 +328,145 @@
     <div class="w-full h-full relative overflow-hidden bg-base-300 {isPanning ? 'cursor-grabbing' : 'cursor-grab'}" on:pointerdown={startPan} on:click={() => activePolyIndex = null}>
         <div class="absolute inset-0 flex items-center justify-center p-6 sm:p-12 pointer-events-none">
             <div class="relative origin-center shadow-2xl ring-1 ring-black/5 shrink-0 pointer-events-auto" style="width: {zoomLevel}%; transform: translate({panX}px, {panY}px); transition: width 0.2s ease-out;">
-            <img src={imageUrl} alt="Container map" class="w-full h-auto block pointer-events-none" />
-            
-            <svg 
-                bind:this={svgNode} 
-                viewBox="0 0 1000 1000" 
-                preserveAspectRatio="none" 
-                class="absolute inset-0 w-full h-full cursor-crosshair z-10 overflow-visible"
-            >
-                {#if isWarpMode}
-                    <!-- Render the Projected Inner Grid as a Preview -->
-                    {#each previewGrid as poly}
-                        <polygon points={poly.map(p => p.join(',')).join(' ')} class="fill-accent/10 stroke-accent/50 stroke-[2px] pointer-events-none" vector-effect="non-scaling-stroke" />
-                    {/each}
-                {:else}
-                    {#each polygons as poly, i}
-                        {@const isActive = activePolyIndex === i}
-                                {@const isMapped = !!mappedEntities[i]}
-                        {@const cx = (poly[0][0] + poly[1][0] + poly[2][0] + poly[3][0]) / 4}
-                        {@const cy = (poly[0][1] + poly[1][1] + poly[2][1] + poly[3][1]) / 4}
-                        <!-- Base Polygon Area -->
-                        <!-- svelte-ignore a11y-click-events-have-key-events -->
-                        <!-- svelte-ignore a11y-no-static-element-interactions -->
-                        <polygon 
-                            points={poly.map(p => p.join(',')).join(' ')} 
-                                    class="transition-colors duration-200 {isActive ? 'fill-accent/40 stroke-accent stroke-[5px] drop-shadow-md' : (isMapped ? 'fill-success/20 stroke-success/60 stroke-[3px] hover:fill-success/40' : 'fill-base-content/10 stroke-base-content/40 stroke-[3px] hover:fill-base-content/20')} cursor-pointer"
+                <img src={imageUrl} alt="Container map" class="w-full h-auto block pointer-events-none" />
+                
+                <svg 
+                    bind:this={svgNode} 
+                    viewBox="0 0 1000 1000" 
+                    preserveAspectRatio="none" 
+                    class="absolute inset-0 w-full h-full cursor-crosshair z-10 overflow-visible"
+                >
+                    {#if isWarpMode}
+                        <!-- Render the Projected Inner Grid as a Preview -->
+                        {#each previewGrid as poly}
+                            <polygon points={poly.map(p => p.join(',')).join(' ')} class="fill-accent/10 stroke-accent/50 stroke-[2px] pointer-events-none" vector-effect="non-scaling-stroke" />
+                        {/each}
+                    {:else}
+                        {#each polygons as poly, i}
+                            {@const isActive = activePolyIndex === i}
+                            {@const isMapped = !!mappedEntities[i]}
+                            {@const cx = (poly[0][0] + poly[1][0] + poly[2][0] + poly[3][0]) / 4}
+                            {@const cy = (poly[0][1] + poly[1][1] + poly[2][1] + poly[3][1]) / 4}
+
+                            <!-- Base Polygon Area -->
+                            <!-- svelte-ignore a11y-click-events-have-key-events -->
+                            <!-- svelte-ignore a11y-no-static-element-interactions -->
+                            <polygon 
+                                points={poly.map(p => p.join(',')).join(' ')} 
+                                class="transition-colors duration-200 {isActive ? 'fill-accent/40 stroke-accent stroke-[5px] drop-shadow-md' : (isMapped ? 'fill-success/20 stroke-success/60 stroke-[3px] hover:fill-success/40' : 'fill-base-content/10 stroke-base-content/40 stroke-[3px] hover:fill-base-content/20')} cursor-pointer"
                                 vector-effect="non-scaling-stroke"
                                 on:click={(e) => makeActive(i, e)}
-                            on:pointerdown={(e) => startDragPoly(i, e)}
-                            on:dragover|preventDefault
-                            on:drop={(e) => handleDrop(i, e)}
-                        />
-                        {#if zoomLevel >= 250 && isMapped && EXPERIMENTAL_PERSPECTIVE_LABELS}
-                            <!-- 2.5D Affine Warp Projection -->
-                            {@const w = Math.hypot(poly[1][0] - poly[0][0], poly[1][1] - poly[0][1]) || 1}
-                            {@const h = Math.hypot(poly[3][0] - poly[0][0], poly[3][1] - poly[0][1]) || 1}
-                            {@const ratio = h / w}
-                            
-                            {@const a = (poly[1][0] - poly[0][0]) / w}
-                            {@const b = (poly[1][1] - poly[0][1]) / w}
-                            {@const floorC = (poly[3][0] - poly[0][0]) / h}
-                            {@const floorD = (poly[3][1] - poly[0][1]) / h}
-                            
-                            <!-- Smoothly transition from Floor plane to Wall plane as perspective steepens -->
-                            {@const wallBlend = Math.max(0, Math.min(1, (0.8 - ratio) / 0.4))}
-                            {@const c = floorC * (1 - wallBlend) + (-b) * wallBlend}
-                            {@const d = floorD * (1 - wallBlend) + (a) * wallBlend}
+                                on:pointerdown={(e) => startDragPoly(i, e)}
+                                on:dragover|preventDefault
+                                on:drop={(e) => handleDrop(i, e)}
+                            />
 
-                            <g transform="matrix({a}, {b}, {c}, {d}, {cx}, {cy})">
-                                <text x="0" y="0" text-anchor="middle" dominant-baseline="middle" class="fill-transparent stroke-black/80 text-[14px] sm:text-[18px] font-black pointer-events-none hidden md:block" stroke-width="4" stroke-linejoin="round">
-                                    {mappedEntities[i].title || mappedEntities[i].name}
-                                </text>
-                                <text x="0" y="0" text-anchor="middle" dominant-baseline="middle" class="fill-white text-[14px] sm:text-[18px] font-black pointer-events-none hidden md:block">
-                                    {mappedEntities[i].title || mappedEntities[i].name}
-                                </text>
-                            </g>
-                        {/if}
-                    {/each}
-                {/if}
-            </svg>
-                            
-            <!-- HTML OVERLAY FOR PERFECT CIRCLES -->
-            <div class="absolute inset-0 w-full h-full z-20 pointer-events-none overflow-visible">
-                {#if isWarpMode}
-                    <!-- 4 Master Drag Handles -->
-                    {#each warpCorners as pt, ptIdx}
-                        <div 
-                            class="absolute w-8 h-8 -ml-4 -mt-4 bg-base-100 rounded-full border-[4px] border-secondary cursor-move drop-shadow-xl hover:border-[6px] hover:bg-secondary transition-all pointer-events-auto"
-                            style="left: {pt[0] / 10}%; top: {pt[1] / 10}%;"
-                            on:pointerdown={(e) => startDrag(-1, ptIdx, e)}
-                            on:click|stopPropagation
-                        ></div>
-                    {/each}
-                {:else}
-                    <!-- Center Markers (Not Active) -->
-                    {#each polygons as poly, i}
-                        {@const isActive = activePolyIndex === i}
-                            {@const isMapped = !!mappedEntities[i]}
-                        {@const cx = (poly[0][0] + poly[1][0] + poly[2][0] + poly[3][0]) / 4}
-                        {@const cy = (poly[0][1] + poly[1][1] + poly[2][1] + poly[3][1]) / 4}
-                        
-                        {#if !isActive}
-                                {#if isMapped}
-                                <div class="absolute w-7 h-7 -ml-3.5 -mt-3.5 bg-success rounded-full shadow-sm flex items-center justify-center pointer-events-none" style="left: {cx / 10}%; top: {cy / 10}%;">
-                                    <i class="bi bi-check text-white text-2xl mt-0.5"></i>
-                                </div>
-                            {:else}
-                                <div class="absolute w-3 h-3 -ml-1.5 -mt-1.5 bg-base-content/30 rounded-full pointer-events-none" style="left: {cx / 10}%; top: {cy / 10}%;"></div>
+                            {#if zoomLevel >= 250 && isMapped && EXPERIMENTAL_PERSPECTIVE_LABELS}
+                                <!-- 2.5D Affine Warp Projection -->
+                                {@const w = Math.hypot(poly[1][0] - poly[0][0], poly[1][1] - poly[0][1]) || 1}
+                                {@const h = Math.hypot(poly[3][0] - poly[0][0], poly[3][1] - poly[0][1]) || 1}
+                                {@const ratio = h / w}
+                                
+                                {@const a = (poly[1][0] - poly[0][0]) / w}
+                                {@const b = (poly[1][1] - poly[0][1]) / w}
+                                {@const floorC = (poly[3][0] - poly[0][0]) / h}
+                                {@const floorD = (poly[3][1] - poly[0][1]) / h}
+                                
+                                <!-- Smoothly transition from Floor plane to Wall plane as perspective steepens -->
+                                {@const wallBlend = Math.max(0, Math.min(1, (0.8 - ratio) / 0.4))}
+                                {@const c = floorC * (1 - wallBlend) + (-b) * wallBlend}
+                                {@const d = floorD * (1 - wallBlend) + (a) * wallBlend}
+
+                                <g transform="matrix({a}, {b}, {c}, {d}, {cx}, {cy})">
+                                    <text x="0" y="0" text-anchor="middle" dominant-baseline="middle" class="fill-transparent stroke-black/80 text-[14px] sm:text-[18px] font-black pointer-events-none hidden md:block" stroke-width="4" stroke-linejoin="round">
+                                        {mappedEntities[i].title || mappedEntities[i].name}
+                                    </text>
+                                    <text x="0" y="0" text-anchor="middle" dominant-baseline="middle" class="fill-white text-[14px] sm:text-[18px] font-black pointer-events-none hidden md:block">
+                                        {mappedEntities[i].title || mappedEntities[i].name}
+                                    </text>
+                                </g>
                             {/if}
-                        {/if}
+                        {/each}
+                    {/if}
+                </svg>
+                                
+                <!-- HTML OVERLAY FOR PERFECT CIRCLES -->
+                <div class="absolute inset-0 w-full h-full z-20 pointer-events-none overflow-visible">
+                    {#if isWarpMode}
+                        <!-- 4 Master Drag Handles -->
+                        {#each warpCorners as pt, ptIdx}
+                            <div 
+                                class="absolute w-8 h-8 -ml-4 -mt-4 bg-base-100 rounded-full border-[4px] border-secondary cursor-move drop-shadow-xl hover:border-[6px] hover:bg-secondary transition-all pointer-events-auto"
+                                style="left: {pt[0] / 10}%; top: {pt[1] / 10}%;"
+                                on:pointerdown={(e) => startDrag(-1, ptIdx, e)}
+                                on:click|stopPropagation
+                            ></div>
+                        {/each}
+                    {:else}
+                        <!-- Center Markers (Not Active) -->
+                        {#each polygons as poly, i}
+                            {@const isActive = activePolyIndex === i}
+                            {@const isMapped = !!mappedEntities[i]}
+                            {@const cx = (poly[0][0] + poly[1][0] + poly[2][0] + poly[3][0]) / 4}
+                            {@const cy = (poly[0][1] + poly[1][1] + poly[2][1] + poly[3][1]) / 4}
+                            
+                            {#if !isActive}
+                                {#if isMapped}
+                                    <div class="absolute w-7 h-7 -ml-3.5 -mt-3.5 bg-success rounded-full shadow-sm flex items-center justify-center pointer-events-none" style="left: {cx / 10}%; top: {cy / 10}%;">
+                                        <i class="bi bi-check text-white text-2xl mt-0.5"></i>
+                                    </div>
+                                {:else}
+                                    <div class="absolute w-3 h-3 -ml-1.5 -mt-1.5 bg-base-content/30 rounded-full pointer-events-none" style="left: {cx / 10}%; top: {cy / 10}%;"></div>
+                                {/if}
+                            {/if}
 
                             {#if isMapped && zoomLevel >= 250 && !EXPERIMENTAL_PERSPECTIVE_LABELS}
                                 <div class="absolute -translate-x-1/2 -translate-y-1/2 pointer-events-none text-[8px] sm:text-[10px] font-bold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] whitespace-nowrap hidden md:block" style="left: {cx / 10}%; top: {cy / 10}%; margin-top: 1.5rem;">
                                     <span class="truncate block px-1 py-0.5 bg-black/40 backdrop-blur-sm rounded max-w-[120px]">{mappedEntities[i].title || mappedEntities[i].name}</span>
                                 </div>
                             {/if}
-                    {/each}
+                        {/each}
 
-                    <!-- Active Handles -->
-                    {#each polygons as poly, i}
-                        {@const isActive = activePolyIndex === i}
+                        <!-- Active Handles -->
+                        {#each polygons as poly, i}
+                            {@const isActive = activePolyIndex === i}
                             {@const isMapped = !!mappedEntities[i]}
-                        {@const cx = (poly[0][0] + poly[1][0] + poly[2][0] + poly[3][0]) / 4}
-                        {@const cy = (poly[0][1] + poly[1][1] + poly[2][1] + poly[3][1]) / 4}
+                            {@const cx = (poly[0][0] + poly[1][0] + poly[2][0] + poly[3][0]) / 4}
+                            {@const cy = (poly[0][1] + poly[1][1] + poly[2][1] + poly[3][1]) / 4}
 
-                        {#if isActive && !readonly}
-                            <!-- Corner Drag Handles -->
-                            {#each poly as pt, ptIdx}
+                            {#if isActive && !readonly}
+                                <!-- Corner Drag Handles -->
+                                {#each poly as pt, ptIdx}
+                                    <div 
+                                        class="absolute w-6 h-6 -ml-3 -mt-3 bg-base-100 rounded-full border-[3px] border-accent cursor-move drop-shadow-lg hover:border-[5px] transition-all pointer-events-auto"
+                                        style="left: {pt[0] / 10}%; top: {pt[1] / 10}%;"
+                                        on:pointerdown={(e) => startDrag(i, ptIdx, e)}
+                                        on:click|stopPropagation
+                                    ></div>
+                                {/each}
+
+                                <!-- Action Center Button -->
                                 <div 
-                                    class="absolute w-6 h-6 -ml-3 -mt-3 bg-base-100 rounded-full border-[3px] border-accent cursor-move drop-shadow-lg hover:border-[5px] transition-all pointer-events-auto"
-                                    style="left: {pt[0] / 10}%; top: {pt[1] / 10}%;"
-                                    on:pointerdown={(e) => startDrag(i, ptIdx, e)}
-                                    on:click|stopPropagation
-                                ></div>
-                            {/each}
-
-                            <!-- Action Center Button -->
-                            <div 
-                                class="absolute w-16 h-16 -ml-8 -mt-8 cursor-pointer pointer-events-auto flex items-center justify-center"
-                                style="left: {cx / 10}%; top: {cy / 10}%;"
-                                on:click|stopPropagation={() => dispatch('select', i)} 
-                                on:pointerdown|stopPropagation
-                            >
-                                <div class="w-11 h-11 bg-base-100 rounded-full drop-shadow-xl hover:bg-base-200 transition-colors flex items-center justify-center relative">
-                                            <div class="w-8 h-8 rounded-full flex items-center justify-center {isMapped ? 'bg-success text-white' : 'bg-accent text-white'}">
-                                                {#if isMapped}
-                                            <i class="bi bi-check text-2xl mt-0.5"></i>
-                                        {:else}
-                                            <i class="bi bi-three-dots text-lg"></i>
-                                        {/if}
+                                    class="absolute w-16 h-16 -ml-8 -mt-8 cursor-pointer pointer-events-auto flex items-center justify-center"
+                                    style="left: {cx / 10}%; top: {cy / 10}%;"
+                                    on:click|stopPropagation={() => dispatch('select', i)} 
+                                    on:pointerdown|stopPropagation
+                                >
+                                    <div class="w-11 h-11 bg-base-100 rounded-full drop-shadow-xl hover:bg-base-200 transition-colors flex items-center justify-center relative">
+                                                <div class="w-8 h-8 rounded-full flex items-center justify-center {isMapped ? 'bg-success text-white' : 'bg-accent text-white'}">
+                                                    {#if isMapped}
+                                                <i class="bi bi-check text-2xl mt-0.5"></i>
+                                            {:else}
+                                                <i class="bi bi-three-dots text-lg"></i>
+                                            {/if}
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        {/if}
-                    {/each}
-                {/if}
+                            {/if}
+                        {/each}
+                    {/if}
+                </div>
             </div>
-        </div>
         </div>
     </div>
 </div>
