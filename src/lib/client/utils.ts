@@ -98,3 +98,19 @@ export function isSlowConnection(): boolean {
     if (['slow-2g', '2g', '3g'].includes(conn.effectiveType)) return true;
     return false;
 }
+
+export function getHumanLocationText(polygon: number[][] | null, containerName: string = ""): string {
+    if (!polygon || polygon.length !== 4) return `Location`;
+    const cx = polygon.reduce((sum, p) => sum + p[0], 0) / 4;
+    const cy = polygon.reduce((sum, p) => sum + p[1], 0) / 4;
+    let vertical = cy < 333 ? "Top" : cy > 666 ? "Bottom" : "Center";
+    let horizontal = cx < 333 ? "left" : cx > 666 ? "right" : "center";
+    
+    let pos = "";
+    if (vertical === "Center" && horizontal === "center") pos = "Center";
+    else if (vertical === "Center") pos = `${horizontal === 'left' ? 'Left' : 'Right'} side`;
+    else if (horizontal === "center") pos = vertical;
+    else pos = `${vertical}-${horizontal}`;
+    
+    return containerName ? `${pos} in ${containerName}` : pos;
+}

@@ -7,6 +7,8 @@
     import SpatialGridMap from "$lib/components/spatial/SpatialGridMap.svelte";
     import SpatialMap from "$lib/components/spatial/SpatialMap.svelte";
     import ContainerBreadcrumbs from "$lib/components/ContainerBreadcrumbs.svelte";
+    import SpatialDiorama from '$lib/components/spatial/SpatialDiorama.svelte';
+    import { getHumanLocationText } from '$lib/client/utils';
 
     export let item: any;
     export let canEdit: boolean = false;
@@ -140,8 +142,8 @@
                 <!-- svelte-ignore a11y_click_events_have_key_events --><!-- svelte-ignore a11y_interactive_supports_focus -->
                 <div class="w-14 h-14 shrink-0 rounded-lg overflow-hidden border border-base-200 bg-base-50 flex items-center justify-center relative cursor-zoom-in hover:opacity-80 transition-opacity" on:click={() => openMapModal(loc)} role="button">
                     {#if isVectorGrid && allPolys.length > 0}
-                        <div class="w-full h-full p-1 bg-base-200/50 flex items-center justify-center">
-                            <SpatialGridMap polygons={allPolys} activeIndex={activeIdx} mappedIndices={[activeIdx]} referenceImage={src} />
+                        <div class="w-full h-full p-1 bg-base-200/50 flex items-center justify-center"><SpatialGridMap polygons={allPolys} activeIndex={activeIdx} mappedIndices={[activeIdx]} referenceImage={src} />
+                            
                         </div>
                     {:else if polyMap && (loc.container.parent?.photoPath || loc.container?.photoPath)}
                         {@const clipPathStr = `polygon(${polyMap.map(p => `${(p[0]/10).toFixed(2)}% ${(p[1]/10).toFixed(2)}%`).join(', ')})`}
@@ -166,6 +168,9 @@
                     {/if}
                     <div class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold leading-none mb-0.5">Location</div>
                     <a href="/container/{encodeURIComponent(loc.container.name)}" class="font-bold text-sm leading-tight truncate hover:text-primary hover:underline">{loc.container.name}</a>
+                    {#if polyMap}
+                        <div class="text-[10px] text-base-content/40 font-bold uppercase tracking-wider mt-0.5">{getHumanLocationText(polyMap)}</div>
+                    {/if}
                     <div class="text-xs text-gray-500 leading-snug line-clamp-1 mt-0.5">{loc.container?.parent?.description || loc.container?.description || 'No description'}</div>
                 </div>
             </div>
@@ -256,18 +261,18 @@
     {/if}
 
     {#each item.locations || [] as loc, i}
+        {@const cellPolyParsed = loc.spatialMap ? JSON.parse(loc.spatialMap) : null}
+        {@const cellPolyMap = cellPolyParsed && !Array.isArray(cellPolyParsed) && cellPolyParsed.polygon ? cellPolyParsed.polygon : cellPolyParsed}
+        {@const containerMapRaw = loc.container?.spatialMap ? JSON.parse(loc.container.spatialMap) : null}
+        {@const trayPolyMap = containerMapRaw && !Array.isArray(containerMapRaw) && containerMapRaw.polygon ? containerMapRaw.polygon : containerMapRaw}
+        {@const polyMap = cellPolyMap || (trayPolyMap && loc.container.parentId ? trayPolyMap : null)}
+        {@const isVectorGrid = containerMapRaw && !Array.isArray(containerMapRaw) && containerMapRaw.renderAsGrid}
+        {@const allPolys = isVectorGrid ? (containerMapRaw.polygons || []) : []}
+        {@const activeIdx = isVectorGrid && cellPolyParsed ? allPolys.findIndex(p => JSON.stringify(p) === JSON.stringify(cellPolyMap)) : -1}
+        {@const src = loc.container.parent?.photoPath ? loc.container.parent.photoPath.replace(/\.[^/.]+$/, '_thumb.webp') : (loc.container?.photoPath ? loc.container.photoPath.replace(/\.[^/.]+$/, '_thumb.webp') : '')}
+
         <div class="card bg-base-100 shadow-sm border border-base-200 w-full overflow-hidden">
             {#if i === 0}
-                {@const cellPolyParsed = loc.spatialMap ? JSON.parse(loc.spatialMap) : null}
-                {@const cellPolyMap = cellPolyParsed && !Array.isArray(cellPolyParsed) && cellPolyParsed.polygon ? cellPolyParsed.polygon : cellPolyParsed}
-                {@const containerMapRaw = loc.container?.spatialMap ? JSON.parse(loc.container.spatialMap) : null}
-                {@const trayPolyMap = containerMapRaw && !Array.isArray(containerMapRaw) && containerMapRaw.polygon ? containerMapRaw.polygon : containerMapRaw}
-                {@const polyMap = cellPolyMap || (trayPolyMap && loc.container.parentId ? trayPolyMap : null)}
-                {@const isVectorGrid = containerMapRaw && !Array.isArray(containerMapRaw) && containerMapRaw.renderAsGrid}
-                {@const allPolys = isVectorGrid ? (containerMapRaw.polygons || []) : []}
-                {@const activeIdx = isVectorGrid && cellPolyParsed ? allPolys.findIndex(p => JSON.stringify(p) === JSON.stringify(cellPolyMap)) : -1}
-                {@const src = loc.container.parent?.photoPath ? loc.container.parent.photoPath.replace(/\.[^/.]+$/, '_thumb.webp') : (loc.container?.photoPath ? loc.container.photoPath.replace(/\.[^/.]+$/, '_thumb.webp') : '')}
-
                 <!-- svelte-ignore a11y_click_events_have_key_events --><!-- svelte-ignore a11y_interactive_supports_focus -->
                 <!-- svelte-ignore a11y_no_noninteractive_element_to_interactive_role -->
                 <figure class="w-full h-20 border-b border-base-200 bg-base-200 m-0 flex items-center justify-center cursor-zoom-in hover:opacity-80 transition-opacity" on:click={() => openMapModal(loc)} role="button">
@@ -275,17 +280,8 @@
                         <div class="w-full h-full p-2 bg-base-200/50 flex items-center justify-center">
                             <SpatialGridMap polygons={allPolys} activeIndex={activeIdx} mappedIndices={[activeIdx]} referenceImage={src} />
                         </div>
-                    {:else if polyMap && (loc.container.parent?.photoPath || loc.container?.photoPath)}
-                        {@const clipPathStr = `polygon(${polyMap.map(p => `${(p[0]/10).toFixed(2)}% ${(p[1]/10).toFixed(2)}%`).join(', ')})`}
-                        <div class="relative max-w-full max-h-full flex items-center justify-center">
-                            <img class="block max-w-full max-h-full blur-[1px] brightness-[0.75] saturate-[0.8]" src="{src}" alt="Background" on:error={(e) => { if (!(e.currentTarget).dataset.fb) { (e.currentTarget).dataset.fb = '1'; (e.currentTarget).src = loc.container.parent?.photoPath || loc.container.photoPath; } }}/>
-                            
-                            <img class="absolute top-0 left-0 w-full h-full object-fill drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)] z-10 transition-transform scale-[1.02]" style="clip-path: {clipPathStr};" src="{src}" alt="Focus" />
-                            
-                            <svg viewBox="0 0 1000 1000" preserveAspectRatio="none" class="absolute inset-0 w-full h-full pointer-events-none z-20 transition-transform scale-[1.02]">
-                                <polygon points={polyMap.map(p => p.join(',')).join(' ')} class="fill-transparent stroke-white/80 drop-shadow-[0_0_2px_rgba(255,255,255,0.8)]" stroke-width="3" vector-effect="non-scaling-stroke" />
-                            </svg>
-                        </div>
+                    {:else if polyMap && src}
+                        <SpatialDiorama imageUrl={src} polygon={polyMap} containerClass="w-full h-full" />
                     {:else if loc.container.parent?.photoPath || loc.container?.photoPath}
                         <img class="w-full h-full object-cover" src="{src}" alt="Container thumbnail" on:error={(e) => { if (!(e.currentTarget).dataset.fb) { (e.currentTarget).dataset.fb = '1'; (e.currentTarget).src = loc.container.parent?.photoPath || loc.container.photoPath; } }}/>
                     {:else}
@@ -298,6 +294,9 @@
                     <div>
                         <div class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Location {i > 0 ? `#${i+1}` : ''}</div>
                         <a href="/container/{encodeURIComponent(loc.container.name)}" class="card-title text-lg m-0 hover:text-primary hover:underline w-max">{loc.container.name}</a>
+                        {#if polyMap}
+                            <div class="text-[11px] text-base-content/40 font-bold uppercase tracking-wider mt-0.5">{getHumanLocationText(polyMap)}</div>
+                        {/if}
                     </div>
                     <button class="btn btn-sm btn-outline border-base-300 rounded-xl hover:border-primary text-xs" on:click={openMoveModal}>
                         <i class="bi bi-arrows-move"></i> Move it

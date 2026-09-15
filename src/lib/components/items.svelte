@@ -19,6 +19,7 @@
     import ContentUnavailable from "$lib/components/ContentUnavailable.svelte";
     import { isSlowConnection } from '$lib/client/utils';
     import Badge from "$lib/components/Badge.svelte";
+    import { getHumanLocationText } from '$lib/client/utils';
 
     export let items: any[] = [];
     export let brief: boolean = false;
@@ -174,6 +175,8 @@
 
     const imgLoadStrategy = isSlowConnection() ? 'lazy' : 'eager';
 
+    let hoverItemData: any = null;
+
 </script>
 
 {#if showControls}
@@ -235,16 +238,22 @@
                     {@const localBlob = item.clientId ? ghostUrls.get(item.clientId) : null}
                     {@const isLoaded = serverSrc ? loadedUrls.has(serverSrc) : false}
 
-                    <tr animate:flip={{ duration: 300 }} in:fade={{ duration: 200 }} class="hover:bg-base-200/50 transition-all duration-200 border-b border-base-200/50 last:border-none relative {isNavigatingToThis ? 'opacity-50 pointer-events-none scale-[0.98]' : ''} {item.isGhost ? 'opacity-80 grayscale-[50%] pointer-events-none animate-pulse duration-1000' : ''}">
+                    {@const loc = item.locations?.[0]}
+                    {@const spatialMapParsed = loc?.spatialMap ? JSON.parse(loc.spatialMap) : null}
+                    {@const polyMap = spatialMapParsed ? (Array.isArray(spatialMapParsed) ? spatialMapParsed : spatialMapParsed.polygon) : null}
+                    {@const containerSrc = loc?.container?.parent?.photoPath ? loc.container.parent.photoPath.replace(/\.[^/.]+$/, '_thumb.webp') : (loc?.container?.photoPath ? loc.container.photoPath.replace(/\.[^/.]+$/, '_thumb.webp') : null)}
+
+                    <tr on:mouseenter={() => hoverItemData = item} on:mouseleave={() => hoverItemData = null} animate:flip={{ duration: 300 }} in:fade={{ duration: 200 }} class="hover:bg-base-200/50 transition-all duration-200 border-b border-base-200/50 last:border-none relative {isNavigatingToThis ? 'opacity-50 pointer-events-none scale-[0.98]' : ''} {item.isGhost ? 'opacity-80 grayscale-[50%] pointer-events-none animate-pulse duration-1000' : ''}">
                        <td class="w-16 sm:w-20 min-w-[4rem] sm:min-w-[5rem] shrink-0 py-3">
                             <div class="flex items-center gap-3">
                                 <div class="avatar">
                                    <div class="w-14 h-14 bg-base-100 rounded-2xl shadow-sm border border-base-200/60 overflow-hidden flex items-center justify-center relative z-0">
+
                                        {#if cols.length > 0}
-                                           <div class="absolute inset-0 opacity-30 pointer-events-none" style="background: linear-gradient(135deg, {cols[0]}, {cols[1] || cols[0]});"></div>
+                                           <div class="absolute inset-0 opacity-30 pointer-events-none transition-opacity duration-300 {brief && hoverItemData === item && polyMap ? 'opacity-0' : ''}" style="background: linear-gradient(135deg, {cols[0]}, {cols[1] || cols[0]});"></div>
                                        {/if}
                                        <a href="/{item.id}/{item.slug}" class="w-full h-full flex items-center justify-center bg-transparent relative z-10">
-                                           <div class="relative w-full h-full flex items-center justify-center">
+                                           <div class="relative w-full h-full flex items-center justify-center transition-opacity duration-300 {brief && hoverItemData === item && polyMap ? 'opacity-0' : 'opacity-100'}">
                                                {#if localBlob && !isLoaded}
 													<img src={localBlob} class="absolute inset-0 object-contain w-full h-full p-1 rounded-xl z-0 opacity-80 animate-pulse transition-opacity duration-700" alt="Preview"/>
                                                {/if}
@@ -259,6 +268,15 @@
                                                    <i class="bi bi-box text-2xl text-gray-300 relative z-10"></i>
                                                {/if}
                                            </div>
+
+                                           {#if brief && polyMap && containerSrc}
+                                               <div class="absolute inset-0 w-full h-full transition-opacity duration-300 z-20 overflow-hidden {hoverItemData === item ? 'opacity-100' : 'opacity-0 pointer-events-none'}">
+                                                   <img src="{containerSrc}" class="absolute inset-0 w-full h-full object-cover blur-[1px] brightness-75 saturate-150" alt="Container Map" />
+                                                   <svg viewBox="0 0 1000 1000" preserveAspectRatio="none" class="absolute inset-0 w-full h-full z-30">
+                                                       <polygon points={polyMap.map(p => p.join(',')).join(' ')} class="fill-primary/25 stroke-primary drop-shadow-[0_0_3px_rgba(255,255,255,0.9)]" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke" />
+                                                   </svg>
+                                               </div>
+                                           {/if}
                                        </a>
                                    </div>
                                 </div>
@@ -266,12 +284,19 @@
                         </td>
 
                         <td class="hidden sm:table-cell w-20 min-w-[5rem]">
-                            <div class="flex flex-col gap-1 min-w-[4rem] relative z-20">
+                            <div class="flex flex-col gap-2 min-w-[4rem] relative z-20">
                                 {#if item.locations}
                                     {#each item.locations as loc}
-                                        <Badge color="ghost" size="sm" class="w-20 overflow-hidden shrink-0">
-                                            <a href="/container/{encodeURIComponent(loc.container.name)}" class="truncate w-full text-center" title="{loc.container.name}">{loc.container.name}</a>
-                                        </Badge>
+                                        <div class="flex flex-col items-center gap-0.5">
+                                            <Badge color="ghost" size="sm" class="w-20 overflow-hidden shrink-0">
+                                                <a href="/container/{encodeURIComponent(loc.container.name)}" class="truncate w-full text-center" title="{loc.container.name}">{loc.container.name}</a>
+                                            </Badge>
+                                            {#if loc.spatialMap}
+                                                {@const parsed = JSON.parse(loc.spatialMap)}
+                                                {@const poly = Array.isArray(parsed) ? parsed : parsed.polygon}
+                                                <span class="text-[9px] text-base-content/40 font-bold uppercase tracking-wider text-center leading-tight -mt-0.5">{getHumanLocationText(poly)}</span>
+                                            {/if}
+                                        </div>
                                     {/each}
                                 {/if}
                             </div>
@@ -308,9 +333,16 @@
                                 <div class="flex flex-wrap gap-1 relative z-20">
                                     {#if item.locations}
                                         {#each item.locations as loc}
-                                            <Badge color="ghost" class="text-[10px] px-1.5 py-0.5 h-auto whitespace-nowrap">
-                                                <a href="/container/{encodeURIComponent(loc.container.name)}" class="truncate w-full text-center" title="{loc.container.name}">{loc.container.name}</a>
-                                            </Badge>
+                                            <div class="flex flex-col items-start gap-0.5">
+                                                <Badge color="ghost" class="text-[10px] px-1.5 py-0.5 h-auto whitespace-nowrap">
+                                                    <a href="/container/{encodeURIComponent(loc.container.name)}" class="truncate w-full text-center" title="{loc.container.name}">{loc.container.name}</a>
+                                                </Badge>
+                                                {#if loc.spatialMap}
+                                                    {@const parsed = JSON.parse(loc.spatialMap)}
+                                                    {@const poly = Array.isArray(parsed) ? parsed : parsed.polygon}
+                                                    <span class="text-[9px] text-base-content/40 font-bold uppercase tracking-wider pl-1 -mt-0.5">{getHumanLocationText(poly)}</span>
+                                                {/if}
+                                            </div>
                                         {/each}
                                     {/if}
                                 </div>
