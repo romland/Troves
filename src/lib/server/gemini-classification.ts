@@ -176,7 +176,7 @@ ${JSON.stringify(baselineMap, null, 2)}
 CRITICAL RULES FOR EXTRACTION:
 1. DO NOT EXPLAIN YOUR REASONING. 
 2. DO NOT WRITE PARAGRAPHS. ZERO CONVERSATIONAL FILLER.
-3. If status is DIFFERENT, 'title' MUST be under 5 words, and 'description' MUST be under 10 words (e.g., "Mixed loose components", "Red wires").
+  3. If status is DIFFERENT, 'title' MUST include critical identifying values if visible (e.g., "10k Ohm Resistors", "KBPC5010 Rectifiers" - NOT just "Resistors"). 'description' MUST be under 10 words.
 
 For EACH compartment in the map, verify its contents against the expectation:
 - Also, estimate the volumetric fill level of the compartment.
@@ -196,7 +196,7 @@ Return an array of results that matches the exact order and length of the baseli
             type: 'object',
             properties: { 
                 status: { type: 'string', enum: ['PRESENT', 'EMPTY', 'DIFFERENT'] }, 
-                title: { type: 'string', nullable: true, description: "Max 5 words. No explanation." }, 
+                title: { type: 'string', nullable: true, description: "Must include key specs/values if visible. No explanation." }, 
                         description: { type: 'string', nullable: true, description: "Max 10 words. NEVER explain your reasoning." },
                         fill_status: { type: 'string', enum: ['EMPTY', 'SPARSE', 'HALF_FULL', 'FULL', 'OVERFLOWING'], description: "Estimate fullness based on 2D visual density. EMPTY: bottom of tray visible. SPARSE: mostly bottom visible. HALF_FULL: 50% covered. FULL: bottom completely obscured. OVERFLOWING: visibly piled up." }
             },
