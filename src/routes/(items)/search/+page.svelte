@@ -113,6 +113,7 @@
             ids: $page.url.searchParams.get('ids') || '',
 			q: data.q, category: data.cat, tag: data.tag, container: data.container,
             title: data.titleStr, desc: data.descStr, doc: data.docStr, reason: data.reasonStr, duplicateStatus: data.duplicateStatus, color: data.color,
+            docType: data.docType,
 			minAmount: data.minAmount, maxAmount: data.maxAmount,
             unassigned: data.unassigned ? 'true' : '',
             attrs: $page.url.searchParams.get('attrs') || ''
@@ -140,6 +141,15 @@
             if (el) el.value = '';
         } else if (type === 'container') {
             const el = filterForm.elements.namedItem('container') as HTMLSelectElement;
+            if (el) el.value = '';
+        } else if (type === 'docType') {
+            const el = filterForm.elements.namedItem('docType') as HTMLSelectElement;
+            if (el) el.value = '';
+        } else if (type === 'doc') {
+            const el = filterForm.elements.namedItem('doc') as HTMLInputElement;
+            if (el) el.value = '';
+        } else if (type === 'reason') {
+            const el = filterForm.elements.namedItem('reason') as HTMLInputElement;
             if (el) el.value = '';
         } else if (type === 'category') {
             selectedCategory = '';
@@ -222,12 +232,15 @@
 </div>
 
 <!-- Active Filter Chips -->
-{#if data.tag || data.container || data.cat || data.unassigned || Object.keys(filterAttrs).length > 0}
+{#if data.tag || data.container || data.cat || data.unassigned || data.docType || data.docStr || data.reasonStr || Object.keys(filterAttrs).length > 0}
 <div class="flex flex-wrap gap-2 px-2 mb-6">
     {#if data.tag}<Badge color="primary" class="p-3 font-semibold shadow-sm" icon="bi-hash" removable on:click={() => removeFilter('tag')}>{data.tag}</Badge>{/if}
     {#if data.container}<Badge color="primary" class="p-3 font-semibold shadow-sm" icon="bi-box-seam" removable on:click={() => removeFilter('container')}>{data.container}</Badge>{/if}
     {#if data.cat}<Badge color="primary" class="p-3 font-semibold shadow-sm capitalize" icon="bi-tags" removable on:click={() => removeFilter('category')}>{data.cat}</Badge>{/if}
     {#if data.unassigned}<Badge color="primary" class="p-3 font-semibold shadow-sm" icon="bi-pin-map" removable on:click={() => removeFilter('unassigned')}>Unassigned</Badge>{/if}
+    {#if data.docStr}<Badge color="primary" class="p-3 font-semibold shadow-sm" icon="bi-file-text" removable on:click={() => removeFilter('doc')}>{data.docStr}</Badge>{/if}
+    {#if data.docType}<Badge color="primary" class="p-3 font-semibold shadow-sm" icon="bi-file-earmark" removable on:click={() => removeFilter('docType')}>{data.docType.toUpperCase()}</Badge>{/if}
+    {#if data.reasonStr}<Badge color="primary" class="p-3 font-semibold shadow-sm" icon="bi-question-circle" removable on:click={() => removeFilter('reason')}>{data.reasonStr}</Badge>{/if}
     {#each Object.entries(filterAttrs) as [k,v]}
         {@const schemaField = (data.activeSchema || []).find(f => f.name === k)}
         {@const friendlyKey = schemaField?.uiLabel || k.replace(/_/g, ' ')}
@@ -282,6 +295,14 @@
                 <FormInput label="Title" name="title" value={data.titleStr || ''} placeholder="e.g. raspberry or Aerosmith..." inputClass="input-sm rounded-lg" labelClass="text-xs uppercase tracking-wider mb-0" />
                 <FormInput label="Description" name="desc" value={data.descStr || ''} placeholder="Description content..." inputClass="input-sm rounded-lg" labelClass="text-xs uppercase tracking-wider mb-0" />
                 <FormInput label="Document Contains" name="doc" value={data.docStr || ''} placeholder="Search manuals, notes, extracts..." inputClass="input-sm rounded-lg" labelClass="text-xs uppercase tracking-wider mb-0" />
+                <FormSelect label="Document Type" name="docType" value={data.docType || ''} selectClass="select-sm rounded-lg font-normal" labelClass="text-xs uppercase tracking-wider mb-0">
+                    <option value="">Any Type</option>
+                    <option value="pdf">PDF</option>
+                    <option value="epub">EPUB</option>
+                    <option value="html">Webpage</option>
+                    <option value="video">Video</option>
+                    <option value="note">Notes / Q&A</option>
+                </FormSelect>
                 <FormInput label="Reason" name="reason" value={data.reasonStr || ''} placeholder="e.g. Curiosity" inputClass="input-sm rounded-lg" labelClass="text-xs uppercase tracking-wider mb-0" />
 
 				<div class="form-control w-full flex flex-row gap-2 items-end">

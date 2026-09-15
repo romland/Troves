@@ -13,6 +13,19 @@ export const load = (async ({ locals, url, fetch }) => {
     const res = await fetch(apiUrl.toString());
     const data = await res.json();
 
+    let documentResults = data.documentResults || [];
+    const docType = url.searchParams.get('docType');
+    if (docType) {
+        documentResults = documentResults.filter((d: any) => {
+            if (docType === 'note') return d.type === 'note';
+            if (docType === 'pdf') return d.path?.toLowerCase().endsWith('.pdf');
+            if (docType === 'epub') return d.path?.toLowerCase().endsWith('.epub');
+            if (docType === 'html') return d.path?.toLowerCase().endsWith('.html') || d.type === 'html';
+            if (docType === 'video') return d.type === 'video';
+            return true;
+        });
+    }
+
 	const categories = await db.category.findMany({
 		where: { inventoryId: locals.activeInventoryId },
 		orderBy: { name: 'asc' }
@@ -60,11 +73,12 @@ export const load = (async ({ locals, url, fetch }) => {
         titleStr: url.searchParams.get('title') || '', 
         descStr: url.searchParams.get('desc') || '', 
         docStr: url.searchParams.get('doc') || '', 
+        docType: docType || '',
         reasonStr: url.searchParams.get('reason') || '', 
         minAmount: url.searchParams.get('minAmount') || '', 
         maxAmount: url.searchParams.get('maxAmount') || '', 
         items: data.items, 
-        documentResults: data.documentResults || [],
+        documentResults,        
         totalCount: data.totalCount, 
         prevPage: data.prevPage, 
         nextPage: data.nextPage, 
