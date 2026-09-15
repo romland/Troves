@@ -168,7 +168,7 @@ export const findItems = async (subject: string, inventoryId: number) => {
 			amount: true, 
 			semanticTokens: true,
 			tags: { select: { name: true } }, 
-			locations: { include: { container: { select: { name: true } } } },
+			locations: { select: { spatialMap: true, container: { select: { name: true } } } },
 			photos: { include: { category: { select: { name: true } } } }
 		}
     });
@@ -257,6 +257,8 @@ export const findItems = async (subject: string, inventoryId: number) => {
 
 	return scoredItems.filter(x => x.score === topScore).map(x => x.item);
 };
+
+import { getHumanLocationText } from '$lib/client/utils';
 
 const getDirectRoute = (items: any[]) => items.length === 1 ? `/${items[0].id}/${items[0].slug}` : undefined;
 
@@ -361,7 +363,16 @@ const intents: VoiceIntent[] = [
                 const bestItem = items[0];
                 const route = getDirectRoute(items);
                 if (bestItem.locations && bestItem.locations.length > 0) {
-                    const locs = bestItem.locations.map((l: any) => l.container.name).join(' and ');
+                    const locs = bestItem.locations.map((l: any) => {
+                        let polyMap = null;
+                        if (l.spatialMap) {
+                            try {
+                                const parsed = JSON.parse(l.spatialMap);
+                                polyMap = Array.isArray(parsed) ? parsed : parsed.polygon;
+                            } catch(e) {}
+                        }
+                        return getHumanLocationText(polyMap, l.container.name);
+                    }).join(' and ');
                     return { query: subject, spokenReply: `I found it in ${locs}.`, route };
                 }
                 return { query: subject, spokenReply: `I found it, but it doesn't have a location assigned yet.`, route };

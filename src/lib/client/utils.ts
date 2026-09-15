@@ -100,17 +100,17 @@ export function isSlowConnection(): boolean {
 }
 
 export function getHumanLocationText(polygon: number[][] | null, containerName: string = ""): string {
-    if (!polygon || polygon.length !== 4) return `Location`;
+    if (!polygon || polygon.length !== 4) return containerName ? containerName : `Location`;
     const cx = polygon.reduce((sum, p) => sum + p[0], 0) / 4;
     const cy = polygon.reduce((sum, p) => sum + p[1], 0) / 4;
     let vertical = cy < 333 ? "Top" : cy > 666 ? "Bottom" : "Center";
     let horizontal = cx < 333 ? "left" : cx > 666 ? "right" : "center";
     
     let pos = "";
-    if (vertical === "Center" && horizontal === "center") pos = "Center";
-    else if (vertical === "Center") pos = `${horizontal === 'left' ? 'Left' : 'Right'} side`;
-    else if (horizontal === "center") pos = vertical;
-    else pos = `${vertical}-${horizontal}`;
+    if (vertical === "Center" && horizontal === "center") pos = "center";
+    else if (vertical === "Center") pos = `${horizontal === 'left' ? 'left' : 'right'} side`;
+    else if (horizontal === "center") pos = vertical.toLowerCase();
+    else pos = `${vertical.toLowerCase()}-${horizontal}`;
     
     return containerName ? `${pos} in ${containerName}` : pos;
 }
