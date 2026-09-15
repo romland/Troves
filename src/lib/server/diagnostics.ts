@@ -29,11 +29,31 @@ export async function getSystemDiagnostics() {
         { id: 'singlefile', name: 'SingleFile', ram: 1, desc: 'Webpage archiver', port: 8001, running: await checkService(`${env.SINGLEFILE_URL || 'http://localhost:8001'}/`) }
     ];
 
-    const apis = {
-        vision: { provider: env.AI_VISION_PROVIDER || 'gemini', configured: !!env.AI_VISION_API_KEY || !!env.AI_VISION_BASE_URL },
-        text: { provider: env.AI_TEXT_PROVIDER || 'openai', configured: !!env.AI_TEXT_API_KEY || !!env.AI_TEXT_BASE_URL },
-        audio: { provider: env.AI_AUDIO_PROVIDER || 'openai', configured: !!env.AI_AUDIO_API_KEY || !!env.AI_AUDIO_BASE_URL }
-    };
+	const { getAIConfig } = await import('./ai/index');
+	const mapEngine = (modality: 'VISION' | 'TEXT' | 'AUDIO', task: string, subTask?: string) => {
+		const config = getAIConfig(modality, subTask);
+		return {
+			modality,
+			task,
+			provider: config.provider,
+			model: config.model || 'default',
+			configured: !!config.apiKey || !!config.baseURL
+		};
+	};
 
-    return { totalRamGB, deps, microservices, apis };
+	const engines = [
+		mapEngine('VISION', 'Base / Default'),
+		mapEngine('VISION', 'Classification', 'CLASSIFY'),
+		mapEngine('VISION', 'Multi-Scan Grid', 'MULTISCAN'),
+		mapEngine('VISION', 'Guess Refinement', 'GUESS'),
+		mapEngine('TEXT', 'Base / Default'),
+		mapEngine('TEXT', 'Document/Web Summaries', 'SUMMARY'),
+		mapEngine('TEXT', 'Invoice/Receipt Parser', 'PARSER'),
+		mapEngine('TEXT', 'KVP Table Extractor', 'KVPPARSER'),
+		mapEngine('TEXT', 'Taxonomy Generation', 'TAXONOMY'),
+		mapEngine('TEXT', 'Ask Troves (Q&A)', 'QNA'),
+		mapEngine('AUDIO', 'Voice Dictation', 'DICTATION'),
+	];
+
+	return { totalRamGB, deps, microservices, engines };
 }

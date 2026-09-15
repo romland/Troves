@@ -47,32 +47,39 @@
         </ul>
     </div>
 
-    <!-- Model (vision, language, voice, ...) Providers -->
+	<!-- Task Routing Matrix -->
     <div>
-        <h5 class="text-xs font-bold uppercase tracking-wider text-base-content/50 mb-3">Model Providers</h5>
-        <ul class="flex flex-col gap-3">
-            <li class="flex items-start gap-3">
-                <i class="bi {diagnostics.apis.vision.configured ? 'bi-check-circle-fill text-success' : 'bi-x-circle-fill text-error'} text-lg mt-0.5"></i>
-                <div>
-                    <div class="font-bold text-sm leading-tight">Vision Engine: <span class="uppercase tracking-wider text-[10px] bg-base-200 px-1.5 py-0.5 rounded ml-1">{diagnostics.apis.vision.provider}</span></div>
-                    <div class="text-xs text-gray-500 mt-0.5">Used for Image Classification, Auto-Tagging, & Deduplication.</div>
-                </div>
-            </li>
-            <li class="flex items-start gap-3">
-                <i class="bi {diagnostics.apis.text.configured ? 'bi-check-circle-fill text-success' : 'bi-dash-circle-fill text-warning'} text-lg mt-0.5"></i>
-                <div>
-                    <div class="font-bold text-sm leading-tight">Text Engine: <span class="uppercase tracking-wider text-[10px] bg-base-200 px-1.5 py-0.5 rounded ml-1">{diagnostics.apis.text.provider}</span></div>
-                    <div class="text-xs text-gray-500 mt-0.5">Used for OCR JSON formatting, Summaries, and Ask Troves.</div>
-                </div>
-            </li>
-            <li class="flex items-start gap-3">
-                <i class="bi {diagnostics.apis.audio.configured ? 'bi-check-circle-fill text-success' : 'bi-dash-circle-fill text-warning'} text-lg mt-0.5"></i>
-                <div>
-                    <div class="font-bold text-sm leading-tight">Audio Engine: <span class="uppercase tracking-wider text-[10px] bg-base-200 px-1.5 py-0.5 rounded ml-1">{diagnostics.apis.audio.provider}</span></div>
-                    <div class="text-xs text-gray-500 mt-0.5">Used for Voice Search dictation and parsing.</div>
-                </div>
-            </li>
-        </ul>
+		<h5 class="text-xs font-bold uppercase tracking-wider text-base-content/50 mb-3">Model Task Routing</h5>
+		<div class="overflow-x-auto bg-base-100 rounded-lg border border-base-200">
+			<table class="table table-sm">
+				<thead>
+					<tr class="bg-base-200/50">
+						<th>Task</th>
+						<th>Engine</th>
+						<th>Model</th>
+						<th class="text-center">Status</th>
+					</tr>
+				</thead>
+				<tbody>
+					{#each diagnostics.engines as engine}
+						<tr>
+							<td>
+								<div class="font-semibold text-xs text-base-content/80">{engine.task}</div>
+							</td>
+							<td><span class="badge badge-ghost badge-sm uppercase tracking-wider text-[9px]">{engine.provider}</span></td>
+							<td><code class="text-[10px] text-gray-500 bg-base-200 px-1.5 py-0.5 rounded shadow-inner">{engine.model}</code></td>
+							<td class="text-center">
+								{#if engine.configured}
+									<i class="bi bi-check-circle-fill text-success text-sm"></i>
+								{:else}
+									<i class="bi bi-dash-circle-fill text-warning text-sm" title="Missing configuration or keys"></i>
+								{/if}
+							</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		</div>
     </div>
 
     <!-- Host Dependencies -->
