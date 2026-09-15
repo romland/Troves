@@ -40,6 +40,27 @@ export const load = (async ({ locals, params, url, fetch }) => {
         orderBy: { name: 'asc' }
     });
 
+    const mappedItems = await db.itemsInContainer.findMany({
+        where: { containerId: item.id, spatialMap: { not: null } },
+        include: { item: { include: { photos: { include: { category: true } }, locations: { include: { container: true } } } } }
+    });
+
+    const unmappedItems = await db.itemsInContainer.findMany({
+        where: { containerId: item.id, spatialMap: null },
+        include: { item: { include: { photos: { include: { category: true } }, locations: { include: { container: true } } } } }
+    });
+
+    const mapEnrich = (loc: any) => {
+        if (loc.item) {
+            loc.item.locationName = loc.item.locations?.[0]?.container?.name || 'Unassigned';
+            loc.item.categoryName = loc.item.photos?.[0]?.category?.name || 'No Category';
+        }
+        return loc;
+    };
+
+    const enrichedMappedItems = mappedItems.map(mapEnrich);
+    const enrichedUnmappedItems = unmappedItems.map(mapEnrich);
+
     const includeTrays = url.searchParams.get('includeTrays') === 'true';
     const apiUrl = new URL('/api/items', url.origin);
     url.searchParams.forEach((val, key) => apiUrl.searchParams.append(key, val));
@@ -75,6 +96,8 @@ export const load = (async ({ locals, params, url, fetch }) => {
         item: item,
         categories,
         items: data.items,
+        mappedItems: enrichedMappedItems,
+        unmappedItems: enrichedUnmappedItems,
         totalCount: data.totalCount || 0,
         includeTrays,
         prevPage: data.prevPage,

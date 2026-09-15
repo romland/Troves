@@ -184,6 +184,7 @@ For EACH compartment in the map, verify its contents against the expectation:
 - If the slot is completely empty, set status to "EMPTY".
 - If there is an item but it is clearly NOT the expected item, set status to "DIFFERENT" and provide a strict, brief 'title' and 'description' of what is actually there.
 - If the baseline expected nothing (null), but you see an item, set status to "DIFFERENT" and provide the title/description.
+  - Estimate fullness: EMPTY: 100% empty, bottom clearly visible. SPARSE: 1-2 items, mostly bottom visible. HALF_FULL: ~50% covered. FULL: packed tight, bottom completely obscured. OVERFLOWING: visibly piled up above the rim.
 
 Return an array of results that matches the exact order and length of the baseline map.`;
 
@@ -198,7 +199,7 @@ Return an array of results that matches the exact order and length of the baseli
                 status: { type: 'string', enum: ['PRESENT', 'EMPTY', 'DIFFERENT'] }, 
                 title: { type: 'string', nullable: true, description: "Must include key specs/values if visible. No explanation." }, 
                         description: { type: 'string', nullable: true, description: "Max 10 words. NEVER explain your reasoning." },
-                        fill_status: { type: 'string', enum: ['EMPTY', 'SPARSE', 'HALF_FULL', 'FULL', 'OVERFLOWING'], description: "Estimate fullness based on 2D visual density. EMPTY: bottom of tray visible. SPARSE: mostly bottom visible. HALF_FULL: 50% covered. FULL: bottom completely obscured. OVERFLOWING: visibly piled up." }
+                        fill_status: { type: 'string', enum: ['EMPTY', 'SPARSE', 'HALF_FULL', 'FULL', 'OVERFLOWING'], description: "EMPTY: 100% empty, bottom clearly visible. SPARSE: 1-2 items, mostly bottom visible. HALF_FULL: ~50% covered. FULL: packed tight, bottom completely obscured. OVERFLOWING: visibly piled up above the rim." }
             },
             required: ['status']
           }

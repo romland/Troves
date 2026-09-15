@@ -2,7 +2,7 @@
     import { onMount } from "svelte";
 
     export let analyzeWithVision: boolean = false;
-    export let removeBackground: boolean = true;
+    export let removeBackground: boolean = false;
 
     let initialized = false;
 

@@ -147,14 +147,14 @@
                         </div>
                     {:else if polyMap && (loc.container.parent?.photoPath || loc.container?.photoPath)}
                         {@const clipPathStr = `polygon(${polyMap.map(p => `${(p[0]/10).toFixed(2)}% ${(p[1]/10).toFixed(2)}%`).join(', ')})`}
-                        <div class="relative max-w-full max-h-full flex items-center justify-center">
-                            <img class="block max-w-full max-h-full blur-[1px] brightness-[0.75] saturate-[0.8]" src="{src}" alt="Background" on:error={(e) => { if (!(e.currentTarget).dataset.fb) { (e.currentTarget).dataset.fb = '1'; (e.currentTarget).src = loc.container.parent?.photoPath || loc.container.photoPath; } }}/>
-                            
-                            <img class="absolute top-0 left-0 w-full h-full object-fill drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)] z-10 scale-[1.02]" style="clip-path: {clipPathStr};" src="{src}" alt="Focus" />
-                            
-                            <svg viewBox="0 0 1000 1000" preserveAspectRatio="none" class="absolute inset-0 w-full h-full pointer-events-none z-20 scale-[1.02]">
-                                <polygon points={polyMap.map(p => p.join(',')).join(' ')} class="fill-transparent stroke-white/80 drop-shadow-[0_0_2px_rgba(255,255,255,0.8)]" stroke-width="3" vector-effect="non-scaling-stroke" />
-                            </svg>
+                        <div class="relative w-full h-full flex items-center justify-center overflow-hidden p-0.5">
+                            <div class="relative max-w-full max-h-full flex items-center justify-center shrink-0">
+                                <img class="block max-w-full max-h-full blur-[1px] brightness-[0.75] saturate-[0.8]" src="{src}" alt="Background" on:error={(e) => { if (!(e.currentTarget).dataset.fb) { (e.currentTarget).dataset.fb = '1'; (e.currentTarget).src = loc.container.parent?.photoPath || loc.container.photoPath; } }}/>
+                                <img class="absolute inset-0 w-full h-full object-fill drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)] z-10" style="clip-path: {clipPathStr};" src="{src}" alt="Focus" />
+                                <svg viewBox="0 0 1000 1000" preserveAspectRatio="none" class="absolute inset-0 w-full h-full pointer-events-none z-20">
+                                    <polygon points={polyMap.map(p => p.join(',')).join(' ')} class="fill-transparent stroke-white/80 drop-shadow-[0_0_2px_rgba(255,255,255,0.8)]" stroke-width="12" stroke-linejoin="round" vector-effect="non-scaling-stroke" />
+                                </svg>
+                            </div>
                         </div>
                     {:else if loc.container.parent?.photoPath || loc.container?.photoPath}
                         <img class="w-full h-full object-cover" src="{src}" alt="Container thumbnail" on:error={(e) => { if (!(e.currentTarget).dataset.fb) { (e.currentTarget).dataset.fb = '1'; (e.currentTarget).src = loc.container.parent?.photoPath || loc.container.photoPath; } }}/>
@@ -395,7 +395,7 @@
                         <img src={src} class="absolute top-0 left-0 w-full h-full object-fill z-20 drop-shadow-[0_10px_30px_rgba(0,0,0,0.8)] scale-[1.01]" style="clip-path: {clipPathStr};" alt="Lifted Cell" />
                         
                         <svg viewBox="0 0 1000 1000" preserveAspectRatio="none" class="absolute inset-0 w-full h-full z-30 pointer-events-none scale-[1.01]">
-                            <polygon points={activePolyMap.map(p => p.join(',')).join(' ')} class="fill-transparent stroke-white/80 drop-shadow-[0_0_4px_rgba(255,255,255,0.8)]" stroke-width="4" vector-effect="non-scaling-stroke" />
+                            <polygon points={activePolyMap.map(p => p.join(',')).join(' ')} class="fill-transparent stroke-white/80 drop-shadow-[0_0_4px_rgba(255,255,255,0.8)]" stroke-width="6" stroke-linejoin="round" vector-effect="non-scaling-stroke" />
                         </svg>
                     {/if}
                 {/if}
@@ -411,6 +411,9 @@
         </div>
         <div class="p-6 bg-base-100 flex flex-col items-center text-center gap-1">
             <a href="/container/{encodeURIComponent(activeMapLoc.container.name)}" class="font-bold text-xl hover:text-primary hover:underline">{activeMapLoc.container.name}</a>
+            {#if activePolyMap}
+                <div class="text-xs text-base-content/50 font-bold uppercase tracking-wider mt-1">{getHumanLocationText(activePolyMap)}</div>
+            {/if}
             {#if activeMapLoc.container.description || activeMapLoc.container.parent?.description}
                 <p class="text-sm text-gray-500">{activeMapLoc.container.description || activeMapLoc.container.parent?.description}</p>
             {/if}

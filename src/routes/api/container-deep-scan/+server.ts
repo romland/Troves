@@ -57,7 +57,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
         2. Look for printed labels (Dymo/Brother tape) which may be slightly outside or overlapping the box boundary, but clearly belong to that numbered slot.
         3. CRITICAL: If a label or component displays a specific value, measurement, or part number (e.g., "10k Ohm", "KBPC5010", "5V", "M3x10"), YOU MUST INCLUDE IT IN THE TITLE. Never use generic titles like "Resistors" or "Bridge Rectifiers" if the specific value is visible. The title must uniquely identify the exact component.
         4. If a slot is completely empty, SKIP IT. Do not include it in the results.
-        5. Estimate the fullness of the compartment based on 2D visual density. EMPTY: bottom of tray visible. SPARSE: mostly bottom visible. HALF_FULL: 50% covered. FULL: bottom completely obscured. OVERFLOWING: visibly piled up.
+        5. Estimate the fullness (fill_status) of the compartment. Account for camera perspective! Even at an angle, look at the volumetric fill. EMPTY: No items visible. SPARSE: 1-3 items, lots of empty space. HALF_FULL: Items cover the bottom but don't reach the top. FULL: Items completely fill the volume up to the rim. OVERFLOWING: Items pile up above the rim. If you can clearly see the bottom of the compartment, it is NOT full!
         Return a JSON array of objects mapping the 'slotIndex' to a highly specific 'title' (including key specifications), optional 'description', and 'fill_status'.`;
 
         const schema = {
@@ -65,7 +65,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
             properties: {
                 items: {
                     type: 'array',
-                    items: { type: 'object', properties: { slotIndex: { type: 'integer' }, title: { type: 'string' }, description: { type: 'string', nullable: true }, fill_status: { type: 'string', enum: ['EMPTY', 'SPARSE', 'HALF_FULL', 'FULL', 'OVERFLOWING'], description: 'Estimate fullness based on 2D visual density.' } }, required: ['slotIndex', 'title', 'fill_status'] }
+                    items: { type: 'object', properties: { slotIndex: { type: 'integer' }, title: { type: 'string' }, description: { type: 'string', nullable: true }, fill_status: { type: 'string', enum: ['EMPTY', 'SPARSE', 'HALF_FULL', 'FULL', 'OVERFLOWING'], description: 'Account for perspective. SPARSE: 1-3 items. HALF_FULL: partially filled. FULL: filled to the rim. OVERFLOWING: piled above rim. If you can see the bottom, it is NOT FULL.' } }, required: ['slotIndex', 'title', 'fill_status'] }
                 }
             },
             required: ['items']

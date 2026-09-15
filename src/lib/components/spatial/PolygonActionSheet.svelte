@@ -116,6 +116,7 @@
         isCreating = true;
         try {
             const fd = new FormData();
+            fd.append('clientId', typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2));
             fd.append('parentContainerId', String(parentContainerId));
             fd.append('polygon', JSON.stringify(polygonCoords));
             fd.append('parentImagePath', parentImagePath);

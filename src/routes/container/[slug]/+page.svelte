@@ -16,7 +16,7 @@
     import CompareHub from "$lib/components/compare/CompareHub.svelte";
     import Modal from "$lib/components/Modal.svelte";
     import MoveContainerModal from "$lib/components/MoveContainerModal.svelte";
-    import { saveToQueue } from "$lib/client/offlineQueue";
+    import { saveToQueue, outboxStore, completedOutboxStore } from "$lib/client/offlineQueue";
     import { invalidateAll } from '$app/navigation';
     import FillStatusSlider from "$lib/components/spatial/FillStatusSlider.svelte";
 
@@ -168,10 +168,8 @@
 
     $: allTrayBankEntities = [
         ...(data.item?.children || []).map((c: any) => ({ id: c.id, type: 'container', name: c.name, hasMap: !!c.spatialMap })),
-        ...(data.items || []).filter((i: any) => i.locations?.some((l: any) => l.containerId === data.item?.id)).map((i: any) => {
-            const loc = i.locations.find((l: any) => l.containerId === data.item?.id);
-            return { id: i.id, type: 'item', name: i.title, hasMap: !!loc.spatialMap };
-        })
+        ...(data.mappedItems || []).map((loc: any) => ({ id: loc.item.id, type: 'item', name: loc.item.title, hasMap: true })),
+        ...(data.unmappedItems || []).map((loc: any) => ({ id: loc.item.id, type: 'item', name: loc.item.title, hasMap: false }))
     ].sort((a, b) => {
         if (a.hasMap === b.hasMap) return a.name.localeCompare(b.name);
         return a.hasMap ? 1 : -1;
@@ -194,18 +192,39 @@
     $: childItemCount = data.items.filter(i => i.locations.some(l => l.container?.name !== data.item?.name)).length;
     $: directItemCount = data.items.length - childItemCount;
 
+    $: combinedOutbox = [...$outboxStore, ...$completedOutboxStore].filter((v, i, a) => a.findIndex(t => (t.id === v.id)) === i);
+    $: ghostQuickCreates = combinedOutbox.filter(job => job.endpoint === '/api/spatial-quick-create');
+
     $: mappedEntities = polygons.map(poly => {
         const polyStr = JSON.stringify(poly);
         
-        for (const item of (data.items || [])) {
-            for (const loc of item.locations) {
-                if (loc.containerId !== data.item?.id || !loc.spatialMap) continue;
+        for (const ghost of ghostQuickCreates) {
+            const fdData = ghost.payload as Record<string, any>;
+            const ghostContainerId = Array.isArray(fdData.parentContainerId) ? fdData.parentContainerId[0] : fdData.parentContainerId;
+            if (ghostContainerId && Number(ghostContainerId) === data.item?.id) {
+                const ghostPoly = Array.isArray(fdData.polygon) ? fdData.polygon[0] : fdData.polygon;
+                if (ghostPoly === polyStr) {
+                    const title = Array.isArray(fdData.title) ? fdData.title[0] : fdData.title;
+                    const imgPath = Array.isArray(fdData.parentImagePath) ? fdData.parentImagePath[0] : fdData.parentImagePath;
+                    const cat = Array.isArray(fdData.categoryName) ? fdData.categoryName[0] : fdData.categoryName;
+                    return { 
+                        type: 'item', name: title, title: title, spatialMapRaw: ghostPoly, isGhost: true,
+                        thumbPath: imgPath,
+                        locationName: data.item?.name,
+                        categoryName: cat || 'Processing...',
+                        locations: [{ spatialMap: ghostPoly, container: { photoPath: imgPath, parent: {} } }]
+                    };
+                }
+            }
+        }
+
+        for (const loc of (data.mappedItems || [])) {
+                if (!loc.spatialMap) continue;
                 try {
                     const parsed = JSON.parse(loc.spatialMap);
                     const p = Array.isArray(parsed) ? parsed : parsed.polygon;
-                    if (JSON.stringify(p) === polyStr) return { ...item, type: 'item', spatialMapRaw: loc.spatialMap };
+                    if (JSON.stringify(p) === polyStr) return { ...loc.item, type: 'item', spatialMapRaw: loc.spatialMap };
                 } catch(e) {}
-            }
         }
         
         for (const child of (data.item?.children || [])) {
@@ -303,10 +322,7 @@
                     {#if !isWarpMode}
                         {#if polygons.length === 0}
                             <button class="btn btn-sm btn-primary shadow-sm rounded-xl" on:click={triggerAiMapping} disabled={isMapping}>
-                                {#if isMapping}<span class="loading loading-spinner loading-xs"></span>{:else}<i class="bi bi-stars"></i> Map Automatically{/if}
-                            </button>
-                            <button class="btn btn-sm btn-secondary shadow-sm rounded-xl" on:click={() => auditModal.showModal()}>
-                                <i class="bi bi-camera"></i> Verify Contents
+                                {#if isMapping}<span class="loading loading-spinner loading-xs"></span> Mapping...{:else}<i class="bi bi-stars"></i> Map Automatically{/if}
                             </button>
                             <button class="btn btn-sm btn-outline border-base-300 rounded-xl" on:click={() => { spatialMapRef?.enterWarpMode(); }}>
                                 <i class="bi bi-grid-3x3"></i> Draw Grid
@@ -363,19 +379,30 @@
                 </div>
             </div>
             
-            <SpatialMap 
-                bind:this={spatialMapRef}
-                imageUrl={data.item.photoPath} 
-                bind:polygons 
-                mappedEntities={mappedEntities}
-                on:change={() => isMapDirty = true} 
-                on:select={handlePolySelect}
-                on:assign={handleAssign}
-                bind:isWarpMode
-                bind:warpCols={gridCols}
-                bind:warpRows={gridRows}
-                bind:warpCorners={warpCorners}
-            />
+            <div class="relative w-full rounded-[2rem] overflow-hidden">
+                <SpatialMap 
+                    bind:this={spatialMapRef}
+                    imageUrl={data.item.photoPath} 
+                    bind:polygons 
+                    mappedEntities={mappedEntities}
+                    on:change={() => isMapDirty = true} 
+                    on:select={handlePolySelect}
+                    on:assign={handleAssign}
+                    bind:isWarpMode
+                    bind:warpCols={gridCols}
+                    bind:warpRows={gridRows}
+                    bind:warpCorners={warpCorners}
+                />
+                {#if isMapping}
+                    <div class="absolute inset-0 z-50 bg-base-100/80 backdrop-blur-sm flex flex-col items-center justify-center rounded-[2rem] animate-fade-in">
+                        <div class="w-20 h-20 bg-primary/10 text-primary rounded-full flex items-center justify-center shadow-inner mb-4">
+                            <span class="loading loading-spinner loading-lg"></span>
+                        </div>
+                        <h3 class="font-bold text-2xl tracking-tight text-base-content">Tracing Compartments</h3>
+                        <p class="text-sm text-gray-500 font-medium mt-2 max-w-xs text-center">Our vision model is extracting the walls and dimensions of your container.</p>
+                    </div>
+                {/if}
+            </div>
             {#if allTrayBankEntities.length > 0}
                 <div class="mt-2 animate-fade-in">
                     <TrayBank entities={allTrayBankEntities} />
@@ -455,14 +482,16 @@
     <div class="modal-box p-0 overflow-hidden bg-base-100 shadow-2xl border border-base-200 sm:rounded-[2.5rem]">
         {#if isDeepScanning}
             <div class="flex flex-col items-center justify-center py-20 px-6 text-center gap-6">
-                <div class="relative w-24 h-24">
-                    <div class="absolute inset-0 border-[6px] border-base-200 rounded-full"></div>
-                    <div class="absolute inset-0 border-[6px] border-primary rounded-full border-t-transparent animate-spin"></div>
-                    <i class="bi bi-stars absolute inset-0 flex items-center justify-center text-4xl text-primary animate-pulse"></i>
+                <div class="relative w-32 h-32">
+                    <div class="absolute inset-0 border-[4px] border-base-200 rounded-full"></div>
+                    <div class="absolute inset-0 border-[4px] border-primary rounded-full border-t-transparent animate-spin"></div>
+                    <div class="absolute inset-0 border-[4px] border-secondary rounded-full border-b-transparent animate-spin" style="animation-duration: 2s; animation-direction: reverse;"></div>
+                    <i class="bi bi-magic absolute inset-0 flex items-center justify-center text-4xl text-primary animate-pulse"></i>
                 </div>
                 <div>
                     <h3 class="font-bold text-2xl tracking-tight text-base-content mb-2">Analyzing Compartments</h3>
-                    <p class="text-sm text-gray-500 font-medium">Scanning your container and reading labels...</p>
+                    <p class="text-sm text-gray-500 font-medium max-w-xs mx-auto">Scanning container and reading your labels...</p>
+                    <p class="text-xs text-base-content/40 mt-3 font-semibold">This might take a few moments per compartment. Grab a coffee!</p>
                 </div>
             </div>
         {:else if deepScanItems.length > 0 && deepScanItems[currentTriageIdx]}
@@ -530,6 +559,7 @@
                     <button class="btn btn-ghost text-error hover:bg-error/10 flex-1 rounded-xl" on:click={nextTriageItem}>Skip</button>
                     <button class="btn btn-primary flex-[2] shadow-md rounded-xl" on:click={async () => {
                         const fd = new FormData();
+                        fd.append('clientId', typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2));
                         fd.append('parentContainerId', String(data.item?.id));
                         fd.append('polygon', JSON.stringify(poly));
                         fd.append('parentImagePath', data.item?.photoPath);

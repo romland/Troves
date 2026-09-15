@@ -135,7 +135,7 @@
     $: combinedOutbox = [...$outboxStore, ...$completedOutboxStore].filter((v, i, a) => a.findIndex(t => (t.id === v.id)) === i);
     
     $: ghostItems = combinedOutbox
-        .filter(job => job.endpoint === '/add')
+        .filter(job => job.endpoint === '/add' || job.endpoint === '/api/spatial-quick-create')
         .map(job => {
             const getVal = (key: string) => Array.isArray(job.payload[key]) ? job.payload[key][0] : job.payload[key];
 

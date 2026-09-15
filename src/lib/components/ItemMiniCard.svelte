@@ -2,7 +2,6 @@
     export let item: any;
     import { createEventDispatcher } from 'svelte';
     import { isSlowConnection } from '$lib/client/utils';
-    import SpatialGridMap from "$lib/components/spatial/SpatialGridMap.svelte";
     const dispatch = createEventDispatcher();
 
     $: mainPhoto = item?.photos?.find(p => p.type === 'product' && p.isPrimary) || item?.photos?.find(p => p.type === 'product') || item?.photos?.[0] || {};
@@ -10,25 +9,6 @@
     $: cols = colorSource && colorSource.length > 2 ? Object.keys(JSON.parse(colorSource)) : [];
     $: cb = mainPhoto?.updatedAt ? '?v=' + new Date(mainPhoto.updatedAt).getTime() : (item?.updatedAt ? '?v=' + new Date(item.updatedAt).getTime() : '');
     $: srcUrl = item.thumbPath || mainPhoto.thumbPath || mainPhoto.orgPath;
-    
-    let polyMap: number[][] | null = null;
-    let isVectorGrid = false;
-    let allPolys: number[][][] = [];
-    let activeIdx = -1;
-    $: {
-        try {
-            let pMap = item.spatialMap ? JSON.parse(item.spatialMap) : (item.locations?.[0]?.spatialMap ? JSON.parse(item.locations[0].spatialMap) : null);
-            if (pMap && !Array.isArray(pMap) && pMap.polygon) {
-                polyMap = pMap.polygon;
-            } else {
-                polyMap = pMap;
-            }
-            const containerMapRaw = item.locations?.[0]?.container?.spatialMap ? JSON.parse(item.locations[0].container.spatialMap) : null;
-            isVectorGrid = containerMapRaw && !Array.isArray(containerMapRaw) && containerMapRaw.renderAsGrid;
-            allPolys = isVectorGrid ? (containerMapRaw.polygons || []) : [];
-            activeIdx = isVectorGrid && polyMap ? allPolys.findIndex(p => JSON.stringify(p) === JSON.stringify(polyMap)) : -1;
-        } catch (e) { polyMap = null; }
-    }
 
     const imgLoadStrategy = isSlowConnection() ? 'lazy' : 'eager';
 </script>
@@ -40,25 +20,7 @@
             {#if cols.length > 0}
                 <div class="absolute inset-0 opacity-30 pointer-events-none" style="background: linear-gradient(135deg, {cols[0]}, {cols[1] || cols[0]});"></div>
             {/if}
-        {#if isVectorGrid && allPolys.length > 0}
-            <div class="w-full h-full p-1 bg-base-200/50 flex items-center justify-center">
-                <SpatialGridMap polygons={allPolys} activeIndex={activeIdx} mappedIndices={[activeIdx]} referenceImage={srcUrl + cb} />
-            </div>
-        {:else if polyMap && srcUrl}
-            {@const clipPathStr = `polygon(${polyMap.map(p => `${(p[0]/10).toFixed(2)}% ${(p[1]/10).toFixed(2)}%`).join(', ')})`}
-            <div class="relative w-full h-full flex items-center justify-center bg-base-300">
-                <!-- Background: Dimmed & Blurred -->
-                <img class="absolute inset-0 w-full h-full object-cover blur-[1px] brightness-[0.75] saturate-[0.8]" src="{srcUrl}{cb}" alt="Background" />
-                
-                <!-- Foreground: Spotlight Clipped -->
-                <img src="{srcUrl}{cb}" alt={item.title} loading={imgLoadStrategy} class="absolute inset-0 w-full h-full object-cover drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)] z-10 scale-[1.02]" style="clip-path: {clipPathStr};" />
-                
-                <!-- Subtle Outer Glow Rim -->
-                <svg viewBox="0 0 1000 1000" preserveAspectRatio="none" class="absolute inset-0 w-full h-full pointer-events-none z-20 scale-[1.02]">
-                    <polygon points={polyMap.map(p => p.join(',')).join(' ')} class="fill-transparent stroke-white/80 drop-shadow-[0_0_2px_rgba(255,255,255,0.8)]" stroke-width="3" vector-effect="non-scaling-stroke" />
-                </svg>
-            </div>
-        {:else if srcUrl}
+        {#if srcUrl}
             <img src="{srcUrl}{cb}" alt={item.title} loading={imgLoadStrategy} class="w-full h-full object-cover mix-blend-multiply dark:mix-blend-normal relative z-10" />
         {:else}
             <i class="bi bi-box text-xl text-gray-400 relative z-10"></i>

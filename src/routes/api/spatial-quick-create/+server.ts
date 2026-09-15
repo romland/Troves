@@ -19,6 +19,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     const skipVision = formData.get('skipVision') === 'true';
     const removeBackground = formData.get('removeBackground') !== 'false';
     const fillStatus = formData.get('fillStatus') as string;
+    const clientId = formData.get('clientId') as string;
     
     const taskId = taskManager.start('global', 0, `Creating item from spatial map...`);
     try {
@@ -45,9 +46,17 @@ export const POST: RequestHandler = async ({ request, locals }) => {
         }
 
         const safeTitle = title?.trim() || 'New Item';
+
+        // Idempotency: Protect against outbox retries
+        if (clientId) {
+            const existing = await db.item.findUnique({ where: { clientId } });
+            if (existing) return json({ success: true, item: existing });
+        }
+
     const spatialMapData = fillStatus ? { polygon, fill_status: fillStatus } : polygon;
         const item = await db.item.create({
             data: {
+                clientId,
                 title: safeTitle,
                 description: description?.trim() || "",
                 slug: slugify(safeTitle, { lower: true, strict: true }) || 'new-item',

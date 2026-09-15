@@ -151,14 +151,14 @@
                     const fd = deserializeToFormData(item.payload);
                     const cleanEndpoint = item.endpoint.replace('?/default', '');
                     
+                    const headers: any = { 'accept': 'application/json' };
+                    if (!cleanEndpoint.startsWith('/api/')) headers['x-sveltekit-action'] = 'true';
+
                     // Emulate SvelteKit native form action to prevent downloading full HTML pages on redirect
                     const res = await fetch(cleanEndpoint, { 
                         method: 'POST', 
                         body: fd,
-                        headers: {
-                            'x-sveltekit-action': 'true',
-                            'accept': 'application/json'
-                        }
+                        headers
                     });
                     
                     if (res.ok) {
