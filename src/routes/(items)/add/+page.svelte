@@ -230,18 +230,17 @@ on:processingComplete={(ev) => {
     </div>
 
     {#if mode === 'single'}
-        <form id="eltForm" method="post" enctype="multipart/form-data" use:enhance={onSubmit} on:input={() => isDirty = true} on:change={() => isDirty = true}>
             <ItemHub 
             bind:this={itemHubComponent}
             containers={data.containers} 
             saving={saving}
             bind:isDirty
             pastedDocCount={pastedDocCount}
+			onSubmit={onSubmit}
             on:success={(ev) => notify("success", ev.detail)} 
             on:processingStart={(ev) => notify("loading", ev.detail.message, ev.detail.taskId)}
             on:processingComplete={(ev) => notify(ev.detail.status, ev.detail.message, ev.detail.taskId)}
             />
-        </form>
     {:else if mode === 'rapid'}
         <div class="flex flex-col items-center justify-center min-h-[60vh] text-center max-w-sm mx-auto px-4 animate-fade-in">
             <div class="w-32 h-32 bg-base-100 border border-base-200 text-secondary rounded-[2rem] flex items-center justify-center mb-8 shadow-2xl relative">

@@ -31,11 +31,6 @@
     let selectedRows: boolean[] = [];
 	let llmUsedForAttributes = false;
 
-    $: if (tableModalDialog) {
-        if (showTableModal && !tableModalDialog.open) tableModalDialog.showModal();
-        if (!showTableModal && tableModalDialog.open) tableModalDialog.close();
-    }
-
     // Automatically initialize row selection state whenever pendingRows updates
     $: if (pendingRows.length > 0 && selectedRows.length !== pendingRows.length) {
         selectedRows = new Array(pendingRows.length).fill(true);
@@ -114,6 +109,7 @@
             }
         }
         showTableModal = false;
+		tableModalDialog.close();
         applyKVPs(pastedKVPs, targetIndex);
 		if (isParsingLLM) { llmUsedForAttributes = true; isParsingLLM = false; }
     }
@@ -184,6 +180,7 @@
                         keyColIndex = 0;
                         valColIndex = maxCols > 1 ? 1 : 0;
                         showTableModal = true;
+						tableModalDialog.showModal();
                     } else {
 					notify('error', "Could not automatically parse pasted data.");
                     }
@@ -214,6 +211,7 @@
                 keyColIndex = 0;
                 valColIndex = 1;
                 showTableModal = true;
+				tableModalDialog.showModal();
             } else {
                 // Direct import for simple tables
                 const pastedKVPs = rows.map(r => {
@@ -232,6 +230,7 @@
     function handleKeydown(event: KeyboardEvent) {
         if (showTableModal && event.key === 'Escape') {
             showTableModal = false;
+			tableModalDialog.close();
         }
     }
 </script>
@@ -264,7 +263,7 @@
     </div>
 
 <!-- Column Picker Modal -->
-<Modal bind:this={tableModalDialog} title="Select Columns to Import" boxClass="max-w-4xl" blur={false} on:close={() => showTableModal = false}>
+<Modal bind:this={tableModalDialog} title="Select Columns to Import" boxClass="max-w-4xl" blur={false} on:close={() => { showTableModal = false; tableModalDialog.close(); }}>
         <p class="text-sm mb-4">We detected multiple columns in your pasted data. Please select which one represents the <strong>Attribute</strong> and which is the <strong>Value</strong>.</p>
         
         <div class="overflow-x-auto max-h-96 border border-base-200 rounded-lg">
@@ -324,7 +323,7 @@
         </div>
 
         <div class="modal-action">
-            <button type="button" class="btn" on:click={() => showTableModal = false}>Cancel</button>
+			<button type="button" class="btn" on:click={() => { showTableModal = false; tableModalDialog.close(); }}>Cancel</button>
             <button type="button" class="btn btn-primary" on:click={handleTableConfirm}>Import</button>
         </div>
 </Modal>

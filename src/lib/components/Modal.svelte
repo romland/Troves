@@ -18,5 +18,7 @@
         {/if}
         <slot />
     </div>
-    <form method="dialog" class="modal-backdrop"><button>close</button></form>
+	<div class="modal-backdrop" role="button" tabindex="-1" on:click={() => close()} on:keydown={(e) => { if (e.key === 'Enter' || e.key === ' ') close(); }}>
+		<button type="button" tabindex="-1" class="cursor-default w-full h-full outline-none border-none bg-transparent">close</button>
+	</div>
 </dialog>

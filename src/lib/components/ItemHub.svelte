@@ -16,9 +16,11 @@
     import Badge from "$lib/components/Badge.svelte";
     import { marked } from 'marked';
     import { createEventDispatcher, onMount } from 'svelte';
+	import type { SubmitFunction } from '@sveltejs/kit';
     import { ambientLocation } from '$lib/client/ambientContext';
     import { page } from '$app/stores';
     import { notify } from "$lib/client/notifications";
+    import { enhance } from "$app/forms";
 
     const dispatch = createEventDispatcher();
 
@@ -28,6 +30,7 @@
     export let isDirty = false;
     export let mode: 'single' | 'rapid' = 'single';
     export let pastedDocCount = 0;
+	export let onSubmit: SubmitFunction | undefined = undefined;
 
     onMount(() => {
         const handleTabShortcut = (e: any) => { activeView = e.detail; };
@@ -281,6 +284,8 @@
     }
 </script>
 
+<form id="eltForm" method="post" enctype="multipart/form-data" use:enhance={onSubmit || (() => {})} on:input={() => isDirty = true} on:change={() => isDirty = true}>
+<slot name="hidden-inputs" />
 <div class="relative w-full md:max-w-2xl mx-auto bg-base-100 md:rounded-[2rem] rounded-xl shadow-lg md:shadow-2xl border border-base-200 flex flex-col">
     
     <!-- ================= THE HUB VIEW ================= -->
@@ -447,9 +452,9 @@
                                 <i class="bi bi-pin-angle-fill text-[8px] opacity-70" title="Sticky Session Context"></i>
                             {/if}
                             {loc}
-                            <button type="button" class="btn btn-ghost btn-xs min-h-0 h-auto w-auto p-0 ml-0.5 hover:text-error" aria-label="Remove" on:click|stopPropagation={() => { selectedLocations = selectedLocations.filter(l => l !== loc); ambientLocation.setContext(selectedLocations); }}>
-                                <i class="bi bi-x"></i>
-                            </button>
+							<span role="button" tabindex="0" class="btn btn-ghost btn-xs min-h-0 h-auto w-auto p-0 ml-0.5 hover:text-error" aria-label="Remove" on:click|stopPropagation={() => { selectedLocations = selectedLocations.filter(l => l !== loc); ambientLocation.setContext(selectedLocations); }} on:keydown|stopPropagation={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectedLocations = selectedLocations.filter(l => l !== loc); ambientLocation.setContext(selectedLocations); } }}>
+								<i class="bi bi-x pointer-events-none"></i>
+							</span>
                             </Badge>
                     {/each}
                     {#if selectedLocations.length > 2}
@@ -649,6 +654,7 @@
         </div>
     </div>
 </div>
+</form>
 
 <!-- The Bottom Drawer for LLM Refinement -->
 <Modal bind:this={aiDialog} position="top" title="<i class='bi bi-stars text-primary'></i> Refine Guess" titleClass="font-bold text-xl mb-2 flex items-center gap-2" boxClass="w-full max-w-[95vw] sm:max-w-md mx-auto mt-4 sm:mt-0 p-6 bg-base-100/95 backdrop-blur-xl rounded-3xl overflow-hidden shadow-2xl">

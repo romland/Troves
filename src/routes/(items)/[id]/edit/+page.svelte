@@ -83,18 +83,18 @@
     </div>
 {/if}
 
-<form id="eltForm" method="post" enctype="multipart/form-data" use:enhance={onSubmit} on:input={() => isDirty = true} on:change={() => isDirty = true}>
-    <input type="hidden" name="id" value={data.item?.id}>
     <ItemHub 
         item={data.item}
         containers={data.containers} 
         saving={saving} 
         bind:isDirty
         pastedDocCount={pastedDocCount}
+		onSubmit={onSubmit}
         on:success={(ev) => notify("success", ev.detail)} 
         on:processingStart={(ev) => notify("loading", ev.detail.message, ev.detail.taskId)}
         on:processingComplete={(ev) => notify(ev.detail.status, ev.detail.message, ev.detail.taskId)}
-    />
-</form>
+	>
+		<input slot="hidden-inputs" type="hidden" name="id" value={data.item?.id}>
+	</ItemHub>
 
 <ConfirmModal bind:this={confirmModal} />
