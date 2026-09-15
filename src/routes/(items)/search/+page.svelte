@@ -212,6 +212,7 @@
     })();
 
     import pageTitle from '$lib/stores';
+    import { notify } from '$lib/client/notifications';
 	$: pageTitle.set(data.cat ? "Category: " + data.cat : (data.q ? "Search for " + data.q : "Search"));
 
     $: currentInventory = $page.data.inventories?.find(i => i.id === $page.data.activeInventoryId);

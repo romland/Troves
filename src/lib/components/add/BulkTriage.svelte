@@ -15,6 +15,7 @@
 	import ConfirmModal from "$lib/components/ConfirmModal.svelte";
     import FormInput from "$lib/components/FormInput.svelte";
     import { getCropStyles } from '$lib/shared/boundingBox';
+    import { notify } from '$lib/client/notifications';
 
     export let isDirty = false;
     export let containers: any[] = [];

@@ -81,7 +81,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
         const provider = textQuery.trim() ? 'local' : (groqData.provider || 'unknown');
         const logTitle = textQuery.trim() ? 'Voice Intent (Text Test)' : 'Voice Search';
 
-        recordLLMLog(logTitle, provider, { prompt: contextPrompt, textQuery, fileSize }, { text: rawTranscription, finalQuery, spokenReply, usage: transcription?.usage }, durationMs, tokensIn, tokensOut);
+		recordLLMLog(logTitle, provider, { prompt: contextPrompt, textQuery, fileSize }, { text: rawTranscription, finalQuery, spokenReply, usage: groqData?.usage }, durationMs, tokensIn, tokensOut);
         await logActivity(null, logTitle, `Parsed intent to query: "${finalQuery}"`, 'info');
 
         return json({ success: true, text: finalQuery, spokenReply, route });
