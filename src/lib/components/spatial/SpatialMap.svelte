@@ -524,6 +524,17 @@
                 <button class="btn btn-primary btn-sm rounded-xl shadow-sm flex-1" on:click={bakeWarpGrid}>Apply</button>
             </div>
         </div>
+
+        <!-- Guidance Pill -->
+        <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-40 bg-base-100/95 backdrop-blur-xl px-4 sm:px-5 py-3 sm:py-4 rounded-3xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] border border-base-200/50 text-[11px] sm:text-sm font-medium text-base-content/80 flex items-center gap-3 sm:gap-4 text-left pointer-events-auto animate-fade-in w-[95%] max-w-[500px]">
+            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0 shadow-inner">
+                <i class="bi bi-arrows-move text-xl sm:text-2xl"></i>
+            </div>
+            <div class="flex-1 leading-snug">
+                <strong class="text-base-content block mb-0.5 sm:mb-1 font-bold text-sm sm:text-base">Align the grid perfectly</strong>
+                Drag rings to match physical walls. If the photo cuts off the drawer, drag rings <em>outside</em> the image edge. We'll extrapolate the rest!
+            </div>
+        </div>
     {/if}
 
     <!-- Floating Apple-Style Hint -->
