@@ -28,9 +28,9 @@
     let spatialMapRef: SpatialMap;
     let actionSheet: PolygonActionSheet;
 
-    $: polygons = data.polygons || [];
-    $: warpMap = data.warpMap || null;
-    $: renderAsGrid = data.renderAsGrid || false;
+    let polygons = data.polygons || [];
+    let warpMap = data.warpMap || null;
+    let renderAsGrid = data.renderAsGrid || false;
     let isMapping = false;
     let isMapDirty = false;
     let activePolyIdx: number | null = null;
@@ -39,17 +39,20 @@
     let gridRows = data.warpMap?.rows || 4;
     let warpCorners = data.warpMap?.corners || [[100, 100], [900, 100], [900, 900], [100, 900]];
 
-    $: {
-        if (data.warpMap && !isMapDirty) {
+    let isWarpMode = false;
+
+    $: if (!isMapDirty && !isWarpMode) {
+        polygons = data.polygons || [];
+        warpMap = data.warpMap || null;
+        renderAsGrid = data.renderAsGrid || false;
+        if (data.warpMap) {
             gridCols = data.warpMap.cols;
             gridRows = data.warpMap.rows;
             warpCorners = data.warpMap.corners;
-        } else if (!data.warpMap && !isMapDirty && polygons.length === 0) {
+        } else if (!data.warpMap && polygons.length === 0) {
             gridCols = 5; gridRows = 4; warpCorners = [[100, 100], [900, 100], [900, 900], [100, 900]];
         }
     }
-
-    let isWarpMode = false;
 
     // Deep Scan Triage State
     let postSaveWizard: Modal;
@@ -81,6 +84,7 @@
                     warpCorners = warpMap.corners;
                     setTimeout(() => { spatialMapRef?.enterWarpMode(); }, 100);
                 }
+                isMapDirty = true;
                 if (json.newPhotoPath) {
                     data.item.photoPath = json.newPhotoPath;
                 }

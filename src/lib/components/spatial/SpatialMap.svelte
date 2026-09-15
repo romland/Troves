@@ -28,7 +28,9 @@
     });
 
     function saveHistory() {
-        history.push(JSON.stringify(polygons));
+        const newState = JSON.stringify(polygons);
+        if (history.length > 0 && history[history.length - 1] === newState) return;
+        history.push(newState);
         if (history.length > 20) history.shift();
         history = history;
     }
@@ -62,18 +64,20 @@
     let isPanning = false;
     let lastPanX = 0;
     let lastPanY = 0;
+    let panStartX = 0;
+    let panStartY = 0;
 
     function startPan(e: PointerEvent) {
         if (readonly) return;
         const target = e.target as HTMLElement;
-        // Block pan ONLY on interactive elements: buttons, drag handles, and clickable polygons
-        if (target.closest('button') || target.closest('.cursor-move') || target.closest('.cursor-pointer')) return;
+        // Block pan ONLY on interactive elements: buttons, drag handles
+        if (target.closest('button') || target.closest('.cursor-move')) return;
         
         isPanning = true;
         lastPanX = e.clientX;
         lastPanY = e.clientY;
-        
-        (e.currentTarget as Element).setPointerCapture(e.pointerId);
+        panStartX = e.clientX;
+        panStartY = e.clientY;
     }
 
     function startDrag(polyIdx: number, ptIdx: number, e: PointerEvent) {
@@ -120,6 +124,209 @@
         pt.y = e.clientY;
         const ctm = svgNode.getScreenCTM()?.inverse();
         return ctm ? pt.matrixTransform(ctm) : null;
+    }
+
+    $: sharedEdges = getSharedEdges(polygons);
+
+    function getSharedEdges(polys: number[][][]) {
+        if (!polys || polys.length === 0) return [];
+        const edges = [];
+        const threshold = 2;
+
+        for (let i = 0; i < polys.length; i++) {
+            for (let j = i + 1; j < polys.length; j++) {
+                const shared = [];
+                const unsharedI = [];
+                const unsharedJ = [];
+                
+                for (let pi = 0; pi < 4; pi++) {
+                    let isShared = false;
+                    for (let pj = 0; pj < 4; pj++) {
+                        if (Math.abs(polys[i][pi][0] - polys[j][pj][0]) < threshold && Math.abs(polys[i][pi][1] - polys[j][pj][1]) < threshold) {
+                            shared.push(polys[i][pi]);
+                            isShared = true;
+                            break;
+                        }
+                    }
+                    if (!isShared) unsharedI.push(polys[i][pi]);
+                }
+                
+                for (let pj = 0; pj < 4; pj++) {
+                    let isShared = false;
+                    for (let pi = 0; pi < 4; pi++) {
+                        if (Math.abs(polys[j][pj][0] - polys[i][pi][0]) < threshold && Math.abs(polys[j][pj][1] - polys[i][pi][1]) < threshold) {
+                            isShared = true;
+                            break;
+                        }
+                    }
+                    if (!isShared) unsharedJ.push(polys[j][pj]);
+                }
+
+                if (shared.length === 2 && unsharedI.length === 2 && unsharedJ.length === 2) {
+                    edges.push({ poly1: i, poly2: j, unshared: [...unsharedI, ...unsharedJ], x1: shared[0][0], y1: shared[0][1], x2: shared[1][0], y2: shared[1][1] });
+                }
+            }
+        }
+        return edges;
+    }
+
+    let lastEdgeTapTime = 0;
+    let lastTapEdge: any = null;
+
+    function handleEdgePointerDown(e: PointerEvent, edge: any) {
+        if (readonly || isWarpMode) return;
+        const now = Date.now();
+        
+        if (lastTapEdge === edge && (now - lastEdgeTapTime) < 400) {
+            e.stopPropagation();
+            e.preventDefault();
+            console.log(`[DEBUG-SPATIAL-MAP] Edge double-tap! Merging cells ${edge.poly1} and ${edge.poly2}`);
+            mergeEdge(edge);
+            lastEdgeTapTime = 0;
+            lastTapEdge = null;
+            return;
+        }
+        lastEdgeTapTime = now;
+        lastTapEdge = edge;
+    }
+
+    function mergeEdge(edge: any) {
+        saveHistory();
+        const outerPoints = edge.unshared;
+        const cx = outerPoints.reduce((sum: number, p: number[]) => sum + p[0], 0) / 4;
+        const cy = outerPoints.reduce((sum: number, p: number[]) => sum + p[1], 0) / 4;
+        outerPoints.sort((a: number[], b: number[]) => Math.atan2(a[1] - cy, a[0] - cx) - Math.atan2(b[1] - cy, b[0] - cx));
+        
+        polygons = polygons.filter((_, idx) => idx !== edge.poly1 && idx !== edge.poly2);
+        polygons.push(outerPoints);
+        activePolyIndex = polygons.length - 1;
+        dispatch('change', polygons);
+    }
+
+    function splitCell(idx: number, mode: 'v' | 'h' | 'q') {
+        saveHistory();
+        const poly = polygons[idx];
+        const p0 = poly[0], p1 = poly[1], p2 = poly[2], p3 = poly[3];
+
+        const mTop = [(p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2];
+        const mBot = [(p2[0] + p3[0]) / 2, (p2[1] + p3[1]) / 2];
+        const mRight = [(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2];
+        const mLeft = [(p3[0] + p0[0]) / 2, (p3[1] + p0[1]) / 2];
+        const c = [(p0[0] + p1[0] + p2[0] + p3[0]) / 4, (p0[1] + p1[1] + p2[1] + p3[1]) / 4];
+
+        polygons.splice(idx, 1);
+
+        if (mode === 'v') {
+            polygons.push([p0, mTop, mBot, p3], [mTop, p1, p2, mBot]);
+        } else if (mode === 'h') {
+            polygons.push([p0, p1, mRight, mLeft], [mLeft, mRight, p2, p3]);
+        } else if (mode === 'q') {
+            polygons.push([p0, mTop, c, mLeft], [mTop, p1, mRight, c], [c, mRight, p2, mBot], [mLeft, c, mBot, p3]);
+        }
+
+        polygons = [...polygons];
+        activePolyIndex = null;
+        dispatch('change', polygons);
+    }
+
+    $: intersections = getIntersections(polygons);
+
+    function getIntersections(polys: number[][][]) {
+        if (!polys || polys.length === 0) return [];
+        const threshold = 2;
+        const clusters: { x: number, y: number, points: { pIdx: number, ptIdx: number, pt: number[] }[] }[] = [];
+
+        for (let pIdx = 0; pIdx < polys.length; pIdx++) {
+            for (let ptIdx = 0; ptIdx < 4; ptIdx++) {
+                const pt = polys[pIdx][ptIdx];
+                let found = false;
+                for (let c of clusters) {
+                    if (Math.abs(c.x - pt[0]) < threshold && Math.abs(c.y - pt[1]) < threshold) {
+                        c.points.push({ pIdx, ptIdx, pt });
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    clusters.push({ x: pt[0], y: pt[1], points: [{ pIdx, ptIdx, pt }] });
+                }
+            }
+        }
+        return clusters.filter(c => c.points.length === 4);
+    }
+
+    let lastTapTime = 0;
+    let lastTapIntersection: any = null;
+
+    function handleIntersectionPointerDown(e: PointerEvent, intersection: any) {
+        if (readonly || isWarpMode) return;
+        e.stopPropagation();
+        e.preventDefault();
+        
+        const now = Date.now();
+        console.log(`[DEBUG-SPATIAL-MAP] Intersection tap. Time since last: ${now - lastTapTime}ms`);
+
+        if (lastTapIntersection === intersection && (now - lastTapTime) < 400) {
+            console.log(`[DEBUG-SPATIAL-MAP] Double-tap confirmed! Merging...`);
+            mergeIntersection(intersection);
+            lastTapTime = 0;
+            lastTapIntersection = null;
+            return;
+        }
+        
+        lastTapTime = now;
+        lastTapIntersection = intersection;
+        
+        console.log(`[DEBUG-SPATIAL-MAP] Starting drag on intersection.`);
+        saveHistory();
+        const basePt = intersection.points[0];
+        activePolyIndex = basePt.pIdx;
+        
+        draggingPoint = {
+            polyIdx: basePt.pIdx,
+            ptIdx: basePt.ptIdx,
+            sharedPoints: intersection.points.map((p: any) => ({ pIdx: p.pIdx, ptIdx: p.ptIdx }))
+        };
+        
+        try { (e.target as Element).setPointerCapture(e.pointerId); } catch(err) {}
+    }
+
+    function mergeIntersection(intersection: any) {
+        console.log(`[DEBUG-SPATIAL-MAP] Dissolving joint and merging ${intersection.points.length} polygons.`);
+        saveHistory();
+        
+        const polyIndicesToRemove = intersection.points.map((p: any) => p.pIdx);
+        const polysToRemove = polyIndicesToRemove.map((i: number) => polygons[i]);
+        
+        const allPoints: number[][] = [];
+        polysToRemove.forEach((poly: number[][]) => { poly.forEach((pt: number[]) => allPoints.push(pt)); });
+        
+        const outerPoints: number[][] = [];
+        for (let i = 0; i < allPoints.length; i++) {
+            const pt1 = allPoints[i];
+            let count = 0;
+            for (let j = 0; j < allPoints.length; j++) {
+                const pt2 = allPoints[j];
+                if (Math.abs(pt1[0] - pt2[0]) < 2 && Math.abs(pt1[1] - pt2[1]) < 2) count++;
+            }
+            if (count === 1) outerPoints.push(pt1);
+        }
+        
+        if (outerPoints.length === 4) {
+            console.log(`[DEBUG-SPATIAL-MAP] Successfully identified 4 outer corners.`);
+            const cx = outerPoints.reduce((sum, p) => sum + p[0], 0) / 4;
+            const cy = outerPoints.reduce((sum, p) => sum + p[1], 0) / 4;
+            outerPoints.sort((a, b) => Math.atan2(a[1] - cy, a[0] - cx) - Math.atan2(b[1] - cy, b[0] - cx));
+            
+            polygons = polygons.filter((_, idx) => !polyIndicesToRemove.includes(idx));
+            polygons.push(outerPoints);
+            activePolyIndex = polygons.length - 1;
+            
+            dispatch('change', polygons);
+            console.log(`[DEBUG-SPATIAL-MAP] Merge complete. New polygon added at index ${activePolyIndex}.`);
+        } else {
+            console.warn(`[DEBUG-SPATIAL-MAP] Merge failed: Expected 4 outer corners, found ${outerPoints.length}`);
+        }
     }
 
     function handlePointerMove(e: PointerEvent) {
@@ -179,11 +386,6 @@
     function handlePointerUp(e: PointerEvent) {
         if (isPanning) {
             isPanning = false;
-            try {
-                if ((e.currentTarget as Element).hasPointerCapture(e.pointerId)) {
-                    (e.currentTarget as Element).releasePointerCapture(e.pointerId);
-                }
-            } catch (err) {}
             return;
         }
 
@@ -211,6 +413,8 @@
     }
 
     function makeActive(idx: number, e: MouseEvent) {
+        // If the user was panning, ignore the click so we don't accidentally select a cell
+        if (Math.abs(e.clientX - panStartX) > 5 || Math.abs(e.clientY - panStartY) > 5) return;
         e.stopPropagation();
         activePolyIndex = idx;
     }
@@ -322,10 +526,18 @@
         </div>
     {/if}
 
+    <!-- Floating Apple-Style Hint -->
+    {#if !isWarpMode && !readonly && polygons.length > 0}
+        <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 bg-base-100/80 backdrop-blur-xl px-4 py-2 rounded-full shadow-lg border border-base-200/50 text-[10px] sm:text-xs font-medium text-base-content/80 flex items-center gap-2 pointer-events-none animate-fade-in whitespace-nowrap">
+            <i class="bi bi-info-circle text-primary"></i>
+            <span>Drag crosshairs to resize. <strong class="text-base-content font-bold">Double-tap</strong> corners or lines to merge compartments.</span>
+        </div>
+    {/if}
+
     <!-- Scrollable Canvas -->
     <!-- svelte-ignore a11y_click_events_have_key_events -->
     <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <div class="w-full h-full relative overflow-hidden bg-base-300 {isPanning ? 'cursor-grabbing' : 'cursor-grab'}" on:pointerdown={startPan} on:click={() => activePolyIndex = null}>
+    <div class="w-full h-full relative overflow-hidden bg-base-300 select-none {isPanning ? 'cursor-grabbing' : 'cursor-grab'}" on:pointerdown={startPan} on:click={(e) => { if (Math.abs(e.clientX - panStartX) < 5 && Math.abs(e.clientY - panStartY) < 5) activePolyIndex = null; }}>
         <div class="absolute inset-0 flex items-center justify-center p-6 sm:p-12 pointer-events-none">
             <div class="relative origin-center shadow-2xl ring-1 ring-black/5 shrink-0 pointer-events-auto" style="width: {zoomLevel}%; transform: translate({panX}px, {panY}px); transition: width 0.2s ease-out;">
                 <img src={imageUrl} alt="Container map" class="w-full h-auto block pointer-events-none" />
@@ -387,6 +599,18 @@
                                 </g>
                             {/if}
                         {/each}
+
+                        {#if !readonly}
+                            {#each sharedEdges as edge}
+                                <line 
+                                    x1={edge.x1} y1={edge.y1} x2={edge.x2} y2={edge.y2}
+                                    stroke="transparent" stroke-width="25"
+                                    class="cursor-pointer pointer-events-auto hover:stroke-primary/40 transition-colors z-30"
+                                    on:pointerdown={(e) => handleEdgePointerDown(e, edge)}
+                                    on:click|stopPropagation
+                                />
+                            {/each}
+                        {/if}
                     {/if}
                 </svg>
                                 
@@ -403,6 +627,19 @@
                             ></div>
                         {/each}
                     {:else}
+                        <!-- 4-Way Intersection Crosshair Targets -->
+                        {#if !readonly}
+                            {#each intersections as intersection}
+                                <!-- svelte-ignore a11y_no_static_element_interactions -->
+                                <div 
+                                    class="absolute w-10 h-10 -ml-5 -mt-5 rounded-full bg-transparent hover:bg-primary/10 transition-colors z-40 flex items-center justify-center cursor-move pointer-events-auto"
+                                    style="left: {intersection.x / 10}%; top: {intersection.y / 10}%;"
+                                    on:pointerdown={(e) => handleIntersectionPointerDown(e, intersection)}
+                                    on:click|stopPropagation
+                                ><div class="w-1.5 h-1.5 bg-primary/40 rounded-full pointer-events-none"></div></div>
+                            {/each}
+                        {/if}
+
                         <!-- Center Markers (Not Active) -->
                         {#each polygons as poly, i}
                             {@const isActive = activePolyIndex === i}
@@ -433,6 +670,7 @@
                             {@const isMapped = !!mappedEntities[i]}
                             {@const cx = (poly[0][0] + poly[1][0] + poly[2][0] + poly[3][0]) / 4}
                             {@const cy = (poly[0][1] + poly[1][1] + poly[2][1] + poly[3][1]) / 4}
+                            {@const minY = Math.min(poly[0][1], poly[1][1], poly[2][1], poly[3][1])}
 
                             {#if isActive && !readonly}
                                 <!-- Corner Drag Handles -->
@@ -444,6 +682,16 @@
                                         on:click|stopPropagation
                                     ></div>
                                 {/each}
+
+                                <!-- Split Actions Toolbar -->
+                                <div 
+                                    class="absolute w-max -translate-x-1/2 -translate-y-full -mt-3 pointer-events-auto bg-base-100/95 backdrop-blur-md shadow-lg rounded-full px-2 py-1.5 border border-base-200 flex items-center gap-1 animate-fade-in z-50"
+                                    style="left: {cx / 10}%; top: {minY / 10}%;"
+                                >
+                                    <button class="btn btn-xs btn-ghost btn-circle text-gray-500 hover:text-primary hover:bg-primary/10" title="Split Vertically" on:click|stopPropagation={() => splitCell(i, 'v')}><i class="bi bi-layout-split"></i></button>
+                                    <button class="btn btn-xs btn-ghost btn-circle text-gray-500 hover:text-primary hover:bg-primary/10" title="Split Horizontally" on:click|stopPropagation={() => splitCell(i, 'h')}><i class="bi bi-layout-split rotate-90"></i></button>
+                                    <button class="btn btn-xs btn-ghost btn-circle text-gray-500 hover:text-primary hover:bg-primary/10" title="Split into 4" on:click|stopPropagation={() => splitCell(i, 'q')}><i class="bi bi-grid"></i></button>
+                                </div>
 
                                 <!-- Action Center Button -->
                                 <div 
