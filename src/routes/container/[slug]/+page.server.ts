@@ -147,4 +147,32 @@ export const actions = {
         }
         return { success: true, message: "Unlinked from map." };
     },
+
+    updateFillStatus: async ({ request, locals }) => {
+        if (!locals.user) return fail(401, { error: true, message: "Unauthorized" });
+        const data = await request.formData();
+        const entityId = Number(data.get('entityId'));
+        const entityType = data.get('entityType') as string;
+        const parentContainerId = Number(data.get('parentContainerId'));
+        const fillStatus = data.get('fillStatus') as string;
+
+        if (entityType === 'container') {
+            const child = await db.container.findFirst({ where: { id: entityId, inventoryId: locals.activeInventoryId, parentId: parentContainerId }});
+            if (child && child.spatialMap) {
+                let parsed = JSON.parse(child.spatialMap);
+                if (Array.isArray(parsed)) parsed = { polygon: parsed };
+                parsed.fill_status = fillStatus;
+                await db.container.update({ where: { id: entityId }, data: { spatialMap: JSON.stringify(parsed) }});
+            }
+        } else {
+            const loc = await db.itemsInContainer.findFirst({ where: { itemId: entityId, containerId: parentContainerId }});
+            if (loc && loc.spatialMap) {
+                let parsed = JSON.parse(loc.spatialMap);
+                if (Array.isArray(parsed)) parsed = { polygon: parsed };
+                parsed.fill_status = fillStatus;
+                await db.itemsInContainer.update({ where: { itemId_containerId: { itemId: entityId, containerId: parentContainerId } }, data: { spatialMap: JSON.stringify(parsed) }});
+            }
+        }
+        return { success: true };
+    }
 };

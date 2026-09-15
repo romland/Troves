@@ -115,6 +115,12 @@
                 </div>
             {/if}
             
+            {#if item.fill_status}
+                <div class="mt-1.5 flex">
+                    <Badge class="uppercase tracking-wider font-bold opacity-80 border-base-300 text-[9px]" color="ghost" size="xs"><i class="bi bi-pie-chart-fill mr-1 opacity-50"></i> {item.fill_status.replace('_', ' ')}</Badge>
+                </div>
+            {/if}
+
             <div class="flex items-center gap-2 mt-2">
                 {#if type === 'unregistered'}
                     <Badge color="ghost" size="xs" class="text-[10px] uppercase font-bold w-max text-primary/80 bg-primary/10 border-none">Not in Trove</Badge>

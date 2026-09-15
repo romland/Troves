@@ -18,6 +18,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     const description = formData.get('description') as string;
     const skipVision = formData.get('skipVision') === 'true';
     const removeBackground = formData.get('removeBackground') !== 'false';
+    const fillStatus = formData.get('fillStatus') as string;
     
     const taskId = taskManager.start('global', 0, `Creating item from spatial map...`);
     try {
@@ -44,6 +45,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
         }
 
         const safeTitle = title?.trim() || 'New Item';
+    const spatialMapData = fillStatus ? { polygon, fill_status: fillStatus } : polygon;
         const item = await db.item.create({
             data: {
                 title: safeTitle,
@@ -55,7 +57,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
                 locations: {
                     create: [{
                         containerId: parentContainerId,
-                        spatialMap: JSON.stringify(polygon)
+                    spatialMap: JSON.stringify(spatialMapData)
                     }]
                 }
             }

@@ -17,7 +17,12 @@
     let activeIdx = -1;
     $: {
         try {
-            polyMap = item.spatialMap ? JSON.parse(item.spatialMap) : (item.locations?.[0]?.spatialMap ? JSON.parse(item.locations[0].spatialMap) : null);
+            let pMap = item.spatialMap ? JSON.parse(item.spatialMap) : (item.locations?.[0]?.spatialMap ? JSON.parse(item.locations[0].spatialMap) : null);
+            if (pMap && !Array.isArray(pMap) && pMap.polygon) {
+                polyMap = pMap.polygon;
+            } else {
+                polyMap = pMap;
+            }
             const containerMapRaw = item.locations?.[0]?.container?.spatialMap ? JSON.parse(item.locations[0].container.spatialMap) : null;
             isVectorGrid = containerMapRaw && !Array.isArray(containerMapRaw) && containerMapRaw.renderAsGrid;
             allPolys = isVectorGrid ? (containerMapRaw.polygons || []) : [];

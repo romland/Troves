@@ -80,7 +80,14 @@ export const POST = async ({ request, locals }) => {
             const warpedPoly = warpedPolygons[i];
             const origPolyStr = JSON.stringify(origPoly);
             
-            const expectedRecord = mappedItems.find(mi => mi.spatialMap === origPolyStr);
+        const expectedRecord = mappedItems.find(mi => {
+            if (!mi.spatialMap) return false;
+            try {
+                const parsed = JSON.parse(mi.spatialMap);
+                const p = Array.isArray(parsed) ? parsed : parsed.polygon;
+                return JSON.stringify(p) === origPolyStr;
+            } catch(e) { return false; }
+        });
             if (!expectedRecord) continue;
             
             baselineMap.push({
@@ -113,6 +120,7 @@ export const POST = async ({ request, locals }) => {
                     title: expectedItem.title,
                     box: warpedPoly, // UI uses this to draw AR glowing box over the new photo
                     category: 'Matched',
+                    fill_status: llmResult.fill_status,
                     matchedItem: {
                         id: expectedItem.id,
                         title: expectedItem.title,
@@ -132,12 +140,13 @@ export const POST = async ({ request, locals }) => {
                     isShortfall: true,
                     expected: 1,
                     count: 0,
+                    fill_status: llmResult.fill_status,
                     spatialMap: origPolyStr // The DB needs the original string to repair/link the slot
                 });
 
                 if (llmResult.status === 'DIFFERENT') {
                     // New unexpected item! The bounding box handles the crop so we can instantly save it to the DB
-                    newToYou.push({ title: llmResult.title || 'Unknown Unexpected Item', subtitle: llmResult.description || 'Found in occupied slot', box: warpedPoly, category: 'Anomaly' });
+                    newToYou.push({ title: llmResult.title || 'Unknown Unexpected Item', subtitle: llmResult.description || 'Found in occupied slot', box: warpedPoly, category: 'Anomaly', fill_status: llmResult.fill_status });
                 }
             }
         }

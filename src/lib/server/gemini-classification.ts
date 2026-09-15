@@ -179,6 +179,7 @@ CRITICAL RULES FOR EXTRACTION:
 3. If status is DIFFERENT, 'title' MUST be under 5 words, and 'description' MUST be under 10 words (e.g., "Mixed loose components", "Red wires").
 
 For EACH compartment in the map, verify its contents against the expectation:
+- Also, estimate the volumetric fill level of the compartment.
 - If the expected item is there, set status to "PRESENT".
 - If the slot is completely empty, set status to "EMPTY".
 - If there is an item but it is clearly NOT the expected item, set status to "DIFFERENT" and provide a strict, brief 'title' and 'description' of what is actually there.
@@ -196,7 +197,8 @@ Return an array of results that matches the exact order and length of the baseli
             properties: { 
                 status: { type: 'string', enum: ['PRESENT', 'EMPTY', 'DIFFERENT'] }, 
                 title: { type: 'string', nullable: true, description: "Max 5 words. No explanation." }, 
-                description: { type: 'string', nullable: true, description: "Max 10 words. NEVER explain your reasoning." } 
+                        description: { type: 'string', nullable: true, description: "Max 10 words. NEVER explain your reasoning." },
+                        fill_status: { type: 'string', enum: ['EMPTY', 'SPARSE', 'HALF_FULL', 'FULL', 'OVERFLOWING'], description: "Estimate fullness based on 2D visual density. EMPTY: bottom of tray visible. SPARSE: mostly bottom visible. HALF_FULL: 50% covered. FULL: bottom completely obscured. OVERFLOWING: visibly piled up." }
             },
             required: ['status']
           }

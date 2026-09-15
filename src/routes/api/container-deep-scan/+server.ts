@@ -57,14 +57,15 @@ export const POST: RequestHandler = async ({ request, locals }) => {
         1. Look at the physical item itself.
         2. Look for printed labels (Dymo/Brother tape) which may be slightly outside or overlapping the box boundary, but clearly belong to that numbered slot.
         3. If a slot is completely empty, SKIP IT. Do not include it in the results.
-        Return a JSON array of objects mapping the 'slotIndex' to a concise 'title' and optional 'description'.`;
+        4. Estimate the fullness of the compartment based on 2D visual density. EMPTY: bottom of tray visible. SPARSE: mostly bottom visible. HALF_FULL: 50% covered. FULL: bottom completely obscured. OVERFLOWING: visibly piled up.
+        Return a JSON array of objects mapping the 'slotIndex' to a concise 'title', optional 'description', and 'fill_status'.`;
 
         const schema = {
             type: 'object',
             properties: {
                 items: {
                     type: 'array',
-                    items: { type: 'object', properties: { slotIndex: { type: 'integer' }, title: { type: 'string' }, description: { type: 'string' } }, required: ['slotIndex', 'title'] }
+                    items: { type: 'object', properties: { slotIndex: { type: 'integer' }, title: { type: 'string' }, description: { type: 'string', nullable: true }, fill_status: { type: 'string', enum: ['EMPTY', 'SPARSE', 'HALF_FULL', 'FULL', 'OVERFLOWING'], description: 'Estimate fullness based on 2D visual density.' } }, required: ['slotIndex', 'title', 'fill_status'] }
                 }
             },
             required: ['items']

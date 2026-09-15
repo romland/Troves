@@ -18,6 +18,7 @@
     import MoveContainerModal from "$lib/components/MoveContainerModal.svelte";
     import { saveToQueue } from "$lib/client/offlineQueue";
     import { invalidateAll } from '$app/navigation';
+    import FillStatusSlider from "$lib/components/spatial/FillStatusSlider.svelte";
 
     export let data: PageServerData;
 
@@ -191,10 +192,27 @@
 
     $: mappedEntities = polygons.map(poly => {
         const polyStr = JSON.stringify(poly);
-        const foundItem = data.items?.find(i => i.locations?.some(l => l.containerId === data.item?.id && l.spatialMap === polyStr));
-        if (foundItem) return { ...foundItem, type: 'item' };
-        const foundTray = data.item?.children?.find(c => c.spatialMap === polyStr);
-        if (foundTray) return { ...foundTray, type: 'container' };
+        
+        for (const item of (data.items || [])) {
+            for (const loc of item.locations) {
+                if (loc.containerId !== data.item?.id || !loc.spatialMap) continue;
+                try {
+                    const parsed = JSON.parse(loc.spatialMap);
+                    const p = Array.isArray(parsed) ? parsed : parsed.polygon;
+                    if (JSON.stringify(p) === polyStr) return { ...item, type: 'item', spatialMapRaw: loc.spatialMap };
+                } catch(e) {}
+            }
+        }
+        
+        for (const child of (data.item?.children || [])) {
+            if (!child.spatialMap) continue;
+            try {
+                const parsed = JSON.parse(child.spatialMap);
+                const p = Array.isArray(parsed) ? parsed : parsed.polygon;
+                if (JSON.stringify(p) === polyStr) return { ...child, type: 'container', spatialMapRaw: child.spatialMap };
+            } catch(e) {}
+        }
+
         return null;
     });
 </script>
@@ -289,54 +307,54 @@
                             <button class="btn btn-sm btn-outline border-base-300 rounded-xl" on:click={() => { spatialMapRef?.enterWarpMode(); }}>
                                 <i class="bi bi-grid-3x3"></i> Draw Grid
                             </button>
-                        {:else}
-                        <div class="dropdown dropdown-end">
-                            <button tabindex="0" class="btn btn-circle btn-ghost bg-base-100/50 backdrop-blur-md border border-base-200 shadow-sm" aria-label="Map Options">
-                                <i class="bi bi-three-dots text-xl"></i>
-                            </button>
-                            <ul tabindex="0" class="dropdown-content z-50 p-2 shadow-2xl bg-base-100/95 backdrop-blur-xl border border-base-200 rounded-2xl w-64 mt-2 gap-1 menu">
-                                <li class="menu-title text-[10px] font-bold uppercase tracking-wider text-gray-400 pb-1">Automations</li>
-                                <li>
-                                    <button class="font-medium text-base-content hover:text-primary" on:click={triggerDeepScan} disabled={isDeepScanning}>
-                                        {#if isDeepScanning}<span class="loading loading-spinner loading-xs"></span>{:else}<i class="bi bi-stars text-primary text-lg opacity-80"></i> Auto-Detect Contents{/if}
-                                    </button>
-                                </li>
-                                <li>
-                                    <button class="font-medium text-base-content hover:text-secondary" on:click={() => auditModal.showModal()}>
-                                        <i class="bi bi-camera text-secondary text-lg opacity-80"></i> Verify Contents
-                                    </button>
-                                </li>
-                                <div class="divider my-0 h-[1px] bg-base-200"></div>
-                                <li class="menu-title text-[10px] font-bold uppercase tracking-wider text-gray-400 pb-1 pt-2">Display & Map</li>
-                                <li>
-                                    <button class="font-medium text-base-content" on:click={() => { spatialMapRef?.enterWarpMode(); (document.activeElement)?.blur(); }}>
-                                        <i class="bi bi-grid-3x3 text-lg opacity-70"></i> Adjust Grid Alignment
-                                    </button>
-                                </li>
-                                <li>
-                                    <label class="cursor-pointer flex items-center justify-between hover:bg-base-200/50 p-3 rounded-lg mt-1">
-                                        <span class="font-medium text-sm flex items-center gap-2"><i class="bi bi-image text-lg opacity-70"></i> Hide Photo</span>
-                                        <input type="checkbox" class="toggle toggle-primary toggle-sm" bind:checked={renderAsGrid} on:change={() => isMapDirty = true} />
-                                    </label>
-                                </li>
-                                <div class="divider my-0 h-[1px] bg-base-200"></div>
-                                <li>
-                                    <form method="POST" action="?/clearSpatialMap" class="m-0 p-0 block w-full" use:enhance={() => {
-                                        return async ({ update }) => { 
-                                            polygons = []; 
-                                            isMapDirty = false; 
-                                            notify('success', 'Map cleared. Ready to start over.'); 
-                                            await update({ reset: false }); 
-                                        };
-                                    }}>
-                                        <button class="w-full text-left font-medium text-error hover:bg-error/10 hover:text-error py-2 px-3 rounded-lg" on:click|preventDefault={(e) => { if(confirm('Clear the entire map and start over?')) e.currentTarget.closest('form').submit(); }}>
-                                            <i class="bi bi-trash text-lg opacity-80 mr-2"></i> Delete Map
+                            {:else}
+                            <div class="dropdown dropdown-end">
+                                <button tabindex="0" class="btn btn-circle btn-ghost bg-base-100/50 backdrop-blur-md border border-base-200 shadow-sm" aria-label="Map Options">
+                                    <i class="bi bi-three-dots text-xl"></i>
+                                </button>
+                                <ul tabindex="0" class="dropdown-content z-50 p-2 shadow-2xl bg-base-100/95 backdrop-blur-xl border border-base-200 rounded-2xl w-64 mt-2 gap-1 menu">
+                                    <li class="menu-title text-[10px] font-bold uppercase tracking-wider text-gray-400 pb-1">Automations</li>
+                                    <li>
+                                        <button class="font-medium text-base-content hover:text-primary" on:click={triggerDeepScan} disabled={isDeepScanning}>
+                                            {#if isDeepScanning}<span class="loading loading-spinner loading-xs"></span>{:else}<i class="bi bi-stars text-primary text-lg opacity-80"></i> Auto-Detect Contents{/if}
                                         </button>
-                                    </form>
-                                </li>
-                            </ul>
-                        </div>
-                    {/if}
+                                    </li>
+                                    <li>
+                                        <button class="font-medium text-base-content hover:text-secondary" on:click={() => auditModal.showModal()}>
+                                            <i class="bi bi-camera text-secondary text-lg opacity-80"></i> Verify Contents
+                                        </button>
+                                    </li>
+                                    <div class="divider my-0 h-[1px] bg-base-200"></div>
+                                    <li class="menu-title text-[10px] font-bold uppercase tracking-wider text-gray-400 pb-1 pt-2">Display & Map</li>
+                                    <li>
+                                        <button class="font-medium text-base-content" on:click={() => { spatialMapRef?.enterWarpMode(); (document.activeElement)?.blur(); }}>
+                                            <i class="bi bi-grid-3x3 text-lg opacity-70"></i> Adjust Grid Alignment
+                                        </button>
+                                    </li>
+                                    <li>
+                                        <label class="cursor-pointer flex items-center justify-between hover:bg-base-200/50 p-3 rounded-lg mt-1">
+                                            <span class="font-medium text-sm flex items-center gap-2"><i class="bi bi-image text-lg opacity-70"></i> Hide Photo</span>
+                                            <input type="checkbox" class="toggle toggle-primary toggle-sm" bind:checked={renderAsGrid} on:change={() => isMapDirty = true} />
+                                        </label>
+                                    </li>
+                                    <div class="divider my-0 h-[1px] bg-base-200"></div>
+                                    <li>
+                                        <form method="POST" action="?/clearSpatialMap" class="m-0 p-0 block w-full" use:enhance={() => {
+                                            return async ({ update }) => { 
+                                                polygons = []; 
+                                                isMapDirty = false; 
+                                                notify('success', 'Map cleared. Ready to start over.'); 
+                                                await update({ reset: false }); 
+                                            };
+                                        }}>
+                                            <button class="w-full text-left font-medium text-error hover:bg-error/10 hover:text-error py-2 px-3 rounded-lg" on:click|preventDefault={(e) => { if(confirm('Clear the entire map and start over?')) e.currentTarget.closest('form').submit(); }}>
+                                                <i class="bi bi-trash text-lg opacity-80 mr-2"></i> Delete Map
+                                            </button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </div>
+                        {/if}
                     {/if}
                 </div>
             </div>
@@ -498,6 +516,10 @@
                 <FormInput label="Suggested Title" bind:value={currentItem.title} required />
                 <FormInput label="Description (Optional)" bind:value={currentItem.description} />
                 
+                <div class="mt-2">
+                    <FillStatusSlider bind:value={currentItem.fill_status} showHeader={false} />
+                </div>
+
                 <SpatialItemSettings bind:analyzeWithVision bind:removeBackground />
 
                 <div class="flex gap-2 mt-4">
@@ -509,6 +531,7 @@
                         fd.append('parentImagePath', data.item?.photoPath);
                         fd.append('title', currentItem.title);
                         if (currentItem.description) fd.append('description', currentItem.description);
+                        if (currentItem.fill_status) fd.append('fillStatus', currentItem.fill_status);
                         fd.append('skipVision', String(!analyzeWithVision));
                         fd.append('removeBackground', String(removeBackground));
                         await saveToQueue('/api/spatial-quick-create', fd);

@@ -8,6 +8,7 @@
     import { notify } from "$lib/client/notifications";
     import { saveToQueue } from "$lib/client/offlineQueue";
     import { enhance } from "$app/forms";
+    import FillStatusSlider from "./FillStatusSlider.svelte";
 
     const dispatch = createEventDispatcher();
     let modal: Modal;
@@ -28,6 +29,18 @@
     let existingMatches: any[] = [];
     let analyzeWithVision = false;
     let removeBackground = true;
+
+    let currentFillStatus = 'EMPTY';
+
+    $: if (mappedEntity) {
+        currentFillStatus = 'EMPTY';
+        if (mappedEntity.spatialMapRaw) {
+            try {
+                const parsed = JSON.parse(mappedEntity.spatialMapRaw);
+                if (parsed.fill_status) currentFillStatus = parsed.fill_status;
+            } catch(e) {}
+        }
+    }
 
     $: if (aiSuggestedTitle && !itemTitle) itemTitle = aiSuggestedTitle;
     $: if (aiSuggestedTitle && !itemTitle) onTitleInput();
@@ -130,6 +143,22 @@
             <div class="text-[10px] font-bold uppercase tracking-wider text-primary">Mapped Entity</div>
             <ItemMiniCard item={mappedEntity} />
             
+
+            <div class="mt-3 bg-base-200/50 p-4 rounded-xl border border-base-200">
+                <form id="fillStatusForm-{mappedEntity.id}" method="POST" action="?/updateFillStatus" class="m-0" use:enhance={() => {
+                    return async ({ update }) => {
+                        await update({ reset: false });
+                        dispatch('updated');
+                    };
+                }}>
+                    <input type="hidden" name="entityId" value={mappedEntity.id}>
+                    <input type="hidden" name="entityType" value={mappedEntity.type || 'item'}>
+                    <input type="hidden" name="parentContainerId" value={parentContainerId}>
+                    <input type="hidden" name="fillStatus" value={currentFillStatus}>
+                    
+                    <FillStatusSlider bind:value={currentFillStatus} on:change={() => document.getElementById(`fillStatusForm-${mappedEntity.id}`)?.requestSubmit()} />
+                </form>
+            </div>
             <form method="POST" action="?/unmapEntity" use:enhance={() => {
                 return async ({ update }) => { dispatch('unmapped'); close(); await update({ reset: false }); };
             }}>
