@@ -23,6 +23,8 @@
     import { notify } from "$lib/client/notifications";
     import { dev } from '$app/environment';
     import { onMount } from 'svelte';
+    import pageTitle from '$lib/stores';
+    import ConfirmModal from "$lib/components/ConfirmModal.svelte";
 
     export let data: PageServerData;
     
@@ -36,6 +38,7 @@
     let duplicateDeleteModal: Delete;
     let diagnosticModal: HTMLDialogElement;
     let pasteHandler: PasteHandler;
+    let confirmModal: ConfirmModal;
     onMount(() => {
         const handleInc = () => { 
             if (data.item?.inventory?.trackQuantity && data.canEdit) document.getElementById('incStockBtn')?.click();
@@ -114,8 +117,6 @@
         }
     }
     
-    import pageTitle from '$lib/stores';
-    import ConfirmModal from "$lib/components/ConfirmModal.svelte";
 $:  pageTitle.set(data.item?.title || 'Item Details');
 
 $:	itemCategories = Array.from(new Set(data.item?.photos?.filter(p => p.category).map(p => p.category.name) || []));
@@ -189,6 +190,15 @@ $: if (data.duplicateItemDetails?.debugTrace) {
                     {/if}
                     -->
                     <li>
+                        <button type="button" class="font-medium text-base-content hover:text-primary" on:click={async () => {
+                            if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+                            const res = await confirmModal.ask('Re-analyze Item', 'Troves will scan this item\'s photos using the vision model to extract deeper attributes. All auto-generated attributes will be replaced. Manual attributes are kept. Continue?', 'Re-analyze', 'Cancel');
+                            if (res) (document.getElementById('reanalyzeForm') as HTMLFormElement).requestSubmit();
+                        }}>
+                            <i class="bi bi-magic text-lg opacity-70"></i> Re-analyze
+                        </button>
+                    </li>                    
+                    <li>
                         <a href="https://www.google.com/search?q={encodeURIComponent(data.item?.title)}" target="_blank" rel="noopener noreferrer" class="font-medium text-base-content hover:text-primary">
                             <i class="bi bi-google text-lg opacity-70"></i> Search
                         </a>
@@ -234,6 +244,13 @@ $: if (data.duplicateItemDetails?.debugTrace) {
             <Delete bind:this={duplicateDeleteModal} action="?/deleteDuplicate" message="Are you sure you want to vaporize this anomaly? This cannot be undone." btnClass="hidden" />
         </div>
     {/if}
+
+    <form id="reanalyzeForm" method="POST" action="?/reanalyze" class="hidden" use:enhance={() => {
+        return async ({ update }) => {
+            notify('info', 'Item queued for re-analysis.');
+            await update({ reset: false });
+        };
+    }}></form>
 
     <!-- End-User Processing Indicator -->
     {#if isProcessingItem}
@@ -427,7 +444,7 @@ $: if (data.duplicateItemDetails?.debugTrace) {
 
 <ImageLightbox bind:this={lightbox} itemTitle={data.item?.title} categories={data.categories} allowCategoryEdit={true} />
 <DocumentLightbox bind:this={docLightbox} />
-
+<ConfirmModal bind:this={confirmModal} />
 
 
 <style>
