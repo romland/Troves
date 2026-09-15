@@ -141,7 +141,7 @@
     <div class="px-6 pb-8 pt-2 flex flex-col gap-4">
         {#if mappedEntity}
             <!-- Already mapped -->
-            <div class="text-[10px] font-bold uppercase tracking-wider text-primary">Mapped Entity</div>
+            <div class="text-[10px] font-bold uppercase tracking-wider text-primary">Assigned Item</div>
             <ItemMiniCard item={mappedEntity} />
             
 
@@ -166,7 +166,7 @@
                 <input type="hidden" name="entityId" value={mappedEntity.id}>
                 <input type="hidden" name="entityType" value={mappedEntity.type || 'item'}>
                 <input type="hidden" name="parentContainerId" value={parentContainerId}>
-                <button type="submit" class="btn btn-outline btn-error w-full rounded-xl mt-2">Unlink from Map</button>
+            <button type="submit" class="btn btn-outline btn-error w-full rounded-xl mt-2">Remove from Location</button>
             </form>
         {:else}
             <!-- Empty Polygon -->

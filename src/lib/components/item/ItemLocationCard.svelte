@@ -410,7 +410,15 @@
             {/if}
         </div>
         <div class="p-6 bg-base-100 flex flex-col items-center text-center gap-1">
+            {#if activeMapLoc.container.parentId}
+                <ContainerBreadcrumbs containerId={activeMapLoc.container.id} containers={allContainers} />
+            {/if}
             <a href="/container/{encodeURIComponent(activeMapLoc.container.name)}" class="font-bold text-xl hover:text-primary hover:underline">{activeMapLoc.container.name}</a>
+            {#if activeMapLoc.container.location || activeMapLoc.container.parent?.location}
+                <div class="text-xs font-semibold text-primary mt-0.5">
+                    <i class="bi bi-geo-alt-fill"></i> {activeMapLoc.container.location || activeMapLoc.container.parent?.location}
+                </div>
+            {/if}
             {#if activePolyMap}
                 <div class="text-xs text-base-content/50 font-bold uppercase tracking-wider mt-1">{getHumanLocationText(activePolyMap)}</div>
             {/if}

@@ -40,6 +40,7 @@
     let warpCorners = data.warpMap?.corners || [[100, 100], [900, 100], [900, 900], [100, 900]];
 
     let isWarpMode = false;
+    let showSpatialSetup = false;
 
     $: if (!isMapDirty && !isWarpMode) {
         polygons = data.polygons || [];
@@ -299,114 +300,126 @@
     <!-- SPATIAL EDITOR BLOCK -->
     {#if data.item?.photoPath}
         <div class="flex flex-col gap-3 mb-8">
-            <div class="flex justify-between items-end px-2">
-                <h3 class="font-bold text-lg">Spatial Map</h3>
-                <div class="flex gap-2">
-                    {#if isMapDirty}
-                        <form method="POST" action="?/saveSpatialMap" class="m-0" use:enhance={() => {
-                            return async ({ update }) => { 
-                                isMapDirty = false; 
-                                await update({ reset: false }); 
-                                const hasMapped = mappedEntities.some(e => e !== null);
-                                if (polygons.length > 0 && !hasMapped) {
-                                    postSaveWizard.showModal();
-                                } else {
-                                    notify('success', 'Map saved!'); 
-                                }
-                            };
-                        }}>
-                            <input type="hidden" name="spatialMap" value={JSON.stringify({ polygons, warpMap: { cols: gridCols, rows: gridRows, corners: warpCorners }, renderAsGrid })}>
-                            <button type="submit" class="btn btn-sm btn-success text-white rounded-xl shadow-sm"><i class="bi bi-check-lg"></i> Save Layout</button>
-                        </form>
-                    {/if}
-                    {#if !isWarpMode}
-                        {#if polygons.length === 0}
-                            <button class="btn btn-sm btn-primary shadow-sm rounded-xl" on:click={triggerAiMapping} disabled={isMapping}>
-                                {#if isMapping}<span class="loading loading-spinner loading-xs"></span> Mapping...{:else}<i class="bi bi-stars"></i> Map Automatically{/if}
-                            </button>
-                            <button class="btn btn-sm btn-outline border-base-300 rounded-xl" on:click={() => { spatialMapRef?.enterWarpMode(); }}>
-                                <i class="bi bi-grid-3x3"></i> Draw Grid
-                            </button>
-                            {:else}
-                            <div class="dropdown dropdown-end">
-                                <button tabindex="0" class="btn btn-circle btn-ghost bg-base-100/50 backdrop-blur-md border border-base-200 shadow-sm" aria-label="Map Options">
-                                    <i class="bi bi-three-dots text-xl"></i>
-                                </button>
-                                <ul tabindex="0" class="dropdown-content z-50 p-2 shadow-2xl bg-base-100/95 backdrop-blur-xl border border-base-200 rounded-2xl w-64 mt-2 gap-1 menu">
-                                    <li class="menu-title text-[10px] font-bold uppercase tracking-wider text-gray-400 pb-1">Automations</li>
-                                    <li>
-                                        <button class="font-medium text-base-content hover:text-primary" on:click={triggerDeepScan} disabled={isDeepScanning}>
-                                            {#if isDeepScanning}<span class="loading loading-spinner loading-xs"></span>{:else}<i class="bi bi-stars text-primary text-lg opacity-80"></i> Auto-Detect Contents{/if}
-                                        </button>
-                                    </li>
-                                    <li>
-                                        <button class="font-medium text-base-content hover:text-secondary" on:click={() => auditModal.showModal()}>
-                                            <i class="bi bi-camera text-secondary text-lg opacity-80"></i> Verify Contents
-                                        </button>
-                                    </li>
-                                    <div class="divider my-0 h-[1px] bg-base-200"></div>
-                                    <li class="menu-title text-[10px] font-bold uppercase tracking-wider text-gray-400 pb-1 pt-2">Display & Map</li>
-                                    <li>
-                                        <button class="font-medium text-base-content" on:click={() => { spatialMapRef?.enterWarpMode(); (document.activeElement)?.blur(); }}>
-                                            <i class="bi bi-grid-3x3 text-lg opacity-70"></i> Adjust Grid Alignment
-                                        </button>
-                                    </li>
-                                    <li>
-                                        <label class="cursor-pointer flex items-center justify-between hover:bg-base-200/50 p-3 rounded-lg mt-1">
-                                            <span class="font-medium text-sm flex items-center gap-2"><i class="bi bi-image text-lg opacity-70"></i> Hide Photo</span>
-                                            <input type="checkbox" class="toggle toggle-primary toggle-sm" bind:checked={renderAsGrid} on:change={() => isMapDirty = true} />
-                                        </label>
-                                    </li>
-                                    <div class="divider my-0 h-[1px] bg-base-200"></div>
-                                    <li>
-                                        <form method="POST" action="?/clearSpatialMap" class="m-0 p-0 block w-full" use:enhance={() => {
-                                            return async ({ update }) => { 
-                                                polygons = []; 
-                                                isMapDirty = false; 
-                                                notify('success', 'Map cleared. Ready to start over.'); 
-                                                await update({ reset: false }); 
-                                            };
-                                        }}>
-                                            <button class="w-full text-left font-medium text-error hover:bg-error/10 hover:text-error py-2 px-3 rounded-lg" on:click|preventDefault={(e) => { if(confirm('Clear the entire map and start over?')) e.currentTarget.closest('form').submit(); }}>
-                                                <i class="bi bi-trash text-lg opacity-80 mr-2"></i> Delete Map
-                                            </button>
-                                        </form>
-                                    </li>
-                                </ul>
-                            </div>
+            {#if directItemCount > 0 && polygons.length === 0 && !showSpatialSetup}
+                <div class="border border-base-200 rounded-2xl p-8 text-center bg-base-100 shadow-sm flex flex-col items-center animate-fade-in mx-2 sm:mx-0">
+                    <div class="w-14 h-14 bg-base-200 rounded-full flex items-center justify-center mb-4">
+                        <i class="bi bi-grid-3x3 text-2xl text-gray-400"></i>
+                    </div>
+                    <h3 class="font-bold text-xl mb-2 tracking-tight">Upgrade to Spatial Map</h3>
+                    <p class="text-sm text-gray-500 mb-6 max-w-sm leading-relaxed">This container holds unmapped items. Enable spatial mapping to trace compartments and track exact physical locations.</p>
+                    <button class="btn btn-primary rounded-xl shadow-sm" on:click={() => showSpatialSetup = true}>Enable Spatial Mapping</button>
+                </div>
+            {:else}
+                <div class="flex justify-between items-end px-2">
+                    <h3 class="font-bold text-lg">Spatial Map</h3>
+                    <div class="flex gap-2">
+                        {#if isMapDirty}
+                            <form method="POST" action="?/saveSpatialMap" class="m-0" use:enhance={() => {
+                                return async ({ update }) => { 
+                                    isMapDirty = false; 
+                                    await update({ reset: false }); 
+                                    const hasMapped = mappedEntities.some(e => e !== null);
+                                    if (polygons.length > 0 && !hasMapped) {
+                                        postSaveWizard.showModal();
+                                    } else {
+                                        notify('success', 'Map saved!'); 
+                                    }
+                                };
+                            }}>
+                                <input type="hidden" name="spatialMap" value={JSON.stringify({ polygons, warpMap: { cols: gridCols, rows: gridRows, corners: warpCorners }, renderAsGrid })}>
+                                <button type="submit" class="btn btn-sm btn-success text-white rounded-xl shadow-sm"><i class="bi bi-check-lg"></i> Save Layout</button>
+                            </form>
                         {/if}
+                        {#if !isWarpMode}
+                            {#if polygons.length === 0}
+                                <button class="btn btn-sm btn-primary shadow-sm rounded-xl" on:click={triggerAiMapping} disabled={isMapping}>
+                                    {#if isMapping}<span class="loading loading-spinner loading-xs"></span> Mapping...{:else}<i class="bi bi-stars"></i> Map Automatically{/if}
+                                </button>
+                                <button class="btn btn-sm btn-outline border-base-300 rounded-xl" on:click={() => { spatialMapRef?.enterWarpMode(); }}>
+                                    <i class="bi bi-grid-3x3"></i> Draw Grid
+                                </button>
+                                {:else}
+                                <div class="dropdown dropdown-end">
+                                    <button tabindex="0" class="btn btn-circle btn-ghost bg-base-100/50 backdrop-blur-md border border-base-200 shadow-sm" aria-label="Map Options">
+                                        <i class="bi bi-three-dots text-xl"></i>
+                                    </button>
+                                    <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+                                    <ul tabindex="0" class="dropdown-content z-50 p-2 shadow-2xl bg-base-100/95 backdrop-blur-xl border border-base-200 rounded-2xl w-64 mt-2 gap-1 menu">
+                                        <li class="menu-title text-[10px] font-bold uppercase tracking-wider text-gray-400 pb-1">Automations</li>
+                                        <li>
+                                            <button class="font-medium text-base-content hover:text-primary" on:click={triggerDeepScan} disabled={isDeepScanning}>
+                                                {#if isDeepScanning}<span class="loading loading-spinner loading-xs"></span>{:else}<i class="bi bi-stars text-primary text-lg opacity-80"></i> Auto-Detect Contents{/if}
+                                            </button>
+                                        </li>
+                                        <li>
+                                            <button class="font-medium text-base-content hover:text-secondary" on:click={() => auditModal.showModal()}>
+                                                <i class="bi bi-camera text-secondary text-lg opacity-80"></i> Verify Contents
+                                            </button>
+                                        </li>
+                                        <div class="divider my-0 h-[1px] bg-base-200"></div>
+                                        <li class="menu-title text-[10px] font-bold uppercase tracking-wider text-gray-400 pb-1 pt-2">Display & Map</li>
+                                        <li>
+                                            <button class="font-medium text-base-content" on:click={() => { spatialMapRef?.enterWarpMode(); (document.activeElement)?.blur(); }}>
+                                                <i class="bi bi-grid-3x3 text-lg opacity-70"></i> Adjust Grid Alignment
+                                            </button>
+                                        </li>
+                                        <li>
+                                            <label class="cursor-pointer flex items-center justify-between hover:bg-base-200/50 p-3 rounded-lg mt-1">
+                                                <span class="font-medium text-sm flex items-center gap-2"><i class="bi bi-image text-lg opacity-70"></i> Hide Photo</span>
+                                                <input type="checkbox" class="toggle toggle-primary toggle-sm" bind:checked={renderAsGrid} on:change={() => isMapDirty = true} />
+                                            </label>
+                                        </li>
+                                        <div class="divider my-0 h-[1px] bg-base-200"></div>
+                                        <li>
+                                            <form method="POST" action="?/clearSpatialMap" class="m-0 p-0 block w-full" use:enhance={() => {
+                                                return async ({ update }) => { 
+                                                    polygons = []; 
+                                                    isMapDirty = false; 
+                                                    notify('success', 'Map cleared. Ready to start over.'); 
+                                                    await update({ reset: false }); 
+                                                };
+                                            }}>
+                                                <button class="w-full text-left font-medium text-error hover:bg-error/10 hover:text-error py-2 px-3 rounded-lg" on:click|preventDefault={(e) => { if(confirm('Clear the entire map and start over?')) e.currentTarget.closest('form').submit(); }}>
+                                                    <i class="bi bi-trash text-lg opacity-80 mr-2"></i> Delete Map
+                                                </button>
+                                            </form>
+                                        </li>
+                                    </ul>
+                                </div>
+                            {/if}
+                        {/if}
+                    </div>
+                </div>
+                
+                <div class="relative w-full rounded-[2rem] overflow-hidden">
+                    <SpatialMap 
+                        bind:this={spatialMapRef}
+                        imageUrl={data.item.photoPath} 
+                        bind:polygons 
+                        mappedEntities={mappedEntities}
+                        on:change={() => isMapDirty = true} 
+                        on:select={handlePolySelect}
+                        on:assign={handleAssign}
+                        bind:isWarpMode
+                        bind:warpCols={gridCols}
+                        bind:warpRows={gridRows}
+                        bind:warpCorners={warpCorners}
+                    />
+                    {#if isMapping}
+                        <div class="absolute inset-0 z-50 bg-base-100/80 backdrop-blur-sm flex flex-col items-center justify-center rounded-[2rem] animate-fade-in">
+                            <div class="w-20 h-20 bg-primary/10 text-primary rounded-full flex items-center justify-center shadow-inner mb-4">
+                                <span class="loading loading-spinner loading-lg"></span>
+                            </div>
+                            <h3 class="font-bold text-2xl tracking-tight text-base-content">Tracing Compartments</h3>
+                            <p class="text-sm text-gray-500 font-medium mt-2 max-w-xs text-center">Our vision model is extracting the walls and dimensions of your container.</p>
+                        </div>
                     {/if}
                 </div>
-            </div>
-            
-            <div class="relative w-full rounded-[2rem] overflow-hidden">
-                <SpatialMap 
-                    bind:this={spatialMapRef}
-                    imageUrl={data.item.photoPath} 
-                    bind:polygons 
-                    mappedEntities={mappedEntities}
-                    on:change={() => isMapDirty = true} 
-                    on:select={handlePolySelect}
-                    on:assign={handleAssign}
-                    bind:isWarpMode
-                    bind:warpCols={gridCols}
-                    bind:warpRows={gridRows}
-                    bind:warpCorners={warpCorners}
-                />
-                {#if isMapping}
-                    <div class="absolute inset-0 z-50 bg-base-100/80 backdrop-blur-sm flex flex-col items-center justify-center rounded-[2rem] animate-fade-in">
-                        <div class="w-20 h-20 bg-primary/10 text-primary rounded-full flex items-center justify-center shadow-inner mb-4">
-                            <span class="loading loading-spinner loading-lg"></span>
-                        </div>
-                        <h3 class="font-bold text-2xl tracking-tight text-base-content">Tracing Compartments</h3>
-                        <p class="text-sm text-gray-500 font-medium mt-2 max-w-xs text-center">Our vision model is extracting the walls and dimensions of your container.</p>
+                {#if allTrayBankEntities.length > 0}
+                    <div class="mt-2 animate-fade-in">
+                        <TrayBank entities={allTrayBankEntities} />
                     </div>
                 {/if}
-            </div>
-            {#if allTrayBankEntities.length > 0}
-                <div class="mt-2 animate-fade-in">
-                    <TrayBank entities={allTrayBankEntities} />
-                </div>
             {/if}
         </div>
     {/if}

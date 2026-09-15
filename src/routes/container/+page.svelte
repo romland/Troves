@@ -83,6 +83,10 @@
             Are you sure you want to delete <strong class="text-base-content">"{containerToDelete?.name}"</strong>? 
             <br><br>
             This action cannot be undone. Items assigned to this container will lose their location tag.
+            {#if containerToDelete?.children?.length > 0}
+                <br><br>
+                <span class="text-error font-bold"><i class="bi bi-exclamation-triangle"></i> Warning:</span> This container contains {containerToDelete.children.length} nested tray{containerToDelete.children.length === 1 ? '' : 's'}. Deleting it will also delete all of its nested trays!
+            {/if}
         </p>
         <div class="flex flex-col sm:flex-row-reverse gap-2 sm:gap-3">
             <form method="POST" action="?/delete" class="w-full sm:w-auto flex-1" use:enhance={() => {
