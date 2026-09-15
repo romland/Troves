@@ -78,7 +78,8 @@
 
     function openMapModal(loc: any) {
         activeMapLoc = loc;
-        activePolyMap = loc.spatialMap ? JSON.parse(loc.spatialMap) : (loc.container?.spatialMap && loc.container.parentId ? JSON.parse(loc.container.spatialMap) : null);
+        let rawMap = loc.spatialMap ? JSON.parse(loc.spatialMap) : (loc.container?.spatialMap && loc.container.parentId ? JSON.parse(loc.container.spatialMap) : null);
+        activePolyMap = rawMap && !Array.isArray(rawMap) && rawMap.polygon ? rawMap.polygon : rawMap;
         mapModal.showModal();
     }
 
@@ -125,12 +126,14 @@
 
         {#if item.locations?.[0]}
             {@const loc = item.locations[0]}
-            {@const cellPolyMap = loc.spatialMap ? JSON.parse(loc.spatialMap) : null}
+            {@const cellPolyParsed = loc.spatialMap ? JSON.parse(loc.spatialMap) : null}
+            {@const cellPolyMap = cellPolyParsed && !Array.isArray(cellPolyParsed) && cellPolyParsed.polygon ? cellPolyParsed.polygon : cellPolyParsed}
             {@const containerMapRaw = loc.container?.spatialMap ? JSON.parse(loc.container.spatialMap) : null}
-            {@const polyMap = cellPolyMap || (containerMapRaw && loc.container.parentId ? containerMapRaw : null)}
+            {@const trayPolyMap = containerMapRaw && !Array.isArray(containerMapRaw) && containerMapRaw.polygon ? containerMapRaw.polygon : containerMapRaw}
+            {@const polyMap = cellPolyMap || (trayPolyMap && loc.container.parentId ? trayPolyMap : null)}
             {@const isVectorGrid = containerMapRaw && !Array.isArray(containerMapRaw) && containerMapRaw.renderAsGrid}
             {@const allPolys = isVectorGrid ? (containerMapRaw.polygons || []) : []}
-            {@const activeIdx = isVectorGrid && cellPolyMap ? allPolys.findIndex(p => JSON.stringify(p) === JSON.stringify(cellPolyMap)) : -1}
+            {@const activeIdx = isVectorGrid && cellPolyParsed ? allPolys.findIndex(p => JSON.stringify(p) === JSON.stringify(cellPolyMap)) : -1}
             {@const src = loc.container.parent?.photoPath ? loc.container.parent.photoPath.replace(/\.[^/.]+$/, '_thumb.webp') : (loc.container?.photoPath ? loc.container.photoPath.replace(/\.[^/.]+$/, '_thumb.webp') : '')}
 
             <div class="flex items-center gap-3 flex-1 min-w-0">
@@ -255,12 +258,14 @@
     {#each item.locations || [] as loc, i}
         <div class="card bg-base-100 shadow-sm border border-base-200 w-full overflow-hidden">
             {#if i === 0}
-                {@const cellPolyMap = loc.spatialMap ? JSON.parse(loc.spatialMap) : null}
+                {@const cellPolyParsed = loc.spatialMap ? JSON.parse(loc.spatialMap) : null}
+                {@const cellPolyMap = cellPolyParsed && !Array.isArray(cellPolyParsed) && cellPolyParsed.polygon ? cellPolyParsed.polygon : cellPolyParsed}
                 {@const containerMapRaw = loc.container?.spatialMap ? JSON.parse(loc.container.spatialMap) : null}
-                {@const polyMap = cellPolyMap || (containerMapRaw && loc.container.parentId ? containerMapRaw : null)}
+                {@const trayPolyMap = containerMapRaw && !Array.isArray(containerMapRaw) && containerMapRaw.polygon ? containerMapRaw.polygon : containerMapRaw}
+                {@const polyMap = cellPolyMap || (trayPolyMap && loc.container.parentId ? trayPolyMap : null)}
                 {@const isVectorGrid = containerMapRaw && !Array.isArray(containerMapRaw) && containerMapRaw.renderAsGrid}
                 {@const allPolys = isVectorGrid ? (containerMapRaw.polygons || []) : []}
-                {@const activeIdx = isVectorGrid && cellPolyMap ? allPolys.findIndex(p => JSON.stringify(p) === JSON.stringify(cellPolyMap)) : -1}
+                {@const activeIdx = isVectorGrid && cellPolyParsed ? allPolys.findIndex(p => JSON.stringify(p) === JSON.stringify(cellPolyMap)) : -1}
                 {@const src = loc.container.parent?.photoPath ? loc.container.parent.photoPath.replace(/\.[^/.]+$/, '_thumb.webp') : (loc.container?.photoPath ? loc.container.photoPath.replace(/\.[^/.]+$/, '_thumb.webp') : '')}
 
                 <!-- svelte-ignore a11y_click_events_have_key_events --><!-- svelte-ignore a11y_interactive_supports_focus -->
