@@ -13,6 +13,8 @@
     import ActionCard from "$lib/components/ActionCard.svelte";
     import FormInput from "$lib/components/FormInput.svelte";
     import Modal from "$lib/components/Modal.svelte";
+    import ConfirmModal from "$lib/components/ConfirmModal.svelte";
+    import ReanalyzeButton from "$lib/components/item/ReanalyzeButton.svelte";
     import Badge from "$lib/components/Badge.svelte";
     import { marked } from 'marked';
     import { createEventDispatcher, onMount } from 'svelte';
@@ -151,6 +153,7 @@
     let aiDialog: Modal;
     let lightbox: ImageLightbox;
     let docLightbox: DocumentLightbox;
+    let confirmModal: ConfirmModal;
 
 
     function handleAnalyzingStart(ev: any) {
@@ -645,6 +648,11 @@
                             <AttributeAdder values={currentAttributes} on:change={() => isDirty = true} />
                         {/key}
                     </div>
+                    {#if item}
+                        <div class="mt-4 pt-3 border-t border-base-200">
+                            <ReanalyzeButton {item} {confirmModal} asMenuItem={false} />
+                        </div>
+                    {/if}
                 </div>
             </div>
         </div>
@@ -676,6 +684,7 @@
 
 <ImageLightbox bind:this={lightbox} />
 <DocumentLightbox bind:this={docLightbox} />
+<ConfirmModal bind:this={confirmModal} />
 
 <style>
     @keyframes shimmer {
