@@ -208,7 +208,7 @@ export function matchFeatures(desc1: Uint32Array[], desc2: Uint32Array[], ratioT
 }
 
 /** Solves a system of equations to find the Homography matrix for exactly 4 points */
-function getHomography4Pt(src: number[][], dst: number[][]): number[] | null {
+export function getHomography4Pt(src: number[][], dst: number[][]): number[] | null {
     let A: number[][] = [];
     for (let i = 0; i < 4; i++) {
         let [x, y] = src[i];
@@ -326,6 +326,50 @@ function polygonArea(poly: number[][]): number {
         area += poly[i][0] * poly[j][1] - poly[j][0] * poly[i][1];
     }
     return Math.abs(area / 2.0);
+}
+
+/**
+ * Maps a perspective-warped RGBA image buffer back into a flat, straight rectangle
+ * using Bilinear Interpolation for smooth, anti-aliased ("Apple-y") premium results.
+ */
+export function warpImageBilinear(
+    srcData: Uint8Array | Buffer,
+    srcW: number,
+    srcH: number,
+    channels: number,
+    srcPts: number[][],
+    dstW: number,
+    dstH: number
+): Buffer {
+    const dstPts = [[0, 0], [dstW, 0], [dstW, dstH], [0, dstH]];
+    const H = getHomography4Pt(dstPts, srcPts);
+    if (!H) throw new Error("Invalid homography matrix");
+
+    const out = Buffer.alloc(dstW * dstH * channels);
+
+    for (let y = 0; y < dstH; y++) {
+        for (let x = 0; x < dstW; x++) {
+            const w = H[6] * x + H[7] * y + H[8];
+            const sx = (H[0] * x + H[1] * y + H[2]) / w;
+            const sy = (H[3] * x + H[4] * y + H[5]) / w;
+
+            const outIdx = (y * dstW + x) * channels;
+
+            if (sx >= 0 && sx < srcW - 1 && sy >= 0 && sy < srcH - 1) {
+                const x0 = Math.floor(sx), y0 = Math.floor(sy);
+                const dx = sx - x0, dy = sy - y0;
+
+                for (let c = 0; c < channels; c++) {
+                    const val = srcData[(y0 * srcW + x0) * channels + c] * (1 - dx) * (1 - dy) +
+                                srcData[(y0 * srcW + x0 + 1) * channels + c] * dx * (1 - dy) +
+                                srcData[((y0 + 1) * srcW + x0) * channels + c] * (1 - dx) * dy +
+                                srcData[((y0 + 1) * srcW + x0 + 1) * channels + c] * dx * dy;
+                    out[outIdx + c] = Math.round(val);
+                }
+            }
+        }
+    }
+    return out;
 }
 
 // ============================================================================

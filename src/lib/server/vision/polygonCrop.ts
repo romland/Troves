@@ -2,6 +2,7 @@ import sharp from 'sharp';
 import { getSafeFilename } from '$lib/server/fsUtils';
 import { uploadsDiskFolder, uploadsWebFolder } from '$lib/server/constants';
 import { polygonToAxisAlignedBox, calculatePolygonRotation, type Polygon } from './polygonMath';
+import { warpImageBilinear } from './pureCv';
 
 /**
  * Extracts a 4-point polygon from an image, deskews/rotates it if necessary, 
@@ -11,7 +12,8 @@ import { polygonToAxisAlignedBox, calculatePolygonRotation, type Polygon } from 
 export async function cropPolygon(
     sourceLocalPath: string,
     polygon: Polygon,
-    filenamePrefix: string = 'crop'
+    filenamePrefix: string = 'crop',
+    straighten: boolean = false
 ): Promise<string | null> {
     try {
         const metadata = await sharp(sourceLocalPath).metadata();
@@ -38,21 +40,44 @@ export async function cropPolygon(
 
         const safeLeft = Math.max(0, Math.floor(left));
         const safeTop = Math.max(0, Math.floor(top));
-        const safeW = Math.min(w - safeLeft, Math.max(1, Math.floor(right - left)));
-        const safeH = Math.min(h - safeTop, Math.max(1, Math.floor(bottom - top)));
+        const safeW = Math.min(w - safeLeft, Math.max(1, Math.ceil(right - left)));
+        const safeH = Math.min(h - safeTop, Math.max(1, Math.ceil(bottom - top)));
 
         const filename = getSafeFilename(filenamePrefix, 'crop') + '.webp';
         const outputPath = `${uploadsDiskFolder}/${filename}`;
 
         let pipeline = sharp(sourceLocalPath).rotate(); // Auto-orient first based on EXIF
         
-        // 1. Crop down to the immediate region containing the skewed object
-        pipeline = pipeline.extract({ left: safeLeft, top: safeTop, width: safeW, height: safeH });
+        if (straighten) {
+            // Determine target dimensions based on longest bounding edges
+            const wTop = Math.hypot(pixelPolygon[1][0] - pixelPolygon[0][0], pixelPolygon[1][1] - pixelPolygon[0][1]);
+            const wBot = Math.hypot(pixelPolygon[2][0] - pixelPolygon[3][0], pixelPolygon[2][1] - pixelPolygon[3][1]);
+            const hLeft = Math.hypot(pixelPolygon[3][0] - pixelPolygon[0][0], pixelPolygon[3][1] - pixelPolygon[0][1]);
+            const hRight = Math.hypot(pixelPolygon[2][0] - pixelPolygon[1][0], pixelPolygon[2][1] - pixelPolygon[1][1]);
+            
+            const dstW = Math.max(1, Math.round(Math.max(wTop, wBot)));
+            const dstH = Math.max(1, Math.round(Math.max(hLeft, hRight)));
 
-        // 2. Deskew: If the angle is significant, rotate it flat. 
-        // We use a transparent background so the corners don't create ugly black triangles.
-        if (Math.abs(angle) > 2) {
-            pipeline = pipeline.rotate(-angle, { background: { r: 0, g: 0, b: 0, alpha: 0 } });
+            // Shift polygon relative to the isolated bounding box buffer
+            const relPoly = pixelPolygon.map(p => [p[0] - safeLeft, p[1] - safeTop]);
+
+            // Extract raw buffer to limit memory footprint before mapping
+            const { data, info } = await pipeline
+                .extract({ left: safeLeft, top: safeTop, width: safeW, height: safeH })
+                .ensureAlpha()
+                .raw()
+                .toBuffer({ resolveWithObject: true });
+
+            const warpedBuffer = warpImageBilinear(data, info.width, info.height, info.channels, relPoly, dstW, dstH);
+            pipeline = sharp(warpedBuffer, { raw: { width: dstW, height: dstH, channels: 4 } });
+        } else {
+            // 1. Standard Crop down to the immediate region containing the skewed object
+            pipeline = pipeline.extract({ left: safeLeft, top: safeTop, width: safeW, height: safeH });
+
+            // 2. Deskew: Rotate it flat via affine orientation
+            if (Math.abs(angle) > 2) {
+                pipeline = pipeline.rotate(-angle, { background: { r: 0, g: 0, b: 0, alpha: 0 } });
+            }
         }
 
         await pipeline

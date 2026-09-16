@@ -85,6 +85,7 @@
     let moveModal: MoveContainerModal;
     let analyzeWithVision = false;
     let removeBackground = false;
+    let straightenPerspective = true;
     let confirmModal: ConfirmModal;
 
     // New Audit Flow State
@@ -759,7 +760,7 @@
                     <FillStatusSlider bind:value={currentItem.fill_status} showHeader={false} />
                 </div>
 
-                <SpatialItemSettings bind:analyzeWithVision bind:removeBackground />
+                <SpatialItemSettings bind:analyzeWithVision bind:removeBackground bind:straightenPerspective />
 
                 <div class="flex gap-2 mt-4">
                     <button class="btn btn-ghost text-error hover:bg-error/10 flex-1 rounded-xl" on:click={nextTriageItem}>Skip</button>
@@ -774,6 +775,7 @@
                         if (currentItem.fill_status) fd.append('fillStatus', currentItem.fill_status);
                         fd.append('skipVision', String(!analyzeWithVision));
                         fd.append('removeBackground', String(removeBackground));
+                        fd.append('straightenPerspective', String(straightenPerspective));
                         await saveToQueue('/api/spatial-quick-create', fd);
                         window.dispatchEvent(new CustomEvent('outbox-trigger'));
                         notify('success', 'Added to Queue');

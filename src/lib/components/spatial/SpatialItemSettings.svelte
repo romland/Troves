@@ -3,6 +3,7 @@
 
     export let analyzeWithVision: boolean = false;
     export let removeBackground: boolean = false;
+    export let straightenPerspective: boolean = true;
 
     let initialized = false;
 
@@ -13,6 +14,9 @@
 
             const storedBg = localStorage.getItem('troves_spatial_bg');
             if (storedBg !== null) removeBackground = storedBg === 'true';
+
+            const storedPersp = localStorage.getItem('troves_spatial_straighten');
+            if (storedPersp !== null) straightenPerspective = storedPersp === 'true';
         }
         initialized = true;
     });
@@ -20,6 +24,7 @@
     $: if (initialized && typeof localStorage !== 'undefined') {
         localStorage.setItem('troves_spatial_vision', String(analyzeWithVision));
         localStorage.setItem('troves_spatial_bg', String(removeBackground));
+        localStorage.setItem('troves_spatial_straighten', String(straightenPerspective));
     }
 </script>
 
@@ -36,6 +41,13 @@
         <span class="label-text text-xs text-gray-500 flex flex-col">
             <span class="font-bold text-base-content">Remove Background</span>
             <span>Cut out the item cleanly, but may struggle with items touching tray walls.</span>
+        </span>
+    </label>
+    <label class="label cursor-pointer py-0 justify-start gap-2">
+        <input type="checkbox" class="toggle toggle-primary toggle-sm" bind:checked={straightenPerspective} />
+        <span class="label-text text-xs text-gray-500 flex flex-col">
+            <span class="font-bold text-base-content">Straighten Perspective</span>
+            <span>Mathematically flattens skewed compartments into perfect top-down squares.</span>
         </span>
     </label>
 </div>

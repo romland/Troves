@@ -18,6 +18,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     const description = formData.get('description') as string;
     const skipVision = formData.get('skipVision') === 'true';
     const removeBackground = formData.get('removeBackground') !== 'false';
+    const straightenPerspective = formData.get('straightenPerspective') === 'true';
     const fillStatus = formData.get('fillStatus') as string;
     const clientId = formData.get('clientId') as string;
     
@@ -27,7 +28,12 @@ export const POST: RequestHandler = async ({ request, locals }) => {
         let cropWebPath = null;
         
         if (fs.existsSync(localPath)) {
-            cropWebPath = await cropPolygon(localPath, polygon, slugify(title || 'item', { lower: true, strict: true }));
+            taskManager.update(taskId, straightenPerspective ? 'Extracting and flattening compartment perspective...' : 'Extracting compartment crop...');
+            // Route pixel manipulation through the heavy ML queue to protect the Node.js event loop
+            const { heavyMlQueue } = await import('$lib/server/queue/index');
+            cropWebPath = await heavyMlQueue.add(() => 
+                cropPolygon(localPath, polygon, slugify(title || 'item', { lower: true, strict: true }), straightenPerspective)
+            );
         }
 
         // If we are overriding the background removal, we inject it into the LLM Analysis payload
@@ -78,6 +84,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
         if (itemForBg) processItemPhotosBackground(itemForBg).catch(console.error);
 
         await logActivity(item.id, 'Creation', `Quick-created from spatial map.`, 'success');
+        if (cropWebPath && straightenPerspective) {
+            await logActivity(item.id, 'Image Processing', 'Mathematically flattened skewed compartment using Bilinear Perspective Warp.', 'info');
+        }
         return json({ success: true, item });
     } catch (e: any) {
         console.error("Spatial quick create failed:", e);
