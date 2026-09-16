@@ -37,6 +37,7 @@ export const POST = async ({ request, locals }) => {
     let parsedMap;
     try { parsedMap = JSON.parse(container.spatialMap); } catch(e) {}
     const originalPolygons: number[][][] = Array.isArray(parsedMap) ? parsedMap : (parsedMap?.polygons || []);
+    const labelPosition = parsedMap?.labelPosition || 'auto';
 
     if (originalPolygons.length === 0) {
         return json({ error: 'No compartments in spatial map' }, { status: 400 });
@@ -110,7 +111,7 @@ export const POST = async ({ request, locals }) => {
         }
 
         // 5. Single batched API call to Gemini
-        const llmPayload = await verifySpatialGrid(localDraftPath, baselineMap, { targetType: 'global', targetId: 0, description: `Auditing ${baselineMap.length} mapped slots` });
+        const llmPayload = await verifySpatialGrid(localDraftPath, baselineMap, labelPosition, { targetType: 'global', targetId: 0, description: `Auditing ${baselineMap.length} mapped slots` });
         const bulkResults = llmPayload.results || [];
 
         // 6. Slot Mapping Reconciliation

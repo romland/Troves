@@ -428,7 +428,7 @@
             </div>
             <div class="flex-1 leading-snug">
                 <strong class="text-base-content block mb-0.5 sm:mb-1 font-bold text-sm sm:text-base">Align the grid perfectly</strong>
-                Drag rings to match physical walls. If the photo cuts off the drawer, drag rings <em>outside</em> the image edge. We'll extrapolate the rest!
+                Drag rings to match physical walls (adjust cols/rows if needed). If the photo cuts off the drawer, drag rings <em>outside</em> the image edge. We'll extrapolate the rest!
             </div>
         </div>
     {/if}

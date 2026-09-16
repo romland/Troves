@@ -8,6 +8,7 @@
     import SpatialGridMap from "$lib/components/spatial/SpatialGridMap.svelte";
     import SpatialMap from "$lib/components/spatial/SpatialMap.svelte";
     import PolygonActionSheet from "$lib/components/spatial/PolygonActionSheet.svelte";
+    import LabelTargeter from "$lib/components/spatial/LabelTargeter.svelte";
     import TrayBank from "$lib/components/spatial/TrayBank.svelte";
     import FormInput from "$lib/components/FormInput.svelte";
     import SpatialItemSettings from "$lib/components/spatial/SpatialItemSettings.svelte";
@@ -44,15 +45,23 @@
     let isWarpMode = false;
     let showSpatialSetup = false;
 
+    let labelPosition: 'auto' | 'ignore' | 'inside' | 'top' | 'bottom' | 'left' | 'right' = 'auto';
     let initialPolygonsStr = JSON.stringify(data.polygons || []);
+
+    $: labelPositionDisplay = {
+        auto: 'Auto', ignore: 'Ignore', inside: 'Inside', 
+        top: 'Top Edge', bottom: 'Bottom Edge', 
+        left: 'Left Edge', right: 'Right Edge'
+    }[labelPosition] || 'Auto';
 
     // Decouple the assignment into a non-reactive function to prevent Svelte from 
     // tracking local variables (like `polygons`) as dependencies and creating an 
     // infinite overwrite loop during dragging.
-    function applyServerData(serverPolygons: any, serverWarpMap: any, serverRenderGrid: any) {
+    function applyServerData(serverPolygons: any, serverWarpMap: any, serverRenderGrid: any, serverLabelPosition: any) {
         polygons = serverPolygons ? JSON.parse(JSON.stringify(serverPolygons)) : [];
         warpMap = serverWarpMap ? JSON.parse(JSON.stringify(serverWarpMap)) : null;
         renderAsGrid = serverRenderGrid || false;
+        labelPosition = serverLabelPosition || 'auto';
         if (warpMap) {
             gridCols = warpMap.cols;
             gridRows = warpMap.rows;
@@ -66,7 +75,8 @@
     // Deep Scan Triage State
     let postSaveWizard: Modal;
     $: if (!isMapDirty && !isWarpMode) {
-        applyServerData(data.polygons, data.warpMap, data.renderAsGrid);
+        const sm = data.item?.spatialMap ? JSON.parse(data.item.spatialMap) : {};
+        applyServerData(data.polygons, data.warpMap, data.renderAsGrid, sm.labelPosition);
     }
     let triageModal: HTMLDialogElement;
     let isDeepScanning = false;
@@ -85,6 +95,15 @@
     let activeAuditSlotIndex: number | null = null;
     $: activeAuditSlot = activeAuditSlotIndex !== null && auditData?.slots ? auditData.slots[activeAuditSlotIndex] : null;
     let auditModal: HTMLDialogElement;
+    let labelTargeterModal: HTMLDialogElement;
+
+    async function silentlySaveMap() {
+        const fd = new FormData();
+        fd.append('spatialMap', JSON.stringify({ polygons, warpMap: { cols: gridCols, rows: gridRows, corners: warpCorners }, renderAsGrid, labelPosition }));
+        await fetch('?/saveSpatialMap', { method: 'POST', body: fd });
+        isMapDirty = false;
+        initialPolygonsStr = JSON.stringify(polygons);
+    }
 
     let pendingNav: string | null = null;
     beforeNavigate(async ({ cancel, to }) => {
@@ -158,7 +177,7 @@
             const res = await fetch('/api/container-deep-scan', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ imagePath: data.item?.photoPath, slots: emptySlots })
+                body: JSON.stringify({ imagePath: data.item?.photoPath, slots: emptySlots, labelPosition })
             });
             const json = await res.json();
             if (json.items && json.items.length > 0) {
@@ -395,7 +414,7 @@
                                     if (spatialMapRef) spatialMapRef.clearHistory();
                                 };
                             }}>
-                                <input type="hidden" name="spatialMap" value={JSON.stringify({ polygons, warpMap: { cols: gridCols, rows: gridRows, corners: warpCorners }, renderAsGrid })}>
+                                <input type="hidden" name="spatialMap" value={JSON.stringify({ polygons, warpMap: { cols: gridCols, rows: gridRows, corners: warpCorners }, renderAsGrid, labelPosition })}>
                                 <button type="submit" class="btn btn-sm btn-success text-white rounded-xl shadow-sm"><i class="bi bi-check-lg"></i> Save Layout</button>
                             </form>
                         {/if}
@@ -430,6 +449,12 @@
                                         <li>
                                             <button class="font-medium text-base-content" on:click={() => { spatialMapRef?.enterWarpMode(); (document.activeElement)?.blur(); }}>
                                                 <i class="bi bi-grid-3x3 text-lg opacity-70"></i> Adjust Grid Alignment
+                                            </button>
+                                        </li>
+                                        <li>
+                                            <button class="font-medium text-base-content flex justify-between w-full" on:click={() => { labelTargeterModal.showModal(); (document.activeElement)?.blur(); }}>
+                                                <span class="flex items-center gap-2"><i class="bi bi-upc-scan text-lg opacity-70"></i> Targeting</span>
+                                                <span class="text-[10px] uppercase font-bold text-gray-500 bg-base-200/50 border border-base-300 px-2 py-0.5 rounded-md">{labelPositionDisplay}</span>
                                             </button>
                                         </li>
                                         <li>
@@ -485,6 +510,7 @@
                         </div>
                     {/if}
                 </div>
+
                 {#if allTrayBankEntities.length > 0}
                     <div class="mt-2 animate-fade-in">
                         <TrayBank entities={allTrayBankEntities} />
@@ -763,22 +789,43 @@
 <ConfirmModal bind:this={confirmModal} />
 
 <Modal bind:this={postSaveWizard} position="bottom" boxClass="p-0 overflow-hidden bg-base-100 shadow-2xl border border-base-200 sm:rounded-[2.5rem]">
-    <div class="flex flex-col items-center text-center gap-4 py-10 px-6">
-        <div class="w-20 h-20 bg-success/10 text-success rounded-full flex items-center justify-center mb-2 shadow-inner">
-            <i class="bi bi-grid-3x3-gap-fill text-4xl"></i>
+    <div class="flex flex-col items-center text-center gap-3 py-8 px-4 sm:px-6">
+        <div class="w-16 h-16 bg-success/10 text-success rounded-full flex items-center justify-center mb-1 shadow-inner">
+            <i class="bi bi-grid-3x3-gap-fill text-3xl"></i>
         </div>
         <div>
-            <h3 class="text-3xl font-bold tracking-tight text-base-content mb-3">Layout Saved</h3>
-            <p class="text-gray-500 text-sm max-w-sm leading-relaxed">Your grid is ready. Would you like Troves to scan the compartments and automatically detect the items inside?</p>
+            <h3 class="text-2xl font-bold tracking-tight text-base-content mb-2">Layout Saved</h3>
+            <p class="text-gray-500 text-sm max-w-sm leading-relaxed">Your grid is ready. If this container uses printed labels, tell Troves where to look before scanning.</p>
         </div>
         
-        <div class="flex flex-col gap-3 w-full max-w-xs mt-4">
-            <button class="btn btn-primary rounded-2xl shadow-lg w-full text-base h-14" on:click={() => { postSaveWizard.close(); triggerDeepScan(); }}>
+        <div class="w-full bg-base-200/40 rounded-3xl p-4 my-2 border border-base-200 shadow-sm">
+            <div class="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-4"><i class="bi bi-upc-scan mr-1"></i> Label Location</div>
+            <div class="w-full flex justify-center scale-90 sm:scale-100">
+                <LabelTargeter bind:value={labelPosition} on:change={() => isMapDirty = true} />
+            </div>
+        </div>
+        
+        <div class="flex flex-col gap-2 w-full max-w-xs mt-2">
+            <button class="btn btn-primary rounded-2xl shadow-lg w-full text-base h-12" on:click={async () => { postSaveWizard.close(); if (isMapDirty) await silentlySaveMap(); triggerDeepScan(); }}>
                 <i class="bi bi-stars text-xl"></i> Auto-Detect Contents
             </button>
-            <button class="btn btn-ghost rounded-2xl w-full text-gray-500 font-semibold h-12" on:click={() => { postSaveWizard.close(); notify('success', 'Ready for manual mapping.'); }}>
+            <button class="btn btn-ghost rounded-2xl w-full text-gray-500 font-semibold h-10" on:click={async () => { postSaveWizard.close(); if (isMapDirty) await silentlySaveMap(); notify('success', 'Ready for manual mapping.'); }}>
                 I'll map them manually
             </button>
         </div>
     </div>
 </Modal>
+
+<dialog bind:this={labelTargeterModal} class="modal modal-bottom sm:modal-middle backdrop-blur-sm">
+    <div class="modal-box p-6 bg-base-100 shadow-2xl border border-base-200 sm:rounded-[2.5rem]">
+        <h3 class="font-bold text-xl mb-1 flex items-center gap-2"><i class="bi bi-upc-scan text-primary"></i> Label Targeting</h3>
+        <p class="text-xs text-gray-500 mb-6">Does this container have identifying stickers or labels? Tell the Vision Model where to focus its attention to prevent reading the wrong slot.</p>
+        <div class="flex justify-center w-full">
+            <LabelTargeter bind:value={labelPosition} on:change={() => isMapDirty = true} />
+        </div>
+        <div class="modal-action mt-8">
+            <button class="btn btn-primary rounded-xl px-8" on:click={async () => { if (isMapDirty) await silentlySaveMap(); labelTargeterModal.close(); }}>Done</button>
+        </div>
+    </div>
+    <form method="dialog" class="modal-backdrop"><button>close</button></form>
+</dialog>

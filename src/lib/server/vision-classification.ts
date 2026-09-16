@@ -178,7 +178,21 @@ export async function guessProductDetails(localFilePath: string, hint: string = 
 	return JSON.parse(rawText);
 }
 
-export async function verifySpatialGrid(localFilePath: string, baselineMap: any[], tracking?: any) {
+export function getLabelPromptInstruction(labelPosition: string): string {
+    switch (labelPosition) {
+        case 'ignore': return "CRITICAL: Ignore all text and printed labels. Identify the item based purely on its physical appearance.";
+        case 'inside': return "CRITICAL: The identifying label for this slot is strictly INSIDE the compartment cavity. Ignore any text on the outer lips or edges.";
+        case 'top': return "CRITICAL: The identifying label for this slot is located STRICTLY on the TOP EDGE/LIP of the compartment. Ignore any text on the bottom edge.";
+        case 'bottom': return "CRITICAL: The identifying label for this slot is located STRICTLY on the BOTTOM EDGE/LIP of the compartment. Ignore any text on the top edge.";
+        case 'left': return "CRITICAL: The identifying label for this slot is located STRICTLY on the LEFT EDGE/LIP of the compartment. Ignore any text on the right edge.";
+        case 'right': return "CRITICAL: The identifying label for this slot is located STRICTLY on the RIGHT EDGE/LIP of the compartment. Ignore any text on the left edge.";
+        case 'auto':
+        default:
+            return "Look for printed labels inside or slightly outside the compartment boundary.";
+    }
+}
+
+export async function verifySpatialGrid(localFilePath: string, baselineMap: any[], labelPosition: string = 'auto', tracking?: any) {
 	const fileBuffer = fs.readFileSync(localFilePath);
 	const base64Data = fileBuffer.toString('base64');
 	const mimeType = getImageMimeType(localFilePath);
@@ -193,6 +207,7 @@ CRITICAL RULES FOR EXTRACTION:
 1. DO NOT EXPLAIN YOUR REASONING. 
 2. DO NOT WRITE PARAGRAPHS. ZERO CONVERSATIONAL FILLER.
   3. If status is DIFFERENT, 'title' MUST include critical identifying values if visible (e.g., "10k Ohm Resistors", "KBPC5010 Rectifiers" - NOT just "Resistors"). 'description' MUST be under 10 words.
+  4. ${getLabelPromptInstruction(labelPosition)}
 	
 For EACH compartment in the map, verify its contents against the expectation:
 - Also, estimate the volumetric fill level of the compartment.

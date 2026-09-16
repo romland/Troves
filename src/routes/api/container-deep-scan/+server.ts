@@ -9,7 +9,7 @@ import fs from 'fs';
 
 export const POST: RequestHandler = async ({ request, locals }) => {
     assertCanMutate(locals);
-    const { imagePath, slots } = await request.json();
+    const { imagePath, slots, labelPosition = 'auto' } = await request.json();
     
     if (!imagePath || !slots || slots.length === 0) {
         return json({ error: 'Missing image or slots' }, { status: 400 });
@@ -34,8 +34,24 @@ export const POST: RequestHandler = async ({ request, locals }) => {
             const poly = slot.polygon;
             const i = slot.originalIndex;
             // Find the center (centroid) of the 4-point polygon
-            const cx = (poly[0][0] + poly[1][0] + poly[2][0] + poly[3][0]) / 4;
-            const cy = (poly[0][1] + poly[1][1] + poly[2][1] + poly[3][1]) / 4;
+            let cx = (poly[0][0] + poly[1][0] + poly[2][0] + poly[3][0]) / 4;
+            let cy = (poly[0][1] + poly[1][1] + poly[2][1] + poly[3][1]) / 4;
+
+            // Mathematically shift the anchor dot out of the cavity and onto the target lip
+            if (['top', 'bottom', 'left', 'right'].includes(labelPosition)) {
+                const xs = poly.map((p: number[]) => p[0]);
+                const ys = poly.map((p: number[]) => p[1]);
+                const boxW = Math.max(...xs) - Math.min(...xs);
+                const boxH = Math.max(...ys) - Math.min(...ys);
+
+                if (labelPosition === 'top') cy -= boxH * 0.45;
+                else if (labelPosition === 'bottom') cy += boxH * 0.45;
+                else if (labelPosition === 'left') cx -= boxW * 0.45;
+                else if (labelPosition === 'right') cx += boxW * 0.45;
+
+                cx = Math.max(20, Math.min(980, cx));
+                cy = Math.max(20, Math.min(980, cy));
+            }
             const px = (cx / 1000) * w;
             const py = (cy / 1000) * h;
             
@@ -45,6 +61,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
         
         const svg = `<svg width="${w}" height="${h}">${svgElements}</svg>`;
         
+        const { getLabelPromptInstruction } = await import('$lib/server/vision-classification');
+        const labelInstruction = getLabelPromptInstruction(labelPosition);
+
         const annotatedBuffer = await sharp(localPath)
             .composite([{ input: Buffer.from(svg), top: 0, left: 0 }])
             .webp({ quality: 85 })
@@ -54,7 +73,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
         const prompt = `Attached is a top-down photo of a storage container. I have overlaid red circles with numbers in the center of specific compartments.
         Look at each numbered compartment. Identify what is inside.
         1. Look at the physical item itself.
-        2. Look for printed labels (Dymo/Brother tape) which may be slightly outside or overlapping the box boundary, but clearly belong to that numbered slot.
+        2. ${labelInstruction}
         3. CRITICAL: If a label or component displays a specific value, measurement, or part number (e.g., "10k Ohm", "KBPC5010", "5V", "M3x10"), YOU MUST INCLUDE IT IN THE TITLE. Never use generic titles like "Resistors" or "Bridge Rectifiers" if the specific value is visible. The title must uniquely identify the exact component.
         4. If a slot is completely empty, SKIP IT. Do not include it in the results.
         5. Estimate the fullness (fill_status) of the compartment. Account for camera perspective! Even at an angle, look at the volumetric fill. EMPTY: No items visible. SPARSE: 1-3 items, lots of empty space. HALF_FULL: Items cover the bottom but don't reach the top. FULL: Items completely fill the volume up to the rim. OVERFLOWING: Items pile up above the rim. If you can clearly see the bottom of the compartment, it is NOT full!
