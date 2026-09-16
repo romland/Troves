@@ -63,6 +63,7 @@
     pageTitle.set("Edit " + data.item?.title);
 </script>
 
+<div style="display: contents" data-dirty={isDirty}>
 <PasteHandler 
     bind:this={pasteHandler}
     formId="eltForm" 
@@ -98,3 +99,4 @@
 	</ItemHub>
 
 <ConfirmModal bind:this={confirmModal} />
+</div>

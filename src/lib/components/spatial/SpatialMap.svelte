@@ -34,17 +34,26 @@
 
     function saveHistory() {
         const newState = JSON.stringify(polygons);
-        if (history.length > 0 && history[history.length - 1] === newState) return;
+        console.log(`[DEBUG-UNDO] saveHistory called. Current stack size: ${history.length}`);
+        if (history.length > 0 && history[history.length - 1] === newState) {
+            console.log(`[DEBUG-UNDO] State identical to top of stack. Skipping save.`);
+            return;
+        }
         history.push(newState);
         if (history.length > 20) history.shift();
         history = history;
+        console.log(`[DEBUG-UNDO] State pushed. New stack size: ${history.length}`);
     }
 
     export function undo() {
+        console.log(`[DEBUG-UNDO] undo() requested. Stack size before pop: ${history.length}`);
         if (history.length > 0) {
             polygons = JSON.parse(history.pop()!);
             history = history;
+            console.log(`[DEBUG-UNDO] State restored. Stack size after pop: ${history.length}`);
             dispatch('change', polygons);
+        } else {
+            console.log(`[DEBUG-UNDO] Cannot undo, stack is empty.`);
         }
     }
 
@@ -52,6 +61,12 @@
         polygons = JSON.parse(initialPolygonsStr);
         history = [];
         dispatch('change', polygons);
+    }
+
+    export function clearHistory() {
+        console.log(`[DEBUG-UNDO] clearHistory() invoked. Wiping stack of size ${history.length}.`);
+        history = [];
+        initialPolygonsStr = JSON.stringify(polygons);
     }
 
     // Perspective Warp Mode State
@@ -87,6 +102,7 @@
 
     function startDrag(polyIdx: number, ptIdx: number, e: PointerEvent) {
         if (readonly) return;
+        console.log(`[DEBUG-UNDO] startDrag initiated on polygon ${polyIdx}, point ${ptIdx}.`);
         saveHistory();
         let sharedPoints = [];
         if (polyIdx !== -1) {
@@ -116,6 +132,7 @@
         if (readonly || activePolyIndex !== polyIdx) return;
         const pt = getSvgPoint(e);
         if (!pt) return;
+        console.log(`[DEBUG-UNDO] startDragPoly initiated on polygon ${polyIdx}.`);
         saveHistory();
         draggingPoly = { polyIdx, startX: pt.x, startY: pt.y, initialPoints: JSON.parse(JSON.stringify(polygons[polyIdx])) };
         e.stopPropagation();
@@ -300,6 +317,7 @@
             } catch (err) {}
             draggingPoint = null;
             draggingPoly = null;
+            console.log(`[DEBUG-UNDO] handlePointerUp completed drag. Dispatching change.`);
             if (isWarpMode) {
                 // Update preview
             } else {

@@ -58,13 +58,15 @@
         safeInvalidate = () => {
             const activeTag = document.activeElement?.tagName;
             const isTyping = (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT') && (Date.now() - lastKeyTime < 3000);
+            const isDirty = document.querySelector('[data-dirty="true"]') !== null;
             
-            if (isTyping || $navigating) {
-                console.log("🕵️‍♂️ [DEBUG-SYNC] User is actively typing or navigating. Deferring invalidateAll().");
+            if (isTyping || $navigating || isDirty) {
+                console.log("🕵️‍♂️ [DEBUG-SYNC] UI is busy or dirty. Deferring invalidateAll().");
                 const attemptSync = () => {
                     const active = document.activeElement?.tagName;
                     const stillTyping = (active === 'INPUT' || active === 'TEXTAREA' || active === 'SELECT') && (Date.now() - lastKeyTime < 3000);
-                    if (stillTyping || $navigating) {
+                    const stillDirty = document.querySelector('[data-dirty="true"]') !== null;
+                    if (stillTyping || $navigating || stillDirty) {
                         setTimeout(attemptSync, 1000);
                     } else {
                         console.log("🕵️‍♂️ [DEBUG-SYNC] Interaction complete. Syncing UI via invalidateAll().");
@@ -112,9 +114,14 @@
             document.addEventListener('visibilitychange', () => {
                 console.log(`[DEBUG-CACHE] 👁️ Visibility changed: ${document.visibilityState} | Network Online: ${navigator.onLine}`);
                 if (document.visibilityState === 'visible') {
-                    console.log(`[DEBUG-CACHE] 🚀 Waking up! Triggering connectSync & invalidateAll()...`);
+                    console.log(`[DEBUG-CACHE] 🚀 Waking up! Triggering connectSync & safeInvalidate()...`);
                     connectSync();
-                    invalidateAll(); // Fetch fresh data to catch up on what we missed while asleep
+                    
+                    // CRITICAL ANTI-REGRESSION RULE:
+                    // NEVER call invalidateAll() directly here! Switching tabs triggers this.
+                    // A raw invalidateAll() instantly vaporizes unsaved client-side state (like spatial map edits).
+                    // safeInvalidate() gracefully defers the background sync until the user saves or discards.
+                    safeInvalidate(); // Fetch fresh data to catch up on what we missed while asleep
                 } else {
                     console.log(`[DEBUG-CACHE] 💤 Going to sleep. Disconnecting SSE.`);
                     disconnectSync();

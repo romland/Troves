@@ -46,21 +46,28 @@
 
     let initialPolygonsStr = JSON.stringify(data.polygons || []);
 
-    $: if (!isMapDirty && !isWarpMode) {
-        polygons = data.polygons || [];
-        warpMap = data.warpMap || null;
-        renderAsGrid = data.renderAsGrid || false;
-        if (data.warpMap) {
-            gridCols = data.warpMap.cols;
-            gridRows = data.warpMap.rows;
-            warpCorners = data.warpMap.corners;
-        } else if (!data.warpMap && polygons.length === 0) {
+    // Decouple the assignment into a non-reactive function to prevent Svelte from 
+    // tracking local variables (like `polygons`) as dependencies and creating an 
+    // infinite overwrite loop during dragging.
+    function applyServerData(serverPolygons: any, serverWarpMap: any, serverRenderGrid: any) {
+        polygons = serverPolygons ? JSON.parse(JSON.stringify(serverPolygons)) : [];
+        warpMap = serverWarpMap ? JSON.parse(JSON.stringify(serverWarpMap)) : null;
+        renderAsGrid = serverRenderGrid || false;
+        if (warpMap) {
+            gridCols = warpMap.cols;
+            gridRows = warpMap.rows;
+            warpCorners = warpMap.corners;
+        } else if (!warpMap && polygons.length === 0) {
             gridCols = 5; gridRows = 4; warpCorners = [[100, 100], [900, 100], [900, 900], [100, 900]];
         }
+        initialPolygonsStr = JSON.stringify(polygons);
     }
 
     // Deep Scan Triage State
     let postSaveWizard: Modal;
+    $: if (!isMapDirty && !isWarpMode) {
+        applyServerData(data.polygons, data.warpMap, data.renderAsGrid);
+    }
     let triageModal: HTMLDialogElement;
     let isDeepScanning = false;
     let deepScanItems: any[] = [];
@@ -301,12 +308,12 @@
     });
 </script>
 
-<article style="padding-bottom: 100px;" class="max-w-4xl mx-auto">
 
+
+<article style="padding-bottom: 100px;" class="max-w-4xl mx-auto" data-dirty={isMapDirty || isWarpMode}>
     <div class="mb-4 ml-2">
         <a href="/container" class="btn btn-sm btn-ghost text-gray-500 hover:text-primary"><i class="bi bi-arrow-left"></i> All Containers</a>
     </div>
-
     <div class="relative w-full rounded-[2rem] overflow-hidden bg-base-200 border border-base-300 mb-8 shadow-sm group min-h-[250px] sm:min-h-[300px] flex items-end">
         {#if data.item?.photoPath}
             <!-- Blurred background -->
@@ -385,6 +392,7 @@
                                         initialPolygonsStr = JSON.stringify(polygons);
                                         notify('success', 'Map saved!'); 
                                     }
+                                    if (spatialMapRef) spatialMapRef.clearHistory();
                                 };
                             }}>
                                 <input type="hidden" name="spatialMap" value={JSON.stringify({ polygons, warpMap: { cols: gridCols, rows: gridRows, corners: warpCorners }, renderAsGrid })}>
@@ -438,6 +446,7 @@
                                                     isMapDirty = false; 
                                                     notify('success', 'Map cleared. Ready to start over.'); 
                                                     await update({ reset: false }); 
+                                                if (spatialMapRef) spatialMapRef.clearHistory();
                                                 };
                                             }}>
                                                 <button class="w-full text-left font-medium text-error hover:bg-error/10 hover:text-error py-2 px-3 rounded-lg" on:click|preventDefault={(e) => { if(confirm('Clear the entire map and start over?')) e.currentTarget.closest('form').submit(); }}>

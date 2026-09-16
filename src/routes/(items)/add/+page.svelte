@@ -166,6 +166,8 @@
     
 </script>
 
+<!-- CRITICAL: Wrapper tracks unsaved state to prevent background syncs from destroying user input when switching tabs -->
+<div style="display: contents" data-dirty={isDirty}>
 <PasteHandler 
 bind:this={pasteHandler}
 formId="eltForm" 
@@ -302,3 +304,4 @@ on:processingComplete={(ev) => {
 {/if}
 
 <ConfirmModal bind:this={confirmModal} />
+</div>
