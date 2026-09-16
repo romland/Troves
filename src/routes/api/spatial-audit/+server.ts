@@ -4,7 +4,6 @@ import { assertCanMutate } from '$lib/server/security';
 import { MediaIngest } from '$lib/server/services/MediaIngest';
 import { verifySpatialGrid } from '$lib/server/vision-classification';
 import { taskManager } from '$lib/server/taskManager';
-import { getActiveSchema } from '$lib/server/ontology';
 import { alignPolygonsToNewImage } from '$lib/server/vision/pureCv';
 import fs from 'fs';
 
@@ -43,17 +42,13 @@ export const POST = async ({ request, locals }) => {
         return json({ error: 'No compartments in spatial map' }, { status: 400 });
     }
 
-    const activeSchema = await getActiveSchema(locals.activeInventoryId, null, true);
-
     // Fetch existing mapped baseline
     const mappedItems = await db.itemsInContainer.findMany({
         where: { containerId: container.id, spatialMap: { not: null } },
-        include: { item: true }
+        include: { item: { include: { photos: true } } }
     });
 
-    const inCollection: any[] = [];
-    const missingFromScope: any[] = [];
-    const newToYou: any[] = [];
+    const slots: any[] = [];
 
     const taskId = taskManager.start('global', 0, `Spatial Audit: Aligning & Processing ${originalPolygons.length} compartments...`);
 
@@ -102,56 +97,35 @@ export const POST = async ({ request, locals }) => {
         }
 
         if (baselineMap.length === 0) {
-            return json({ success: true, draftPath, activeSchema, totalDetected: 0, totalVisibleCount: originalPolygons.length, inCollection: [], missingFromScope: [], newToYou: [], scopeType: 'container', scopeValue: container.name });
+            return json({ success: true, draftPath, slots: [], totalVisibleCount: originalPolygons.length, scopeValue: container.name });
         }
 
         // 5. Single batched API call to Gemini
         const llmPayload = await verifySpatialGrid(localDraftPath, baselineMap, { targetType: 'global', targetId: 0, description: `Auditing ${baselineMap.length} mapped slots` });
         const bulkResults = llmPayload.results || [];
 
-        // 6. Local reconciliation
+        // 6. Slot Mapping Reconciliation
         for (let i = 0; i < activePolygons.length && i < bulkResults.length; i++) {
             const { warpedPoly, origPolyStr, expectedItem } = activePolygons[i];
             const llmResult = bulkResults[i];
 
-            // Reconciliation Strategy
-            if (llmResult.status === 'PRESENT') {
-                inCollection.push({
-                    title: expectedItem.title,
-                    box: warpedPoly, // UI uses this to draw AR glowing box over the new photo
-                    category: 'Matched',
-                    fill_status: llmResult.fill_status,
-                    matchedItem: {
-                        id: expectedItem.id,
-                        title: expectedItem.title,
-                        slug: expectedItem.slug,
-                        locationName: container.name,
-                        amount: expectedItem.amount
-                    }
-                });
-            } else {
-                missingFromScope.push({
-                    id: expectedItem.id,
-                    title: expectedItem.title,
-                    slug: expectedItem.slug,
-                    locationName: container.name,
-                    amount: expectedItem.amount,
-                    box: warpedPoly,
-                    isShortfall: true,
-                    expected: 1,
-                    count: 0,
-                    fill_status: llmResult.fill_status,
-                    spatialMap: origPolyStr // The DB needs the original string to repair/link the slot
-                });
+            let status = 'UNKNOWN';
+            if (llmResult.status === 'PRESENT') status = 'MATCH';
+            else if (llmResult.status === 'EMPTY' && expectedItem) status = 'MISSING';
+            else if (llmResult.status === 'DIFFERENT') status = 'ANOMALY';
 
-                if (llmResult.status === 'DIFFERENT') {
-                    // New unexpected item! The bounding box handles the crop so we can instantly save it to the DB
-                    newToYou.push({ title: llmResult.title || 'Unknown Unexpected Item', subtitle: llmResult.description || 'Found in occupied slot', box: warpedPoly, category: 'Anomaly', fill_status: llmResult.fill_status });
-                }
-            }
+            slots.push({
+                polygon: warpedPoly,
+                spatialMapRaw: origPolyStr,
+                status,
+                expectedItem: expectedItem ? { id: expectedItem.id, title: expectedItem.title, amount: expectedItem.amount, slug: expectedItem.slug, thumbPath: expectedItem.photos?.[0]?.thumbPath || null } : null,
+                detectedTitle: llmResult.title || null,
+                detectedDescription: llmResult.description || null,
+                fill_status: llmResult.fill_status
+            });
         }
 
-        return json({ success: true, draftPath, activeSchema, totalDetected: inCollection.length + newToYou.length, totalVisibleCount: originalPolygons.length, inCollection, missingFromScope, newToYou, scopeType: 'container', scopeValue: container.name });
+        return json({ success: true, draftPath, slots, totalVisibleCount: originalPolygons.length, scopeValue: container.name });
     } catch (e) {
         console.error("Spatial Audit failed", e);
         return json({ error: 'Spatial Audit failed due to an internal error' }, { status: 500 });

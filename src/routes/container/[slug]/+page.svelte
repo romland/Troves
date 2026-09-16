@@ -13,12 +13,13 @@
     import FormInput from "$lib/components/FormInput.svelte";
     import SpatialItemSettings from "$lib/components/spatial/SpatialItemSettings.svelte";
     import ContainerBreadcrumbs from "$lib/components/ContainerBreadcrumbs.svelte";
-    import CompareHub from "$lib/components/compare/CompareHub.svelte";
     import Modal from "$lib/components/Modal.svelte";
     import MoveContainerModal from "$lib/components/MoveContainerModal.svelte";
     import { saveToQueue, outboxStore, completedOutboxStore } from "$lib/client/offlineQueue";
     import { invalidateAll } from '$app/navigation';
     import FillStatusSlider from "$lib/components/spatial/FillStatusSlider.svelte";
+    import BottomSheet from "$lib/components/BottomSheet.svelte";
+    import ActionCard from "$lib/components/ActionCard.svelte";
 
     export let data: PageServerData;
 
@@ -64,8 +65,14 @@
     let moveModal: MoveContainerModal;
     let analyzeWithVision = false;
     let removeBackground = true;
-    let auditModal: Modal;
-    let compareHubComponent: CompareHub;
+
+    // New Audit Flow State
+    let isAuditing = false;
+    let auditFileInput: HTMLInputElement;
+    let auditData: any = null;
+    let auditResolutionSheet: BottomSheet;
+    let activeAuditSlotIndex: number | null = null;
+    $: activeAuditSlot = activeAuditSlotIndex !== null && auditData?.slots ? auditData.slots[activeAuditSlotIndex] : null;
 
     async function triggerAiMapping() {
         isMapping = true;
@@ -159,6 +166,32 @@
             }
             triageModal.close();
             invalidateAll();
+        }
+    }
+
+    async function runAudit(e: Event) {
+        const file = (e.target as HTMLInputElement).files?.[0];
+        if (!file) return;
+        
+        isAuditing = true;
+        
+        const fd = new FormData();
+        fd.append('file', file);
+        fd.append('scopeValue', data.item.name);
+        
+        try {
+            const res = await fetch('/api/spatial-audit', { method: 'POST', body: fd });
+            const json = await res.json();
+            if (json.success) {
+                auditData = json;
+            } else {
+                notify('error', json.error || 'Audit failed');
+            }
+        } catch(e) {
+            notify('error', 'Network error');
+        } finally {
+            isAuditing = false;
+            if (auditFileInput) auditFileInput.value = '';
         }
     }
 
@@ -352,7 +385,7 @@
                                             </button>
                                         </li>
                                         <li>
-                                            <button class="font-medium text-base-content hover:text-secondary" on:click={() => auditModal.showModal()}>
+                                            <button class="font-medium text-base-content hover:text-secondary" on:click={() => auditFileInput.click()} disabled={isAuditing}>
                                                 <i class="bi bi-camera text-secondary text-lg opacity-80"></i> Verify Contents
                                             </button>
                                         </li>
@@ -462,23 +495,97 @@
 
 <MoveContainerModal bind:this={moveModal} allContainers={data.allContainers} />
 
-<Modal bind:this={auditModal} position="bottom" boxClass="p-0 overflow-y-auto max-h-[90vh] bg-base-100 shadow-2xl border border-base-200 sm:rounded-[2.5rem]">
-    <div class="p-6">
-        <CompareHub 
-            bind:this={compareHubComponent}
-            containers={data.allContainers}
-            categories={data.categories}
-            tags={data.tags}
-            predefinedScopeType="container"
-            predefinedScopeValue={data.item.name}
-            isSpatialAudit={polygons.length > 0}
-            on:processingStart={(ev) => notify("loading", ev.detail.message, ev.detail.taskId)}
-            on:processingComplete={(ev) => notify(ev.detail.status, ev.detail.message, ev.detail.taskId)}
-            on:success={(ev) => notify("success", ev.detail)}
-            on:notify={(ev) => notify(ev.detail.status, ev.detail.message)}
-        />
+<!-- Fullscreen Auditing Modal -->
+{#if isAuditing}
+    <div class="fixed inset-0 z-[100] bg-base-100/95 backdrop-blur-xl flex flex-col items-center justify-center animate-fade-in">
+        <div class="relative w-32 h-32 mb-8">
+            <div class="absolute inset-0 border-[4px] border-base-200 rounded-full"></div>
+            <div class="absolute inset-0 border-[4px] border-secondary rounded-full border-t-transparent animate-spin"></div>
+            <div class="absolute inset-0 border-[4px] border-primary rounded-full border-b-transparent animate-spin" style="animation-duration: 2s; animation-direction: reverse;"></div>
+            <i class="bi bi-camera absolute inset-0 flex items-center justify-center text-4xl text-primary animate-pulse"></i>
+        </div>
+        <h3 class="text-3xl font-bold tracking-tight text-base-content mb-3">Auditing Container...</h3>
+        <p class="text-sm text-gray-500 font-medium max-w-sm text-center px-4">Aligning grid, inspecting compartments, and verifying items against your Trove.</p>
     </div>
-</Modal>
+{/if}
+
+<!-- The New Fullscreen Audit View -->
+{#if auditData}
+    <div class="fixed inset-0 z-50 bg-base-100/95 backdrop-blur-xl flex flex-col animate-fade-in pb-[env(safe-area-inset-bottom)]">
+        <div class="flex items-center justify-between p-4 shrink-0 border-b border-base-200">
+            <div>
+                <h2 class="text-xl font-bold tracking-tight">Audit Results</h2>
+                <p class="text-xs text-gray-500">
+                    <span class="text-success font-bold">{auditData.slots.filter(s => s.status === 'MATCH').length} Matched</span> •
+                    <span class="text-error font-bold">{auditData.slots.filter(s => s.status === 'MISSING').length} Missing</span> •
+                    <span class="text-warning font-bold">{auditData.slots.filter(s => s.status === 'ANOMALY').length} Anomalies</span>
+                </p>
+            </div>
+            <button class="btn btn-sm btn-ghost btn-circle" on:click={() => auditData = null}><i class="bi bi-x-lg text-lg"></i></button>
+        </div>
+        
+        {#if auditData.totalVisibleCount - auditData.slots.length > 0}
+             <div class="alert bg-warning/20 border-warning text-warning-content shadow-sm rounded-none border-x-0 border-t-0 flex items-start">
+                 <i class="bi bi-exclamation-triangle-fill mt-0.5"></i>
+                 <div>
+                     <h3 class="font-bold text-sm">Partial Audit</h3>
+                     <p class="text-xs">{auditData.totalVisibleCount - auditData.slots.length} compartments were cut off or out of frame.</p>
+                 </div>
+             </div>
+        {/if}
+        
+        <div class="flex-1 overflow-hidden p-2 sm:p-6 flex flex-col items-center">
+            <div class="w-full max-w-4xl mx-auto h-full flex flex-col items-center justify-center">
+                <SpatialMap imageUrl={auditData.draftPath} auditSlots={auditData.slots} readonly={true} bind:activePolyIndex={activeAuditSlotIndex} on:selectAudit={(e) => { activeAuditSlotIndex = e.detail; auditResolutionSheet.showModal(); }} />
+            </div>
+        </div>
+    </div>
+{/if}
+
+<!-- Audit Resolution Drawer -->
+<BottomSheet bind:this={auditResolutionSheet} title="Slot Details" on:close={() => activeAuditSlotIndex = null}>
+    {#if activeAuditSlot}
+        <div class="flex flex-col gap-4">
+            <div class="flex items-center gap-4 bg-base-200/50 p-4 rounded-3xl border border-base-300">
+                <div class="w-16 h-16 rounded-2xl overflow-hidden bg-base-300 shrink-0 flex items-center justify-center shadow-inner">
+                    {#if activeAuditSlot.expectedItem?.thumbPath}
+                         <img src={activeAuditSlot.expectedItem.thumbPath} class="w-full h-full object-cover" alt="Item Thumbnail" />
+                    {:else}
+                         <i class="bi bi-box-seam text-2xl text-gray-400"></i>
+                    {/if}
+                </div>
+                <div class="flex flex-col min-w-0">
+                     <span class="text-[10px] font-bold uppercase tracking-wider mb-0.5">
+                         {#if activeAuditSlot.status === 'MATCH'} <span class="text-success"><i class="bi bi-check-circle-fill"></i> Verified Present</span>
+                         {:else if activeAuditSlot.status === 'MISSING'} <span class="text-error"><i class="bi bi-x-circle-fill"></i> Missing Item</span>
+                         {:else} <span class="text-warning"><i class="bi bi-exclamation-circle-fill"></i> Unexpected Item</span> {/if}
+                     </span>
+                     <span class="font-bold text-lg leading-tight truncate text-base-content">{activeAuditSlot.expectedItem?.title || 'Empty Slot'}</span>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-2">
+                {#if activeAuditSlot.status === 'MATCH' && activeAuditSlot.expectedItem}
+                    <ActionCard title="View Item" subtitle="Open details page" icon="bi-arrow-right" iconColorClass="bg-base-200 text-base-content" variant="flat" buttonClass="border border-base-200 hover:border-primary rounded-2xl" href="/{activeAuditSlot.expectedItem.id}/{activeAuditSlot.expectedItem.slug}" on:click={() => auditResolutionSheet.close()} />
+                {:else if activeAuditSlot.status === 'ANOMALY'}
+                    <ActionCard title="Accept New Reality" subtitle="Add '{activeAuditSlot.detectedTitle || 'Unknown'}' to database" icon="bi-plus-lg" iconColorClass="bg-warning/20 text-warning" variant="flat" buttonClass="border border-base-200 hover:border-warning rounded-2xl" on:click={() => { auditResolutionSheet.close(); notify('info', 'Routing to Add Screen... (Will be queued)'); }} />
+                    {#if activeAuditSlot.expectedItem}
+                        <ActionCard title="Mark Expected as Missing" subtitle="It's not here anymore" icon="bi-trash3" iconColorClass="bg-error/20 text-error" variant="flat" buttonClass="border border-base-200 hover:border-error rounded-2xl" on:click={() => { auditResolutionSheet.close(); notify('success', 'Marked as missing.'); }} />
+                    {/if}
+                {:else if activeAuditSlot.status === 'MISSING' && activeAuditSlot.expectedItem}
+                    <form method="POST" action="/timeline?/capture" class="w-full" use:enhance={() => { return async ({ update }) => { notify('success', 'Added to Buy List'); auditResolutionSheet.close(); await update({ reset: false }); }; }}>
+                        <input type="hidden" name="content" value="Need to find/replace: {activeAuditSlot.expectedItem.title}">
+                        <input type="hidden" name="category" value="to buy">
+                        <input type="hidden" name="linkedItemIds[]" value={activeAuditSlot.expectedItem.id}>
+                        <ActionCard type="submit" title="Add to Buy List" subtitle="Track this missing item" icon="bi-cart-plus" iconColorClass="bg-error/20 text-error" variant="flat" buttonClass="border border-base-200 hover:border-error rounded-2xl" />
+                    </form>
+                {/if}
+            </div>
+        </div>
+    {/if}
+</BottomSheet>
+
+<input type="file" bind:this={auditFileInput} accept="image/*" capture="environment" class="hidden" on:change={runAudit} />
 
 <PolygonActionSheet 
     bind:this={actionSheet} 

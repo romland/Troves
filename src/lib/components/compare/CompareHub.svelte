@@ -9,7 +9,6 @@
     export let tags: any[] = [];
     export let predefinedScopeType: string | null = null;
     export let predefinedScopeValue: string | null = null;
-    export let isSpatialAudit: boolean = false;
     const dispatch = createEventDispatcher();
 
     let fileInputCamera: HTMLInputElement;
@@ -70,12 +69,7 @@
         if (scanHint.trim()) fd.append('hint', scanHint.trim());
 
         try {
-            let res;
-            if (isSpatialAudit && predefinedScopeType === 'container') {
-                res = await fetch('/api/spatial-audit', { method: 'POST', body: fd });
-            } else {
-                res = await fetch('/api/compare-collection', { method: 'POST', body: fd });
-            }
+            const res = await fetch('/api/compare-collection', { method: 'POST', body: fd });
 
             const data = await res.json();
             if (res.ok && data.success) {

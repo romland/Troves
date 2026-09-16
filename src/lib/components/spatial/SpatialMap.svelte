@@ -8,7 +8,8 @@
     export let readonly: boolean = false;
     export let activePolyIndex: number | null = null;
     export let mappedEntities: any[] = [];
-    
+    export let auditSlots: { polygon: number[][], status: string, expectedItem?: any, detectedTitle?: string }[] = [];
+
     // Toggle for experimental perspective labels
     const EXPERIMENTAL_PERSPECTIVE_LABELS = false;
 
@@ -482,7 +483,7 @@
 
 <div
     class="relative w-full h-[50vh] sm:h-[65vh] bg-base-300 rounded-[2rem] overflow-hidden shadow-inner border border-base-200">
-    <!-- Zoom Pill -->
+    <!-- Floating Apple-Style Zoom Pill -->
     <div
         class="absolute top-1/2 -translate-y-1/2 right-4 z-40 flex flex-col gap-1 bg-base-100/80 backdrop-blur-xl p-1.5 rounded-[1.25rem] shadow-lg border border-base-200/50 items-center transition-all">
         <!-- svelte-ignore a11y_consider_explicit_label -->
@@ -501,7 +502,7 @@
         </div>
     {/if}
 
-    <!-- Warp HUD -->
+    <!-- Floating Apple-Style Warp HUD -->
     {#if isWarpMode}
         <div class="absolute top-4 sm:top-6 left-1/2 -translate-x-1/2 z-50 flex flex-col sm:flex-row gap-3 bg-base-100/95 backdrop-blur-2xl p-2 rounded-3xl shadow-[0_10px_40px_rgba(0,0,0,0.3)] border border-base-200/50 items-center animate-fade-in w-[95%] max-w-[350px] sm:w-auto">
             <div class="flex items-center justify-center gap-4 px-2 w-full sm:w-auto">
@@ -537,7 +538,7 @@
         </div>
     {/if}
 
-    <!-- Hint -->
+    <!-- Floating Apple-Style Hint -->
     {#if !isWarpMode && !readonly && polygons.length > 0}
         <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 bg-base-100/80 backdrop-blur-xl px-4 py-2 rounded-full shadow-lg border border-base-200/50 text-[10px] sm:text-xs font-medium text-base-content/80 flex items-center gap-2 pointer-events-none animate-fade-in whitespace-nowrap">
             <i class="bi bi-info-circle text-primary"></i>
@@ -564,7 +565,39 @@
                         {#each previewGrid as poly}
                             <polygon points={poly.map(p => p.join(',')).join(' ')} class="fill-accent/10 stroke-accent/50 stroke-[2px] pointer-events-none" vector-effect="non-scaling-stroke" />
                         {/each}
+                    {:else if auditSlots.length > 0}
+                        <!-- AUDIT MODE OVERLAY -->
+                        {#each auditSlots as slot, i}
+                            {@const isActive = activePolyIndex === i}
+                            {@const isDimmed = activePolyIndex !== null && !isActive}
+                            {@const cx = (slot.polygon[0][0] + slot.polygon[1][0] + slot.polygon[2][0] + slot.polygon[3][0]) / 4}
+                            {@const cy = (slot.polygon[0][1] + slot.polygon[1][1] + slot.polygon[2][1] + slot.polygon[3][1]) / 4}
+                            <!-- svelte-ignore a11y-click-events-have-key-events -->
+                            <!-- svelte-ignore a11y-no-static-element-interactions -->
+                            <g class="cursor-pointer transition-all duration-300 {isDimmed ? 'opacity-30 grayscale' : 'opacity-100 hover:opacity-80'}" on:click|stopPropagation={() => dispatch('selectAudit', i)}>
+                                <polygon 
+                                    points={slot.polygon.map(pt => pt.join(',')).join(' ')} 
+                                    class="transition-colors duration-300 status-{slot.status} {isActive ? 'active-slot' : ''}" 
+                                    vector-effect="non-scaling-stroke" stroke-linejoin="round"
+                                />
+                                <!-- Colorblind accessible iconography overlay -->
+                                {#if slot.status === 'MATCH'}
+                                    <foreignObject x={cx - 15} y={cy - 15} width="30" height="30" class="overflow-visible pointer-events-none" xmlns="http://www.w3.org/1999/xhtml">
+                                        <div class="w-full h-full rounded-full bg-success text-success-content flex items-center justify-center shadow-lg border-2 border-white/20"><i class="bi bi-check-lg text-lg drop-shadow-md"></i></div>
+                                    </foreignObject>
+                                {:else if slot.status === 'MISSING'}
+                                    <foreignObject x={cx - 15} y={cy - 15} width="30" height="30" class="overflow-visible pointer-events-none" xmlns="http://www.w3.org/1999/xhtml">
+                                        <div class="w-full h-full rounded-full bg-error text-error-content flex items-center justify-center shadow-lg border-2 border-white/20"><i class="bi bi-x-lg text-sm drop-shadow-md"></i></div>
+                                    </foreignObject>
+                                {:else if slot.status === 'ANOMALY'}
+                                    <foreignObject x={cx - 15} y={cy - 15} width="30" height="30" class="overflow-visible pointer-events-none" xmlns="http://www.w3.org/1999/xhtml">
+                                        <div class="w-full h-full rounded-full bg-warning text-warning-content flex items-center justify-center shadow-lg border-2 border-white/20"><i class="bi bi-question-lg text-lg drop-shadow-md"></i></div>
+                                    </foreignObject>
+                                {/if}
+                            </g>
+                        {/each}
                     {:else}
+                        <!-- STANDARD EDITOR MAP OVERLAY -->
                         {#each polygons as poly, i}
                             {@const isActive = activePolyIndex === i}
                             {@const isMapped = !!mappedEntities[i]}
@@ -712,8 +745,8 @@
                                     on:pointerdown|stopPropagation
                                 >
                                     <div class="w-11 h-11 bg-base-100 rounded-full drop-shadow-xl hover:bg-base-200 transition-colors flex items-center justify-center relative">
-                                                <div class="w-8 h-8 rounded-full flex items-center justify-center {isMapped ? 'bg-success text-white' : 'bg-accent text-white'}">
-                                                    {#if isMapped}
+                                        <div class="w-8 h-8 rounded-full flex items-center justify-center {isMapped ? 'bg-success text-white' : 'bg-accent text-white'}">
+                                            {#if isMapped}
                                                 <i class="bi bi-check text-2xl mt-0.5"></i>
                                             {:else}
                                                 <i class="bi bi-three-dots text-lg"></i>
@@ -729,3 +762,11 @@
         </div>
     </div>
 </div>
+
+<style>
+    @keyframes pulse-dash { 0%, 100% { stroke-opacity: 1; fill-opacity: 0.2; } 50% { stroke-opacity: 0.5; fill-opacity: 0.05; } }
+    :global(.status-MATCH) { fill: oklch(var(--su)); stroke: oklch(var(--su)); opacity: 0.35; stroke-width: 2; }
+    :global(.status-MISSING) { fill: oklch(var(--er)); stroke: oklch(var(--er)); stroke-width: 4; stroke-dasharray: 15 10; animation: pulse-dash 2s infinite; }
+    :global(.status-ANOMALY) { fill: oklch(var(--wa)); stroke: oklch(var(--wa)); stroke-width: 4; fill-opacity: 0.3; }
+    :global(.active-slot) { stroke-width: 6 !important; fill-opacity: 0.5 !important; filter: drop-shadow(0 0 10px currentColor); }
+</style>
