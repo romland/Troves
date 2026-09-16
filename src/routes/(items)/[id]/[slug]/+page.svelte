@@ -159,7 +159,7 @@ $: if (data.duplicateItemDetails?.debugTrace) {
             <h1 class="text-3xl sm:text-4xl font-bold text-base-content hyphens-auto overflow-wrap-anywhere break-words leading-tight tracking-tight">
                 {data.item?.title}
             </h1>
-            <div class="text-[11px] text-gray-500 font-medium flex flex-wrap items-center gap-1.5 mt-2">
+            <div class="text-[11px] text-gray-500 font-medium flex flex-wrap items-center gap-1.5 mt-2 print:text-gray-700">
                 <span class="flex items-center gap-1.5"><i class="bi bi-clock-history opacity-70"></i> Added <RelativeDate date={data.item?.createdAt} /></span>
                 {#if data.item?.updatedAt && data.item.updatedAt !== data.item.createdAt}
                     <span class="mx-1 opacity-40 hidden sm:inline">•</span> 
@@ -167,7 +167,7 @@ $: if (data.duplicateItemDetails?.debugTrace) {
                 {/if}
             </div>
         </div>
-        <div class="inline-flex gap-2 items-center shrink-0 pt-1">
+        <div class="inline-flex gap-2 items-center shrink-0 pt-1 print:hidden">
             {#if isSavingPasted}
                 <span class="loading loading-spinner loading-sm text-primary"></span>
             {/if}
@@ -347,11 +347,13 @@ $: if (data.duplicateItemDetails?.debugTrace) {
         {/if}
 
         {#if data.item?.inventory?.enableAskAi !== false}
-            <ItemAssistant itemId={data.item.id} hasPhotos={productPhotos.length > 0} />
+            <div class="print:hidden">
+                <ItemAssistant itemId={data.item.id} hasPhotos={productPhotos.length > 0} />
+            </div>
         {/if}
 
         {#if data.item?.inventory?.showRelatedItems && data.relatedItems?.length > 0}
-            <div class="border-b border-base-300 pb-3 mb-3">
+            <div class="border-b border-base-300 pb-3 mb-3 print:hidden">
                 <div class="title font-bold mb-3 flex items-center gap-2">
                     <i class="bi bi-collection"></i> Related Items
                 </div>
@@ -400,8 +402,8 @@ $: if (data.duplicateItemDetails?.debugTrace) {
                         {@const cols=Object.keys(JSON.parse(photo.colors))}
                         {@const names=Object.values(JSON.parse(photo.colors))}
                         {#each cols as col, i}
-                            <div class="tooltip shadow text-xs items-center text-center rounded" data-tip="{names[i]} ({col})">
-                                <div class="w-8 h-8 rounded border border-base-200/50" style="background-color:{col}">
+                            <div class="tooltip shadow text-xs items-center text-center rounded print:shadow-none" data-tip="{names[i]} ({col})">
+                                <div class="w-8 h-8 rounded border border-base-200/50 print:border-gray-300" style="background-color:{col}">
                                 </div>
                             </div>
                         {/each}

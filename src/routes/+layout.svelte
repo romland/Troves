@@ -402,7 +402,7 @@
 
 <!-- Static Ambient Wash (Disabled on Auth/Setup to avoid clashing with animated versions) -->
 {#if !['/login', '/setup', '/register'].includes($page.url.pathname)}
-    <div class="fixed inset-0 z-[-1] overflow-hidden bg-base-100 pointer-events-none transition-colors duration-500">
+    <div class="fixed inset-0 z-[-1] overflow-hidden bg-base-100 pointer-events-none transition-colors duration-500 print:hidden">
         <div class="absolute top-[-20%] left-[-10%] w-[70vw] h-[70vw] md:w-[40vw] md:h-[40vw] rounded-full bg-primary/10 blur-[100px] md:blur-[150px]"></div>
         <div class="absolute top-[10%] right-[-10%] w-[60vw] h-[60vw] md:w-[35vw] md:h-[35vw] rounded-full bg-secondary/10 blur-[100px] md:blur-[150px]"></div>
         <div class="absolute bottom-[-10%] left-[10%] w-[80vw] h-[80vw] md:w-[50vw] md:h-[50vw] rounded-full bg-accent/10 blur-[100px] md:blur-[150px]"></div>
@@ -413,7 +413,7 @@
     <progress class="progress progress-primary bg-transparent w-full fixed top-0 left-0 z-[10000] rounded-none h-1"></progress>
 {/if}
 
-<div class="navbar bg-base-100/90 backdrop-blur-xl border-b border-base-200/50 sticky top-0 z-50 transition-transform duration-300 ease-out {hideNav ? '-translate-y-full md:translate-y-0' : 'translate-y-0'}">
+<div class="navbar bg-base-100/90 backdrop-blur-xl border-b border-base-200/50 sticky top-0 z-50 transition-transform duration-300 ease-out print:hidden {hideNav ? '-translate-y-full md:translate-y-0' : 'translate-y-0'}">
     <!-- Mobile menu -->
     <div class="navbar-start pl-3">
         <button on:click={()=>history.back()} class="pt-1" aria-label="Go back">
@@ -512,7 +512,7 @@
     <ReloadPrompt />
 {/if}
 
-<div class="btm-nav" style="z-index: 50; padding-bottom: env(safe-area-inset-bottom); height: calc(5rem + env(safe-area-inset-bottom));">
+<div class="btm-nav print:hidden" style="z-index: 50; padding-bottom: env(safe-area-inset-bottom); height: calc(5rem + env(safe-area-inset-bottom));">
     <a class="active:scale-95 transition-transform duration-200 flex flex-col items-center justify-center gap-1 {$page.url.pathname==='/' ? 'active' : ''}" href="/">
         <i class="bi bi-house-door text-xl"></i>
         <span class="btm-nav-label text-[10px]">Home</span>

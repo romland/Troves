@@ -25,7 +25,7 @@
 
             <button type="button" class="p-0 border-none bg-transparent h-full w-full flex justify-center items-center relative overflow-hidden" on:click={() => dispatch('zoom', photo)}>
                 {#if cols.length > 0}
-                    <div class="absolute inset-0 opacity-20 dark:opacity-30 mix-blend-screen pointer-events-none transition-opacity duration-500 group-hover:opacity-40" style="background: radial-gradient(circle at 20% 20%, {cols[0]}, transparent 60%), radial-gradient(circle at 80% 80%, {cols[1] || cols[0]}, transparent 60%);"></div>
+                    <div class="absolute inset-0 opacity-20 dark:opacity-30 mix-blend-screen pointer-events-none transition-opacity duration-500 group-hover:opacity-40 print:hidden" style="background: radial-gradient(circle at 20% 20%, {cols[0]}, transparent 60%), radial-gradient(circle at 80% 80%, {cols[1] || cols[0]}, transparent 60%);"></div>
                 {/if}
                 {#if photo.orgPath.match(/\.(mp4|webm|mov|ogg|mkv)$/i)}
                     <video src="{photo.orgPath}#t=0.1" class="object-scale-down max-h-full max-w-full rounded-xl relative z-10" muted playsinline></video>
@@ -50,7 +50,7 @@
         {@const cols = photo.colors?.length > 2 ? Object.keys(JSON.parse(photo.colors)) : []}
         <button aria-label="View photo {i + 1}" on:click={()=> { document.getElementById("carousel-item" + i)?.scrollIntoView({ block: 'nearest', inline: 'center' }) }} class="btn shrink-0 p-0 overflow-hidden relative border border-base-300 bg-base-100 hover:border-primary transition-colors">
             {#if cols.length > 0}
-                <div class="absolute inset-0 opacity-20 pointer-events-none" style="background: linear-gradient(135deg, {cols[0]}, {cols[1] || cols[0]});"></div>
+                <div class="absolute inset-0 opacity-20 pointer-events-none print:hidden" style="background: linear-gradient(135deg, {cols[0]}, {cols[1] || cols[0]});"></div>
             {/if}
             {#if photo.orgPath.match(/\.(mp4|webm|mov|ogg|mkv)$/i)}
                 <video class="object-cover w-12 h-12 bg-black rounded relative z-10" src="{photo.orgPath}#t=0.1" muted playsinline></video>

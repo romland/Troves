@@ -128,3 +128,37 @@ dialog[open].modal .modal-box {
     -ms-overflow-style: none; 
     scrollbar-width: none; 
 }
+
+/* --- PRINT STYLESHEET --- */
+@media print {
+    /* The Nuclear Option: printing dark themes */
+    *, *::before, *::after {
+        background-color: transparent !important; /* Vaporizes all background colors */
+        background-image: none !important; /* Vaporizes all gradients */
+        color: #000 !important; /* Forces ALL text to pure black */
+        box-shadow: none !important; /* Kills shadows */
+        text-shadow: none !important; /* Kills text glows */
+        border-color: #ddd !important; /* Forces borders to a faint, printable gray */
+    }
+
+    /* Force page breaks to be polite */
+    .card, tr, img, .badge, .prose {
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+    h1, h2, h3 {
+        page-break-after: avoid;
+        break-after: avoid;
+    }
+    /* Ensure modals, tooltips, and floating UI never print */
+    dialog, .modal, .toast, .tooltip::before, .tooltip::after {
+        display: none !important;
+    }
+
+    /* Strip the hardcoded padding from the main wrapper */
+    main.container {
+        padding-bottom: 0 !important;
+        margin: 0 !important;
+        max-width: 100% !important;
+    }
+}

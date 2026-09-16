@@ -218,7 +218,7 @@
     $: currentInventory = $page.data.inventories?.find(i => i.id === $page.data.activeInventoryId);
 </script>
 
-<div class="flex justify-between items-center mb-6 px-2">
+<div class="flex justify-between items-center mb-6 px-2 print:hidden">
 	<h1 class="text-2xl font-bold tracking-tight">
 		Results
 	</h1>
@@ -234,7 +234,7 @@
 
 <!-- Active Filter Chips -->
 {#if data.tag || data.container || data.cat || data.unassigned || data.docType || data.docStr || data.reasonStr || Object.keys(filterAttrs).length > 0}
-<div class="flex flex-wrap gap-2 px-2 mb-6">
+<div class="flex flex-wrap gap-2 px-2 mb-6 print:hidden">
     {#if data.tag}<Badge color="primary" class="p-3 font-semibold shadow-sm" icon="bi-hash" removable on:click={() => removeFilter('tag')}>{data.tag}</Badge>{/if}
     {#if data.container}<Badge color="primary" class="p-3 font-semibold shadow-sm" icon="bi-box-seam" removable on:click={() => removeFilter('container')}>{data.container}</Badge>{/if}
     {#if data.cat}<Badge color="primary" class="p-3 font-semibold shadow-sm capitalize" icon="bi-tags" removable on:click={() => removeFilter('category')}>{data.cat}</Badge>{/if}
@@ -252,7 +252,7 @@
 {/if}
 
 {#if !bulkMode && currentInventory?.enableDocuments !== false}
-<div class="bg-base-200 p-1 rounded-2xl flex w-full max-w-md mx-auto mb-6 mt-2 relative z-10 border border-base-300 shadow-inner">
+<div class="bg-base-200 p-1 rounded-2xl flex w-full max-w-md mx-auto mb-6 mt-2 relative z-10 border border-base-300 shadow-inner print:hidden">
     <button type="button" class="flex-1 btn btn-sm border-none {searchTab === 'items' ? 'bg-base-100 shadow-sm hover:bg-base-100 text-base-content' : 'btn-ghost text-gray-500 hover:text-base-content hover:bg-base-300'}" on:click={() => searchTab = 'items'}>
         Items <Badge color="ghost" size="sm" class="ml-1">{data.totalCount}</Badge>
     </button>
@@ -353,7 +353,7 @@
 		};
 	}}>
 		<!-- Master Checkbox Bar -->
-		<div class="flex items-center justify-between bg-base-200/50 p-3 rounded-xl border border-base-200 shadow-inner mb-3">
+        <div class="flex items-center justify-between bg-base-200/50 p-3 rounded-xl border border-base-200 shadow-inner mb-3 print:hidden">
 			<label class="flex items-center gap-3 cursor-pointer">
 				<input type="checkbox" class="checkbox checkbox-sm checkbox-primary" checked={isAllSelected} on:change={(e) => toggleAll(e.currentTarget.checked)} />
 				<span class="text-sm font-bold text-gray-500 uppercase tracking-wider">Select All Loaded</span>
@@ -402,7 +402,7 @@
 		</Navigation>
 
 		{#if selectedIds.length > 0}
-            <div class="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] left-0 w-full p-4 bg-base-100/95 backdrop-blur-xl border-t border-base-200 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] z-40 animate-fade-in">
+            <div class="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] left-0 w-full p-4 bg-base-100/95 backdrop-blur-xl border-t border-base-200 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] z-40 animate-fade-in print:hidden">
 				<div class="max-w-2xl mx-auto flex flex-col sm:flex-row items-end gap-3">
 					<DropdownSelect 
 						name="bulkAction" 

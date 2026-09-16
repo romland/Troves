@@ -108,15 +108,15 @@
             <div class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Stock</div>
             <div class="text-2xl font-bold leading-tight flex items-center justify-center gap-1 {item.amount === 0 ? 'opacity-50' : ''}">
                 {#if canEdit}
-                    <button class="btn btn-xs btn-ghost p-0 w-5 h-5 -ml-1" on:click={() => item.amount > 0 && document.getElementById('decStockBtn')?.click()} disabled={item.amount === 0}><i class="bi bi-dash"></i></button>
+                    <button class="btn btn-xs btn-ghost p-0 w-5 h-5 -ml-1 print:hidden" on:click={() => item.amount > 0 && document.getElementById('decStockBtn')?.click()} disabled={item.amount === 0}><i class="bi bi-dash"></i></button>
                 {/if}
                 <span>{item.amount !== null ? item.amount : '-'}</span>
                 {#if canEdit}
-                    <button class="btn btn-xs btn-ghost p-0 w-5 h-5 -mr-1" on:click={() => document.getElementById('incStockBtn')?.click()}><i class="bi bi-plus"></i></button>
+                    <button class="btn btn-xs btn-ghost p-0 w-5 h-5 -mr-1 print:hidden" on:click={() => document.getElementById('incStockBtn')?.click()}><i class="bi bi-plus"></i></button>
                 {/if}
             </div>
             {#if item.amount === 0 && item?.inventory?.enableNotebook}
-                <form method="POST" action="/timeline?/capture" use:enhance={() => { return async ({ update }) => { notify('success', 'Added to Shopping List!'); await update({ reset: false }); }; }}>
+                <form method="POST" action="/timeline?/capture" class="print:hidden" use:enhance={() => { return async ({ update }) => { notify('success', 'Added to Shopping List!'); await update({ reset: false }); }; }}>
                     <input type="hidden" name="content" value="Need to restock: {item.title}">
                     <input type="hidden" name="category" value="to buy">
                     <input type="hidden" name="linkedItemIds[]" value={item.id}>
@@ -183,7 +183,7 @@
                     <div class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold leading-none mb-0.5">Location</div>
                     <div class="font-bold text-sm leading-tight truncate text-warning">Unassigned</div>
                     {#if canEdit}
-                        <button class="text-[11px] font-bold text-primary hover:underline text-left mt-0.5 w-max shrink-0 whitespace-nowrap" on:click={openMoveModal}>+ Assign</button>
+                        <button class="text-[11px] font-bold text-primary hover:underline text-left mt-0.5 w-max shrink-0 whitespace-nowrap print:hidden" on:click={openMoveModal}>+ Assign</button>
                     {/if}
                 </div>
             </div>
@@ -214,14 +214,14 @@
             <div class="stat-title"><span class="text-xs">Stock</span></div>
             <div class="stat-value text-secondary flex items-center gap-2 {item.amount === 0 ? 'opacity-50' : ''}">
                 {#if canEdit}
-                    <button class="btn btn-sm btn-ghost p-0 w-8 h-8" on:click={() => item.amount > 0 && document.getElementById('decStockBtn')?.click()} disabled={item.amount === 0}><i class="bi bi-dash"></i></button>
+                    <button class="btn btn-sm btn-ghost p-0 w-8 h-8 print:hidden" on:click={() => item.amount > 0 && document.getElementById('decStockBtn')?.click()} disabled={item.amount === 0}><i class="bi bi-dash"></i></button>
                 {/if}
                 <span>{#if item.amount !== null}{item.amount}{:else}-{/if}</span>
                 {#if canEdit}
-                    <button class="btn btn-sm btn-ghost p-0 w-8 h-8" on:click={() => document.getElementById('incStockBtn')?.click()}><i class="bi bi-plus"></i></button>
+                    <button class="btn btn-sm btn-ghost p-0 w-8 h-8 print:hidden" on:click={() => document.getElementById('incStockBtn')?.click()}><i class="bi bi-plus"></i></button>
                 {/if}
             </div>
-            <div class="stat-desc mt-1 h-5">
+            <div class="stat-desc mt-1 h-5 print:hidden">
                 {#if item.amount === 0 && item?.inventory?.enableNotebook}
                     <form method="POST" action="/timeline?/capture" class="flex items-center gap-2" use:enhance={() => { return async ({ update }) => { notify('success', 'Added to Shopping List!'); await update({ reset: false }); }; }}>
                         <span class="text-error/80 font-medium">Out of stock</span>
@@ -250,7 +250,7 @@
                         <div class="card-title text-lg m-0 text-warning leading-none">Unassigned</div>
                     </div>
                     {#if canEdit}
-                        <button class="btn btn-sm btn-outline border-base-300 rounded-xl hover:border-primary text-xs shrink-0 whitespace-nowrap" on:click={openMoveModal}>
+                        <button class="btn btn-sm btn-outline border-base-300 rounded-xl hover:border-primary text-xs shrink-0 whitespace-nowrap print:hidden" on:click={openMoveModal}>
                             <i class="bi bi-pin-map-fill"></i> Assign
                         </button>
                     {/if}
@@ -298,7 +298,7 @@
                             <div class="text-[11px] text-base-content/40 font-bold uppercase tracking-wider mt-0.5">{getHumanLocationText(polyMap)}</div>
                         {/if}
                     </div>
-                    <button class="btn btn-sm btn-outline border-base-300 rounded-xl hover:border-primary text-xs" on:click={openMoveModal}>
+                    <button class="btn btn-sm btn-outline border-base-300 rounded-xl hover:border-primary text-xs print:hidden" on:click={openMoveModal}>
                         <i class="bi bi-arrows-move"></i> Move it
                     </button>
                 </div>

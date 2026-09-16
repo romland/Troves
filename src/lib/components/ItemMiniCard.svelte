@@ -18,7 +18,7 @@
     <!-- svelte-ignore a11y_no_static_element_interactions -->
         <div class="w-12 h-12 shrink-0 rounded-lg overflow-hidden bg-base-200 flex items-center justify-center border border-base-300 cursor-zoom-in hover:opacity-80 transition-opacity relative" on:click|preventDefault|stopPropagation={() => dispatch('zoom', item)}>
             {#if cols.length > 0}
-                <div class="absolute inset-0 opacity-30 pointer-events-none" style="background: linear-gradient(135deg, {cols[0]}, {cols[1] || cols[0]});"></div>
+                <div class="absolute inset-0 opacity-30 pointer-events-none print:hidden" style="background: linear-gradient(135deg, {cols[0]}, {cols[1] || cols[0]});"></div>
             {/if}
         {#if srcUrl}
             <img src="{srcUrl}{cb}" alt={item.title} loading={imgLoadStrategy} class="w-full h-full object-cover mix-blend-multiply dark:mix-blend-normal relative z-10" />

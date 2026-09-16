@@ -180,7 +180,7 @@
 </script>
 
 {#if showControls}
-    <div class="flex justify-between items-center mb-3 mt-1 gap-2">
+    <div class="flex justify-between items-center mb-3 mt-1 gap-2 print:hidden">
         <div class="dropdown dropdown-bottom">
             <button tabindex="0" class="btn btn-sm bg-base-200/60 border-base-300/50 shadow-sm font-medium text-base-content hover:bg-base-300 gap-1.5 sm:gap-2 rounded-lg h-8 min-h-0">
                 <i class="bi bi-sort-down text-gray-500 text-lg"></i>
@@ -250,7 +250,7 @@
                                    <div class="w-14 h-14 bg-base-100 rounded-2xl shadow-sm border border-base-200/60 overflow-hidden flex items-center justify-center relative z-0">
 
                                        {#if cols.length > 0}
-                                           <div class="absolute inset-0 opacity-30 pointer-events-none transition-opacity duration-300 {brief && hoverItemData === item && polyMap ? 'opacity-0' : ''}" style="background: linear-gradient(135deg, {cols[0]}, {cols[1] || cols[0]});"></div>
+                                            <div class="absolute inset-0 opacity-30 pointer-events-none transition-opacity duration-300 print:hidden {brief && hoverItemData === item && polyMap ? 'opacity-0' : ''}" style="background: linear-gradient(135deg, {cols[0]}, {cols[1] || cols[0]});"></div>
                                        {/if}
                                        <a href="/{item.id}/{item.slug}" class="w-full h-full flex items-center justify-center bg-transparent relative z-10">
                                            <div class="relative w-full h-full flex items-center justify-center transition-opacity duration-300 {brief && hoverItemData === item && polyMap ? 'opacity-0' : 'opacity-100'}">
@@ -425,7 +425,7 @@
                         {/if}
                         <div class="relative w-full h-full flex items-center justify-center rounded-lg overflow-hidden">
                             {#if cols.length > 0}
-                                <div class="absolute inset-0 opacity-30 pointer-events-none" style="background: linear-gradient(135deg, {cols[0]}, {cols[1] || cols[0]});"></div>
+                                <div class="absolute inset-0 opacity-30 pointer-events-none print:hidden" style="background: linear-gradient(135deg, {cols[0]}, {cols[1] || cols[0]});"></div>
                             {/if}
                             {#if localBlob && !isLoaded}
                                 <img src={localBlob} class="absolute inset-0 object-contain w-full h-full rounded-lg mix-blend-multiply dark:mix-blend-normal z-0 opacity-80 animate-pulse transition-opacity duration-700" alt="Preview"/>
