@@ -17,7 +17,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     const title = formData.get('title') as string;
     const description = formData.get('description') as string;
     const skipVision = formData.get('skipVision') === 'true';
-    const removeBackground = formData.get('removeBackground') !== 'false';
+    const removeBackground = formData.get('removeBackground') === 'true';
     const straightenPerspective = formData.get('straightenPerspective') === 'true';
     const fillStatus = formData.get('fillStatus') as string;
     const clientId = formData.get('clientId') as string;
