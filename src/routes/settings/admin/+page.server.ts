@@ -34,7 +34,6 @@ export const actions = {
                 data: {
                     username: username.trim(),
                     password: await bcrypt.hash(password, await bcrypt.genSalt(10)),
-                    token: crypto.randomUUID()
                 }
             });
             return { success: true, message: `User '${username}' created!` };

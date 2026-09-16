@@ -106,7 +106,7 @@
 				const audioBlob = new Blob(audioChunks, { type: mediaRecorder?.mimeType || 'audio/webm' });
 				if (audioBlob.size === 0) {
 					isProcessingAudio = false;
-					showVoiceError('No audio captured by browser.');
+					showVoiceFeedback('error', undefined, undefined, 'No audio captured by browser.');
 					return;
 				}
 

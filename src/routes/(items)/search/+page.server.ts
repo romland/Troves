@@ -1,7 +1,6 @@
 import type { PageServerLoad, Actions } from "./$types";
 import { db } from '$lib/server/database';
 import { fail } from '@sveltejs/kit';
-import { flagDuplicatesInList } from '$lib/server/matcher';
 import { getActiveSchema } from '$lib/server/ontology';
 
 export const load = (async ({ locals, url, fetch }) => {

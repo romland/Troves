@@ -1,10 +1,8 @@
 import fs from 'fs';
-import path from 'path';
 import { dev } from '$app/environment';
 import { env } from '$env/dynamic/private';
 import { analyzeImage } from './ai/index';
 import { getImageMimeType } from './fsUtils';
-import type { TaskContext } from './taskManager';
 import { parseBoundingBox } from '$lib/shared/boundingBox';
 
 export interface ImageAnalysisResult {
@@ -126,8 +124,17 @@ TASKS:
 	properties.description = { type: 'string', description: 'Brief visual description' };
 	properties.subtitle = { type: 'string', description: 'Author, maker, or secondary text' };
 	
-	const rawText = await analyzeImage(promptText, mimeType, base64Data, true, { type: 'object', properties, required }, 'Vision Classification', { path: localFilePath, itemId }, 'CLASSIFY');
-	
+    const rawText = await analyzeImage(
+        promptText, 
+        mimeType, 
+        base64Data, 
+        true, 
+        { type: 'object', properties, required }, 
+        'Vision Classification', 
+        { targetType: itemId ? 'item' : 'global', targetId: itemId || 0 }, 
+        'CLASSIFY'
+    );
+
 	const result = JSON.parse(rawText);
 	
 	if (result.foregroundBox) {
@@ -158,7 +165,16 @@ export async function guessProductDetails(localFilePath: string, hint: string = 
 		promptText += `\n\nUSER HINT: "${hint}". You MUST use this hint to identify the exact product model or brand, overriding your default guess.`;
 	}
 	
-	const rawText = await analyzeImage(promptText, mimeType, fileBuffer.toString('base64'), true, { type: 'object', properties: { title: { type: 'string' }, description: { type: 'string' } }, required: ['title', 'description'] }, 'Product Details Guess', { path: localFilePath, itemId }, 'GUESS');
+    const rawText = await analyzeImage(
+        promptText, 
+        mimeType, 
+        fileBuffer.toString('base64'), 
+        true, 
+        { type: 'object', properties: { title: { type: 'string' }, description: { type: 'string' } }, required: ['title', 'description'] }, 
+        'Product Details Guess', 
+        { targetType: itemId ? 'item' : 'global', targetId: itemId || 0 }, 
+        'GUESS'
+    );
 	return JSON.parse(rawText);
 }
 

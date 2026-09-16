@@ -168,9 +168,9 @@
     }
 
     $: allTrayBankEntities = [
-        ...(data.item?.children || []).map((c: any) => ({ id: c.id, type: 'container', name: c.name, hasMap: !!c.spatialMap })),
-        ...(data.mappedItems || []).map((loc: any) => ({ id: loc.item.id, type: 'item', name: loc.item.title, hasMap: true })),
-        ...(data.unmappedItems || []).map((loc: any) => ({ id: loc.item.id, type: 'item', name: loc.item.title, hasMap: false }))
+        ...(data.item?.children || []).map((c: any) => ({ id: c.id, type: 'container' as const, name: c.name, hasMap: !!c.spatialMap })),
+        ...(data.mappedItems || []).map((loc: any) => ({ id: loc.item.id, type: 'item' as const, name: loc.item.title, hasMap: true })),
+        ...(data.unmappedItems || []).map((loc: any) => ({ id: loc.item.id, type: 'item' as const, name: loc.item.title, hasMap: false }))
     ].sort((a, b) => {
         if (a.hasMap === b.hasMap) return a.name.localeCompare(b.name);
         return a.hasMap ? 1 : -1;

@@ -41,6 +41,7 @@
         <span class="truncate">{labelPrefix}{selectedLabel}</span>
         <i class="bi {chevronClass} shrink-0"></i>
     </button>
+    <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
     <ul tabindex="0" class="dropdown-content z-[100] menu shadow-2xl {menuClass}">
         <slot name="header" />
         {#each options as opt}

@@ -222,6 +222,7 @@ console.log("formData:", orgData);
             include: {
               photos : true,
               documents : true,
+              attributes: true,
             }
         });
 

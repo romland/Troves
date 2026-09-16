@@ -224,6 +224,7 @@
         <h2 class="text-2xl font-bold mb-6">Profile Details</h2>
         <form method="POST" action="?/updateProfile" enctype="multipart/form-data" class="flex flex-col gap-5" use:enhance={createEnhancer}>
             <div class="flex items-center gap-6 mb-2">
+                <!-- svelte-ignore a11y_click_events_have_key_events -->
                 <div class="avatar relative group cursor-pointer" on:click={() => document.getElementById('avatarUpload')?.click()} role="button" tabindex="0">
                     <div class="w-20 rounded-full border-4 border-base-100 shadow-md bg-base-200">
                         {#if avatarPreview}

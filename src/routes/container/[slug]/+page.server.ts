@@ -40,6 +40,11 @@ export const load = (async ({ locals, params, url, fetch }) => {
         orderBy: { name: 'asc' }
     });
 
+    const tags = await db.tag.findMany({
+        where: { inventoryId: locals.activeInventoryId },
+        orderBy: { name: 'asc' }
+    });
+
     const mappedItems = await db.itemsInContainer.findMany({
         where: { containerId: item.id, spatialMap: { not: null } },
         include: { item: { include: { photos: { include: { category: true } }, locations: { include: { container: true } } } } }
@@ -98,6 +103,7 @@ export const load = (async ({ locals, params, url, fetch }) => {
         items: data.items,
         mappedItems: enrichedMappedItems,
         unmappedItems: enrichedUnmappedItems,
+        tags,
         totalCount: data.totalCount || 0,
         includeTrays,
         prevPage: data.prevPage,

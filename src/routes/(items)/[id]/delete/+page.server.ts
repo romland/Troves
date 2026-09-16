@@ -1,6 +1,7 @@
 import type { Actions} from "./$types";
 import { redirect } from "@sveltejs/kit";
 import { db } from '$lib/server/database';
+import { fail } from '@sveltejs/kit';
 
 export const actions = {
     default: async ({ params, locals }) => {
