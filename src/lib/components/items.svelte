@@ -25,6 +25,7 @@
     export let brief: boolean = false;
     export let showControls: boolean = true;
     export let forceListView: boolean = false;
+    export let loadingSkeletonCount: number = 0;
 
     const sortOptions = [
         { id: 'newest', label: 'Newest Added', icon: 'bi-sort-numeric-down-alt' },
@@ -393,6 +394,32 @@
                         {/if}                        
                     </tr>
                 {/each}
+                {#if loadingSkeletonCount > 0}
+                    {#each Array(loadingSkeletonCount) as _, i}
+                        <tr class="border-b border-base-200/50 last:border-none pointer-events-none">
+                            <td class="w-16 sm:w-20 min-w-[4rem] sm:min-w-[5rem] shrink-0 py-3">
+                                <div class="avatar">
+                                    <div class="w-14 h-14 bg-base-200/50 rounded-2xl shadow-sm border border-base-200/60 overflow-hidden animate-pulse"></div>
+                                </div>
+                            </td>
+                            <td class="hidden sm:table-cell w-20 min-w-[5rem]">
+                                <div class="h-4 w-16 bg-base-200/50 rounded animate-pulse mb-1"></div>
+                                <div class="h-3 w-12 bg-base-200/50 rounded animate-pulse"></div>
+                            </td>
+                            <td class="w-full relative max-w-[200px] sm:max-w-none">
+                                <div class="h-5 w-3/4 max-w-[200px] bg-base-200/50 rounded animate-pulse mb-2"></div>
+                                <div class="hidden lg:flex gap-2">
+                                    <div class="h-4 w-12 bg-base-200/50 rounded-full animate-pulse"></div>
+                                    <div class="h-4 w-16 bg-base-200/50 rounded-full animate-pulse"></div>
+                                </div>
+                                <div class="sm:hidden mt-1 flex flex-col gap-1.5 w-full">
+                                    <div class="h-3 w-full bg-base-200/50 rounded animate-pulse"></div>
+                                    <div class="h-3 w-2/3 bg-base-200/50 rounded animate-pulse"></div>
+                                </div>
+                            </td>
+                        </tr>
+                    {/each}
+                {/if}
             </tbody>
         </table>
     </div>
@@ -481,6 +508,24 @@
                     </div>
                 </div>
             {/each}
+
+            {#if loadingSkeletonCount > 0}
+                {#each Array(loadingSkeletonCount) as _, i}
+                    <div class="card group bg-base-100 shadow-sm border border-base-200 relative flex flex-col h-full pointer-events-none">
+                        <figure class="aspect-square bg-base-200/30 border-b border-base-200 p-2 relative animate-pulse">
+                            <div class="w-full h-full bg-base-200/50 rounded-lg"></div>
+                        </figure>
+                        <div class="card-body p-3 gap-2 flex-1 flex-col justify-start">
+                            <div class="h-4 w-3/4 bg-base-200/50 rounded animate-pulse"></div>
+                            <div class="h-3 w-1/2 bg-base-200/50 rounded animate-pulse mt-1"></div>
+                            <div class="flex gap-1 mt-auto">
+                                <div class="h-4 w-10 bg-base-200/50 rounded-[4px] animate-pulse"></div>
+                                <div class="h-4 w-14 bg-base-200/50 rounded-[4px] animate-pulse"></div>
+                            </div>
+                        </div>
+                    </div>
+                {/each}
+            {/if}
         </div>
     {/if}
 

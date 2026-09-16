@@ -193,7 +193,7 @@
         if (el) {
             observer = new IntersectionObserver(handleIntersection, {
                 root: null,
-                rootMargin: '100px', // Fetch slightly before they hit the absolute bottom
+                rootMargin: '1500px', // Pre-fetch 1.5 screens ahead to beat fast scroll velocity
                 threshold: 0.1
             });
             observer.observe(el);
@@ -212,8 +212,11 @@
     </slot>
 {/each}
 
+{#if loading && !reachedEnd}
+    <slot items={[]} loadingSkeletonCount={12}>
+        <Items items={[]} showControls={false} loadingSkeletonCount={12} />
+    </slot>
+{/if}
+
 <div id="postScrollArea" class="flex justify-center items-center gap-3 py-6 min-h-[4rem]">
-    {#if loading}
-        <span class="loading loading-spinner loading-md text-primary"></span>
-    {/if}
 </div>
