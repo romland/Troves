@@ -6,7 +6,7 @@ import { db } from '$lib/server/database';
 import type { Tag } from "@prisma/client";
 
 import type { Item, Photo, Prisma } from '@prisma/client';
-import { formKVPsToDBrows, getTagIds } from "$lib/server/services";
+import { formKVPsToDBrows, getTagIds, consolidatePastedUrls } from "$lib/server/services";
 import { uploadsDiskFolder, uploadsRemoteSite, uploadsWebFolder } from '$lib/server/constants';
 import { downloadAndStoreDocuments } from "$lib/server/urldownloader";
 import { savePhotos, processItemPhotosBackground } from '$lib/server/photouploads';
@@ -14,6 +14,7 @@ import { processFormDocuments } from '$lib/server/services';
 import { logActivity } from '$lib/server/logger';
 import { tokenizeAndStem } from '$lib/server/nlp';
 import { getActiveSchema } from '$lib/server/ontology';
+import { getAuthError } from '$lib/server/security';
 
 export const load = (async ({ locals, params }) => {
     const parsedId = Number(params.id);
@@ -90,8 +91,8 @@ x delete all attributes (to be re-inserted)
 */
 export const actions = {
     default: async ({ request, params, locals }) => {
-        if (!locals.user) return fail(401, { error: true, message: 'Unauthorized' });
-        if (locals.role !== 'EDITOR' && locals.role !== 'OWNER' && !locals.user.isAdmin) return fail(403, { error: true, message: 'Forbidden. Viewer access only.' });
+        const authErr = getAuthError(locals);
+        if (authErr) return authErr;
 
         const orgData = await request.formData();
         const data = Object.fromEntries(orgData);
@@ -230,22 +231,7 @@ console.log("formData:", orgData);
         const allExistingPhotoIds = item.photos.map(p=>p.id);
         const allExistingDocumentIds = item.documents.map(p=>p.id);
 
-        data.urls = data.urls || "";
-        const pastedUrls = orgData.getAll("pasted_urls[]") as string[];
-        if (pastedUrls.length > 0) {
-            data.urls = (data.urls as string || "") + "\n" + pastedUrls.join("\n");
-        }
-
-		const preDocsRaw = orgData.getAll("preprocessed_docs[]");
-		const preDocs = preDocsRaw.map(d => JSON.parse(d as string));
-		const preprocessedSources = new Set(preDocs.map(d => d.source));
-
-		if (data.urls) {
-			data.urls = (data.urls as string)
-				.split('\n')
-				.filter(u => u.trim() && !preprocessedSources.has(u.trim()))
-				.join('\n');
-		}
+        data.urls = consolidatePastedUrls(orgData, data);
 
         // Fire and forget newly pasted document processing
         processFormDocuments(orgData, { itemId: item.id }, uploadsDiskFolder, uploadsWebFolder).catch(e => console.error(e));

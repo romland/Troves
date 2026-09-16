@@ -39,6 +39,27 @@ export const getTagIds = async (tagcsv: string, inventoryId: number) => {
     return ids;
 }
 
+/**
+ * Standardizes URL extraction from form data, merging newly pasted URLs
+ * and filtering out documents that have already been processed to prevent duplicates.
+ */
+export function consolidatePastedUrls(orgData: FormData, data: Record<string, any>) {
+    data.urls = data.urls || "";
+    const pastedUrls = orgData.getAll("pasted_urls[]") as string[];
+    if (pastedUrls.length > 0) {
+        data.urls = (data.urls as string || "") + "\n" + pastedUrls.join("\n");
+    }
+
+    const preDocsRaw = orgData.getAll("preprocessed_docs[]");
+    const preDocs = preDocsRaw.map(d => JSON.parse(d as string));
+    const preprocessedSources = new Set(preDocs.map(d => d.source));
+
+    if (data.urls) {
+        return (data.urls as string).split('\n').filter(u => u.trim() && !preprocessedSources.has(u.trim())).join('\n');
+    }
+    return data.urls;
+}
+
 export function formKVPsToDBrows(formData: Record<string, any>)
 {
   const kvps: Prisma.KVPCreateWithoutItemInput[] = [];

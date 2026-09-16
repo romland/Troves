@@ -120,46 +120,7 @@
         };
     });
 
-    const onSubmit: SubmitFunction = async ({ cancel, formData }) => {
-        // Stop SvelteKit from natively submitting the form! 
-        // If missing, SvelteKit AND our Outbox will both upload it, causing duplicates.
-        cancel();
-        if (saving) {
-            return;
-        }
-        console.log("🛠️ [DEBUG AMBIENT] Form submitting! Extracted containers from DOM:", formData.getAll('containers'));
 
-        saving = true;
-        hasSubmitted = true;
-        formData.append('clientId', clientId);
-        formData.append('inventoryId', $page.data.activeInventoryId.toString());
-        try {
-            await saveToQueue('/add', formData);
-            notify("success", "Item saved in background!");
-            pasteHandler?.clearQueue();
-            window.dispatchEvent(new CustomEvent('outbox-trigger'));
-            
-            // Detach router execution from the current microtask to bypass deadlock
-            setTimeout(async () => {
-                if (CONTINUOUS_SCANNING) {
-                    clientId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2);
-                    if (itemHubComponent) itemHubComponent.reset();
-                    isDirty = false;
-                    hasSubmitted = false;
-                    saving = false;
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                } else {
-                    await goto('/', { invalidateAll: true });
-                }
-            }, 10);
-        } catch (err) {
-            console.error("Queue Error:", err);
-            notify("error", "Failed to save item. Please try again.");
-            hasSubmitted = false;
-            saving = false;
-        }
-
-    }
     
     pageTitle.set("Add new product");
     $:  pageTitle.set(mode === 'single' ? "Add new product" : mode === 'collection' ? "Multi-scan" : "Rapid Intake");
@@ -237,8 +198,13 @@ on:processingComplete={(ev) => {
             containers={data.containers} 
             saving={saving}
             bind:isDirty
+            bind:hasSubmitted
             pastedDocCount={pastedDocCount}
-			onSubmit={onSubmit}
+            formAction="/add"
+            successRedirect="/"
+            isContinuous={CONTINUOUS_SCANNING}
+            {clientId}
+            on:queued={() => pasteHandler?.clearQueue()}
             on:success={(ev) => notify("success", ev.detail)} 
             on:processingStart={(ev) => notify("loading", ev.detail.message, ev.detail.taskId)}
             on:processingComplete={(ev) => notify(ev.detail.status, ev.detail.message, ev.detail.taskId)}

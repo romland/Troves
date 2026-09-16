@@ -6,17 +6,18 @@ import { fail, redirect } from '@sveltejs/kit';
 import { db } from '$lib/server/database';
 
 import type { Item, Photo, Prisma } from '@prisma/client';
-import { createItemEntity, formKVPsToDBrows, getTagIds, processFormDocuments } from "$lib/server/services";
+import { createItemEntity, formKVPsToDBrows, getTagIds, processFormDocuments, consolidatePastedUrls } from "$lib/server/services";
 import { uploadsDiskFolder, uploadsRemoteSite, uploadsWebFolder } from '$lib/server/constants';
 import { downloadAndStoreDocuments } from "$lib/server/urldownloader";
 import { savePhotos } from '$lib/server/photouploads';
 import { autoFill } from '$lib/server/autofill';
 import { logActivity } from '$lib/server/logger';
+import { getAuthError } from '$lib/server/security';
 
 export const actions = {
 	default: async ({ locals, request }) => {
-		if (!locals.user) return fail(401, { error: true, message: 'Unauthorized' });
-		if (locals.role !== 'EDITOR' && locals.role !== 'OWNER' && !locals.user.isAdmin) return fail(403, { error: true, message: 'Forbidden. Viewer access only.' });
+		const authErr = getAuthError(locals);
+		if (authErr) return authErr;
 		
 		const orgData = await request.formData();
 		const data = Object.fromEntries(orgData);
@@ -86,24 +87,9 @@ export const actions = {
 			timelineNoteId
 		});
 		
-		data.urls = data.urls || "";
-		const pastedUrls = orgData.getAll("pasted_urls[]") as string[];
-		if (pastedUrls.length > 0) {
-			data.urls = (data.urls as string || "") + "\n" + pastedUrls.join("\n");
-		}
-		
-		const preDocsRaw = orgData.getAll("preprocessed_docs[]");
-		const preDocs = preDocsRaw.map(d => JSON.parse(d as string));
-		const preprocessedSources = new Set(preDocs.map(d => d.source));
-		
-		if (data.urls) {
-			data.urls = (data.urls as string)
-			.split('\n')
-			.filter(u => u.trim() && !preprocessedSources.has(u.trim()))
-			.join('\n');
-		}
 		
 		// Fire and forget heavy IO & ML tasks so the server returns "200 OK" to the outbox instantly
+		data.urls = consolidatePastedUrls(orgData, data);
 		processFormDocuments(orgData, { itemId: item.id }, uploadsDiskFolder, uploadsWebFolder).catch(e => console.error(e));
 		downloadAndStoreDocuments({ itemId: item.id }, uploadsRemoteSite, data, uploadsDiskFolder, uploadsWebFolder, "qr.").catch(e => console.error(e));
 		

@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import path from 'path';
-import { error, fail } from '@sveltejs/kit';
+import { error, fail, type ActionFailure } from '@sveltejs/kit';
 import { uploadsDiskFolder, uploadsWebFolder } from '$lib/server/constants';
 
 /**
@@ -82,4 +82,17 @@ export function assertCanMutate(locals: App.Locals) {
     if (role !== 'EDITOR' && role !== 'OWNER' && !locals.user?.isAdmin) {
         throw error(403, 'Forbidden. Viewer access only.');
     }
+}
+
+/**
+ * DRY Form Action Guard.
+ * Unlike assertCanMutate (which throws a hard error page), this gracefully returns 
+ * a fail() object to preserve the user's form state.
+ */
+export function getAuthError(locals: App.Locals): ActionFailure<{ error: boolean, message: string }> | null {
+    if (!locals.user) return fail(401, { error: true, message: 'Unauthorized' });
+    if (locals.role !== 'EDITOR' && locals.role !== 'OWNER' && !locals.user?.isAdmin) {
+        return fail(403, { error: true, message: 'Forbidden. Viewer access only.' });
+    }
+    return null;
 }

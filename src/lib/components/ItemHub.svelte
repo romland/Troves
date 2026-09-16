@@ -31,10 +31,17 @@
     export let item: any = null;
     export let saving = false;
     export let isDirty = false;
+    export let hasSubmitted = false;
     export let mode: 'single' | 'rapid' = 'single';
     export let pastedDocCount = 0;
 	export let onSubmit: SubmitFunction | undefined = undefined;
 
+    export let formAction: string = "";
+    export let successRedirect: string | null = null;
+    export let isContinuous: boolean = false;
+    export let clientId: string | null = null;
+
+    import { saveToQueue } from '$lib/client/offlineQueue';
     onMount(() => {
         const handleTabShortcut = (e: any) => { activeView = e.detail; };
         window.addEventListener('shortcut:tab', handleTabShortcut);
@@ -72,6 +79,34 @@
             dispatch('success', `Location auto-set to ${selectedLocations.join(', ')}`);
         }
     }
+
+    const handleFormSubmit: SubmitFunction = async ({ cancel, formData }) => {
+        cancel();
+        if (saving) return;
+        saving = true;
+        hasSubmitted = true;
+        
+        if (clientId) formData.append('clientId', clientId);
+        formData.append('inventoryId', $page.data.activeInventoryId.toString());
+
+        try {
+            await saveToQueue(formAction, formData);
+            notify("success", "Item saved in background!");
+            dispatch('queued'); 
+            window.dispatchEvent(new CustomEvent('outbox-trigger'));
+            
+            setTimeout(async () => {
+                if (isContinuous) {
+                    reset(); saving = false; hasSubmitted = false; window.scrollTo({ top: 0, behavior: 'smooth' });
+                } else if (successRedirect) {
+                    await goto(successRedirect, { invalidateAll: true });
+                }
+            }, 10);
+        } catch (err) {
+            notify("error", "Failed to save item. Please try again.");
+            hasSubmitted = false; saving = false;
+        }
+    };
 
     export function triggerCamera() {
         const fileInputs = document.querySelectorAll('input[type="file"][name^="file."]');
@@ -288,7 +323,7 @@
     }
 </script>
 
-<form id="eltForm" method="post" enctype="multipart/form-data" use:enhance={onSubmit || (() => {})} on:input={() => isDirty = true} on:change={() => isDirty = true}>
+<form id="eltForm" method="post" enctype="multipart/form-data" use:enhance={onSubmit || handleFormSubmit} on:input={() => isDirty = true} on:change={() => isDirty = true}>
 <slot name="hidden-inputs" />
 <div class="relative w-full md:max-w-2xl mx-auto bg-base-100 md:rounded-[2rem] rounded-xl shadow-lg md:shadow-2xl border border-base-200 flex flex-col">
     

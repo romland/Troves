@@ -34,31 +34,8 @@
         }
     });
 
-    const onSubmit: SubmitFunction = async ({ cancel, formData }) => {
         // Stop SvelteKit from natively submitting the form
-        cancel();
-        if (saving) {
-            return;
-        }        
-        saving = true;
-
-        hasSubmitted = true;
-        try {
-            await saveToQueue(`/${data.item?.id}/edit`, formData);
-            notify("success", "Changes queued! Returning...");
-            pasteHandler?.clearQueue();
-            window.dispatchEvent(new CustomEvent('outbox-trigger'));
-            
             // Detach execution to ensure router cleanly navigates away
-            setTimeout(async () => {
-                await goto(`/${data.item?.id}/${data.item?.slug}`);
-            }, 10);
-        } catch (err) {
-            saving = false;
-            hasSubmitted = false;
-            notify("error", "Failed to queue changes.");
-        }       
-    }
     
     pageTitle.set("Edit " + data.item?.title);
 </script>
@@ -89,8 +66,11 @@
         containers={data.containers} 
         saving={saving} 
         bind:isDirty
+        bind:hasSubmitted
         pastedDocCount={pastedDocCount}
-		onSubmit={onSubmit}
+        formAction={`/${data.item?.id}/edit`}
+        successRedirect={`/${data.item?.id}/${data.item?.slug}`}
+        on:queued={() => pasteHandler?.clearQueue()}
         on:success={(ev) => notify("success", ev.detail)} 
         on:processingStart={(ev) => notify("loading", ev.detail.message, ev.detail.taskId)}
         on:processingComplete={(ev) => notify(ev.detail.status, ev.detail.message, ev.detail.taskId)}
