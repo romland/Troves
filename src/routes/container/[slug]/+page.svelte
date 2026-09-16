@@ -301,13 +301,13 @@
     {#if data.item?.photoPath}
         <div class="flex flex-col gap-3 mb-8">
             {#if directItemCount > 0 && polygons.length === 0 && !showSpatialSetup}
-                <div class="border border-base-200 rounded-2xl p-8 text-center bg-base-100 shadow-sm flex flex-col items-center animate-fade-in mx-2 sm:mx-0">
-                    <div class="w-14 h-14 bg-base-200 rounded-full flex items-center justify-center mb-4">
-                        <i class="bi bi-grid-3x3 text-2xl text-gray-400"></i>
+                <div class="border border-dashed border-base-300 rounded-2xl p-6 text-center bg-base-50 flex flex-col items-center animate-fade-in mx-2 sm:mx-0 opacity-80 hover:opacity-100 transition-opacity">
+                    <div class="w-12 h-12 bg-base-200/50 rounded-full flex items-center justify-center mb-3">
+                        <i class="bi bi-grid-3x3 text-xl text-gray-400"></i>
                     </div>
-                    <h3 class="font-bold text-xl mb-2 tracking-tight">Upgrade to Spatial Map</h3>
-                    <p class="text-sm text-gray-500 mb-6 max-w-sm leading-relaxed">This container holds unmapped items. Enable spatial mapping to trace compartments and track exact physical locations.</p>
-                    <button class="btn btn-primary rounded-xl shadow-sm" on:click={() => showSpatialSetup = true}>Enable Spatial Mapping</button>
+                    <h3 class="font-bold text-lg mb-1 tracking-tight text-base-content/80">Spatial Map</h3>
+                    <p class="text-xs text-gray-500 mb-4 max-w-xs leading-relaxed">Optionally trace compartments to track exactly where items are stored inside.</p>
+                    <button class="btn btn-sm btn-outline border-base-300 rounded-xl" on:click={() => showSpatialSetup = true}>Create Map</button>
                 </div>
             {:else}
                 <div class="flex justify-between items-end px-2">
