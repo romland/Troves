@@ -15,7 +15,21 @@ import { fetchVideoIfSupported } from './ytdlp';
 import { extractEpubText } from './epub';
 import { isPdf, isEpub } from '$lib/shared/fileutils';
 import { stripHtmlSafe, extractHtmlTitleSafe } from '$lib/server/htmlUtils';
-    import { env } from '$env/dynamic/private';
+import { env } from '$env/dynamic/private';
+
+// ============================================================================
+// CRITICAL: WHY WE IMPORT NODE-FETCH INSTEAD OF USING THE NATIVE GLOBAL FETCH
+// ============================================================================
+// SvelteKit automatically patches the global `fetch()` during SSR to track requests.
+// When we push heavy background tasks (like downloading PDFs) into our `ioQueue`,
+// those tasks often execute *after* the original HTTP request has responded.
+// If we use the global `fetch()`, SvelteKit notices a fetch happening outside the 
+// context of an active request lifecycle and throws an annoying console warning: 
+// "Avoid calling fetch eagerly during server-side rendering..."
+// By importing standard `node-fetch`, we bypass SvelteKit's interceptor completely
+// for these offline background queues, keeping the console clean.
+// ============================================================================
+import fetch from 'node-fetch';
 
 export async function downloadAndStoreDocuments(target: { itemId?: number, timelineNoteId?: number }, remoteSite: string, data: any, diskFolder: string, webFolder: string, formPrefix: string, depth: number = 0)
 {
