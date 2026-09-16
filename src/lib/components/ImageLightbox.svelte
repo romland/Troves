@@ -20,10 +20,17 @@
 	let fileDetails = { size: '...', type: '...', dimensions: '...' };
 
     // Pan & Zoom State
-	// Tuned for a buttery, slight-bounce iOS feel
-	let scaleVal = spring(1, { stiffness: 0.15, damping: 0.65 });
-	let translateX = spring(0, { stiffness: 0.15, damping: 0.65 });
-	let translateY = spring(0, { stiffness: 0.15, damping: 0.65 });
+    // Tuned for an Apple-like physical, responsive feel (critically damped)
+    let scaleVal = spring(1, { stiffness: 0.25, damping: 0.85 });
+    let translateX = spring(0, { stiffness: 0.25, damping: 0.85 });
+    let translateY = spring(0, { stiffness: 0.25, damping: 0.85 });
+
+    // Apple-style rubber banding (overscroll resistance)
+    function rubberBand(offset: number, dimension: number, constant = 0.55) {
+        const absOffset = Math.abs(offset);
+        const pull = (1.0 - (1.0 / ((absOffset * constant / dimension) + 1.0))) * dimension;
+        return offset > 0 ? pull : -pull;
+    }
     let isDragging = false;
     let startX = 0;
     let startY = 0;
@@ -159,7 +166,7 @@
     // True Focal-Point Zooming: Keeps the pixel under your finger/cursor exactly where it is
     function zoomTo(newScale: number, focalX: number, focalY: number, hard = false) {
         let targetScale = newScale;
-        if (targetScale < 1 && hard) targetScale = 1 - (1 - targetScale) * 0.5; // Rubber banding
+        if (targetScale < 1 && hard) targetScale = 1 - rubberBand(1 - targetScale, 1, 0.8); // Smooth Apple resistance
         else if (targetScale < 1) targetScale = 1; // Snap back instantly
 		targetScale = Math.min(targetScale, 15);
 
@@ -235,12 +242,12 @@
 		const maxTx = Math.max(0, (window.innerWidth * ($scaleVal - 1)) / 2);
 		const maxTy = Math.max(0, (window.innerHeight * ($scaleVal - 1)) / 2);
 
-		// Apply rubber-band resistance if dragging past the edges
-		if (rawX > maxTx) rawX = maxTx + (rawX - maxTx) * 0.3;
-		else if (rawX < -maxTx) rawX = -maxTx + (rawX + maxTx) * 0.3;
+        // Apply exponential rubber-band resistance if dragging past the edges
+        if (rawX > maxTx) rawX = maxTx + rubberBand(rawX - maxTx, window.innerWidth);
+        else if (rawX < -maxTx) rawX = -maxTx + rubberBand(rawX + maxTx, window.innerWidth);
 
-		if (rawY > maxTy) rawY = maxTy + (rawY - maxTy) * 0.3;
-		else if (rawY < -maxTy) rawY = -maxTy + (rawY + maxTy) * 0.3;
+        if (rawY > maxTy) rawY = maxTy + rubberBand(rawY - maxTy, window.innerHeight);
+        else if (rawY < -maxTy) rawY = -maxTy + rubberBand(rawY + maxTy, window.innerHeight);
 
 		if (Math.abs(rawX - $translateX) > 3 || Math.abs(rawY - $translateY) > 3) dragHasMoved = true;
 
@@ -259,7 +266,10 @@
 		}
 
         if ($scaleVal === 1) {
-			if (Math.abs(swipeOffsetY) > 75 || Math.abs(velocityY) > 0.6) {
+            // Project where the swipe would end up based on velocity (standard iOS physics trick)
+            const projectedY = swipeOffsetY + (velocityY * 150);
+
+            if (Math.abs(projectedY) > window.innerHeight / 3 || Math.abs(velocityY) > 1.2) {
 				// Fling the image off-screen using your swipe momentum while fading
 				const throwDir = swipeOffsetY > 0 ? 1 : -1;
 				translateY.set(throwDir * (window.innerHeight || 800), { hard: false });
@@ -277,9 +287,9 @@
 		let targetTx = $translateX;
 		let targetTy = $translateY;
 
-		// Momentum Glide: If released while in motion (less than 50ms since last movement), throw it forward
+        // Momentum Glide: Apply exponential decay projection
 		if (performance.now() - lastDragTime < 50) {
-			const momentumMultiplier = 200; // Adjust for more/less slide distance
+            const momentumMultiplier = 180; // Friction coefficient
 			targetTx += velocityX * momentumMultiplier;
 			targetTy += velocityY * momentumMultiplier;
 		}
@@ -332,7 +342,7 @@
             const currentFocalY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
 
             let targetScale = pinchInitialScale * (currentDistance / pinchInitialDistance);
-            if (targetScale < 1) targetScale = 1 - (1 - targetScale) * 0.5;
+            if (targetScale < 1) targetScale = 1 - rubberBand(1 - targetScale, 1, 0.8);
 			targetScale = Math.min(targetScale, 15);
 
             const cx = window.innerWidth / 2;
