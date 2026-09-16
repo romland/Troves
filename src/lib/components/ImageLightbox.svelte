@@ -145,7 +145,7 @@
 		velocityY = 0;
     }
 
-    // Apple-y Edge Constraints: Prevents panning out of bounds when zoomed in
+    // Edge Constraints: Prevents panning out of bounds when zoomed in
     function applyBounds(tx: number, ty: number, scale: number) {
         if (scale <= 1) return { x: 0, y: 0 };
         const maxTx = Math.max(0, (window.innerWidth * (scale - 1)) / 2);

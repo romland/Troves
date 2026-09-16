@@ -340,7 +340,7 @@
 
         <DropdownPanel>
 			{#if isVoiceTestMode}
-				<!-- 🛠️ PREMIUM DEBUG UI FOR VOICE COMMANDS -->
+				<!-- 🛠️ DEBUG UI FOR VOICE COMMANDS -->
 				<div class="p-6 text-center bg-base-200/50 rounded-xl border border-primary/20 m-2 animate-fade-in">
 					<div class="w-12 h-12 bg-primary/20 text-primary rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm">
 						<i class="bi bi-robot text-2xl"></i>

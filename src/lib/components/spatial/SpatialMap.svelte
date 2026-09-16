@@ -482,7 +482,7 @@
 
 <div
     class="relative w-full h-[50vh] sm:h-[65vh] bg-base-300 rounded-[2rem] overflow-hidden shadow-inner border border-base-200">
-    <!-- Floating Apple-Style Zoom Pill -->
+    <!-- Zoom Pill -->
     <div
         class="absolute top-1/2 -translate-y-1/2 right-4 z-40 flex flex-col gap-1 bg-base-100/80 backdrop-blur-xl p-1.5 rounded-[1.25rem] shadow-lg border border-base-200/50 items-center transition-all">
         <!-- svelte-ignore a11y_consider_explicit_label -->
@@ -501,7 +501,7 @@
         </div>
     {/if}
 
-    <!-- Floating Apple-Style Warp HUD -->
+    <!-- Warp HUD -->
     {#if isWarpMode}
         <div class="absolute top-4 sm:top-6 left-1/2 -translate-x-1/2 z-50 flex flex-col sm:flex-row gap-3 bg-base-100/95 backdrop-blur-2xl p-2 rounded-3xl shadow-[0_10px_40px_rgba(0,0,0,0.3)] border border-base-200/50 items-center animate-fade-in w-[95%] max-w-[350px] sm:w-auto">
             <div class="flex items-center justify-center gap-4 px-2 w-full sm:w-auto">
@@ -537,7 +537,7 @@
         </div>
     {/if}
 
-    <!-- Floating Apple-Style Hint -->
+    <!-- Hint -->
     {#if !isWarpMode && !readonly && polygons.length > 0}
         <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 bg-base-100/80 backdrop-blur-xl px-4 py-2 rounded-full shadow-lg border border-base-200/50 text-[10px] sm:text-xs font-medium text-base-content/80 flex items-center gap-2 pointer-events-none animate-fade-in whitespace-nowrap">
             <i class="bi bi-info-circle text-primary"></i>

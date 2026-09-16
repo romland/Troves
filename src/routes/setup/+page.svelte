@@ -189,7 +189,7 @@
 <CreateInventoryModal bind:this={createModal} on:success={() => step = 3} />
 
 <style>
-    /* Premium hardware-accelerated animated mesh blobs */
+    /* hardware-accelerated animated mesh blobs */
     @keyframes blob {
         0% { transform: translate(0px, 0px) scale(1); }
         33% { transform: translate(30px, -50px) scale(1.1); }
