@@ -20,6 +20,34 @@
     let currentInvId = $page.data.activeInventoryId;
     let cacheKey = `nav-cache-${currentInvId}-${href}`;
 
+    // ====================================================================================
+    // CRITICAL BUG FIX DOCUMENTATION: SVELTE PROP MUTATION & ASYNC DATA STORES
+    // ====================================================================================
+    // THE PROBLEM:
+    // We previously tried to reset the infinite scroller on navigation by mutating the 
+    // `export let nextPage` prop directly (e.g., `nextPage = $page.data.nextPage`).
+    // Because SvelteKit's `$page` store updates asynchronously during client-side routing,
+    // this reactive block would sometimes fire BEFORE the new page data finished loading.
+    // It would grab the OLD `nextPage` (often `0` because the previous list hit the bottom).
+    // Worse, Svelte's compiler dictates that if a child component internally mutates an 
+    // `export let` prop, it severs the reactivity binding from the parent. When the parent 
+    // finally passed down the correct new `nextPage`, the child ignored it and stayed stuck at 0.
+    //
+    // THE SOLUTION:
+    // We decouple the external prop from the internal state using `internalNextPage`.
+    // 1. `export let nextPage` is treated as strictly read-only by this component. It 
+    //    acts ONLY as the initial seed value passed synchronously from the parent.
+    // 2. We use `internalNextPage` to track the actual pagination state and cache it.
+    //
+    // GOING FORWARD (ANTI-PATTERNS TO AVOID):
+    // - NEVER mutate `export let` props inside a component if you expect the parent to 
+    //   continue updating them. Always create a local shadow variable (e.g., `let internalX = X`).
+    // - NEVER rely on `$page.data` inside nested reactive blocks (`$:`) during 
+    //   route transitions to reset state, as it creates unpredictable race conditions. 
+    //   Rely on the synchronous props passed down from the parent layout instead.
+    // ====================================================================================    
+    let internalNextPage = nextPage;
+
     // 1. SYNCHRONOUS CACHE READ
     // By doing this here instead of in onMount, Svelte renders the full height on the VERY FIRST DOM frame.
     // This allows the browser to perfectly restore the Y-axis scroll position instantly.
@@ -30,7 +58,7 @@
             try {
                 const parsed = JSON.parse(cached);
                 loadedPages = parsed.loadedPages || [];
-                    nextPage = parsed.nextPage !== undefined ? parsed.nextPage : nextPage;
+                internalNextPage = parsed.nextPage !== undefined ? parsed.nextPage : nextPage;
                 reachedEnd = parsed.reachedEnd || false;
                 console.log(`[DEBUG-SCROLL] ✅ Synchronously restored ${loadedPages.length} pages. (This enables scroll restore)`);
             } catch (e) { console.warn("Was a silenced exception", e); }
@@ -49,7 +77,7 @@
                 try {
                     const parsed = JSON.parse(cached);
                     loadedPages = parsed.loadedPages || [];
-                        nextPage = parsed.nextPage !== undefined ? parsed.nextPage : $page.data.nextPage;
+                    internalNextPage = parsed.nextPage !== undefined ? parsed.nextPage : nextPage;
                     reachedEnd = parsed.reachedEnd || false;
                     console.log(`[DEBUG-SCROLL] ✅ Synchronously restored ${loadedPages.length} pages.`);
                 } catch (e) { console.warn("Was a silenced exception", e); }
@@ -57,7 +85,7 @@
                 // CRITICAL: If URL changed and no cache exists, wipe the old pages out!
                 loadedPages = [];
                 reachedEnd = false;
-                    nextPage = $page.data.nextPage;
+                internalNextPage = nextPage;
             }
         }
     }
@@ -106,7 +134,7 @@
         if (typeof sessionStorage !== 'undefined') {
             sessionStorage.setItem(cacheKey, JSON.stringify({
                 loadedPages,
-                nextPage,
+                nextPage: internalNextPage,
                 reachedEnd
             }));
         }
@@ -114,7 +142,7 @@
 
     async function query() {
         let h = href.replace("/search?", "/api/items?").replace("/?", "/api/items?");
-        const url = `${h}c=12&page=${nextPage}`;
+        const url = `${h}c=12&page=${internalNextPage}`;
         
         try {
             // Explicitly command fetch to bypass browser disk cache
@@ -136,13 +164,13 @@
         const entry = entries[0];
         
         if (!entry.isIntersecting) return;
-        if (loading || reachedEnd || nextPage === 0) return;
+        if (loading || reachedEnd || internalNextPage === 0) return;
         
         loading = true;
         query().then(() => {
             loading = false;
             if (!reachedEnd) {
-                nextPage++;
+                internalNextPage++;
             }
         });
     }
