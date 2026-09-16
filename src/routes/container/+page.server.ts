@@ -42,6 +42,9 @@ export const load = (async ({ locals, params }) => {
 
 export const actions = {
     delete: async ({ request, locals }) => {
+        if (!locals.user) return fail(401, { error: true, message: 'Unauthorized' });
+        if (locals.role !== 'EDITOR' && locals.role !== 'OWNER' && !locals.user.isAdmin) return fail(403, { error: true, message: 'Forbidden. Viewer access only.' });
+        
         const data = await request.formData();
         const name = data.get('name') as string;
         

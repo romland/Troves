@@ -119,6 +119,7 @@ export const load = (async ({ locals, params, url, fetch }) => {
 export const actions = {
     saveSpatialMap: async ({ request, locals, params }) => {
         if (!locals.user) return fail(401, { error: true, message: "Unauthorized" });
+        if (locals.role !== 'EDITOR' && locals.role !== 'OWNER' && !locals.user.isAdmin) return fail(403, { error: true, message: 'Forbidden. Viewer access only.' });
         const data = await request.formData();
         const spatialMap = data.get('spatialMap') as string;
         
@@ -136,6 +137,7 @@ export const actions = {
                 // Prevent nesting inside self
     clearSpatialMap: async ({ locals, params }) => {
         if (!locals.user) return fail(401, { error: true, message: "Unauthorized" });
+        if (locals.role !== 'EDITOR' && locals.role !== 'OWNER' && !locals.user.isAdmin) return fail(403, { error: true, message: 'Forbidden. Viewer access only.' });
         const container = await db.container.findUnique({
             where: { inventoryId_name: { inventoryId: locals.activeInventoryId, name: params.slug } }
         });
@@ -158,6 +160,7 @@ export const actions = {
 
     unmapEntity: async ({ request, locals }) => {
         if (!locals.user) return fail(401, { error: true, message: "Unauthorized" });
+        if (locals.role !== 'EDITOR' && locals.role !== 'OWNER' && !locals.user.isAdmin) return fail(403, { error: true, message: 'Forbidden. Viewer access only.' });
         const data = await request.formData();
         const entityId = Number(data.get('entityId'));
         const entityType = data.get('entityType') as string;
@@ -179,6 +182,7 @@ export const actions = {
 
     updateFillStatus: async ({ request, locals }) => {
         if (!locals.user) return fail(401, { error: true, message: "Unauthorized" });
+        if (locals.role !== 'EDITOR' && locals.role !== 'OWNER' && !locals.user.isAdmin) return fail(403, { error: true, message: 'Forbidden. Viewer access only.' });
         const data = await request.formData();
         const entityId = Number(data.get('entityId'));
         const entityType = data.get('entityType') as string;
