@@ -62,7 +62,7 @@ export const handle = (async ({ event, resolve }) => {
                 isAdmin: user.isAdmin,
                 preferences: user.preferences,
                 canCreateInventories: user.canCreateInventories
-            } as any;
+            };
 
             // Inventory Routing Logic
             const cookieInvId = event.cookies.get('activeInventoryId');
@@ -87,14 +87,14 @@ export const handle = (async ({ event, resolve }) => {
 
 				try {
 			const prefs: UserPreferences = JSON.parse(user.preferences || '{}');
-					if (prefs.largeFont) (event.locals as any).largeFont = true;
+					if (prefs.largeFont) event.locals.largeFont = true;
 				} catch(e) {}
 
             // Sort Routing Logic (Remembered per inventory)
             const urlSort = event.url.searchParams.get('sort');
             if (urlSort) {
                 event.cookies.set('troves_sort_' + event.locals.activeInventoryId, urlSort, { path: '/', maxAge: 60 * 60 * 24 * 365, httpOnly: false });
-                (event.locals as any).activeSort = urlSort;
+                event.locals.activeSort = urlSort;
             } else {
 			const cookieSort = event.cookies.get('troves_sort_' + event.locals.activeInventoryId);
 			let dbSort = 'newest';
@@ -102,20 +102,20 @@ export const handle = (async ({ event, resolve }) => {
 				const currentPrefs: UserPreferences = JSON.parse(user.preferences || '{}');
 				if (currentPrefs.defaultSorts?.[String(event.locals.activeInventoryId)]) dbSort = currentPrefs.defaultSorts[String(event.locals.activeInventoryId)];
 			} catch (e) {}
-			(event.locals as any).activeSort = cookieSort || dbSort || 'newest';
+			event.locals.activeSort = cookieSort || dbSort || 'newest';
             }
 
             // UI View Modes
             const cookieViewMode = event.cookies.get('troves_viewmode_' + event.locals.activeInventoryId);
             if (cookieViewMode) {
-                (event.locals as any).activeViewMode = cookieViewMode;
+                event.locals.activeViewMode = cookieViewMode;
             } else if (event.locals.activeInventoryId) {
                 const inv = await db.inventory.findUnique({ where: { id: event.locals.activeInventoryId }, select: { defaultView: true } });
-                (event.locals as any).activeViewMode = inv?.defaultView || 'grid';
+                event.locals.activeViewMode = inv?.defaultView || 'grid';
             } else {
-                (event.locals as any).activeViewMode = 'grid';
+                event.locals.activeViewMode = 'grid';
             }
-            (event.locals as any).activeAddMode = event.cookies.get('troves_add_mode') || 'single';
+            event.locals.activeAddMode = event.cookies.get('troves_add_mode') || 'single';
 
         } else {
             // Destroy the invalid cookie so we don't keep querying a dead token
@@ -140,7 +140,7 @@ export const handle = (async ({ event, resolve }) => {
 	return await resolve(event, {
 		transformPageChunk: ({ html }) => {
 			let out = html.replace('data-theme=""', `data-theme="${theme}"`);
-			if ((event.locals as any).largeFont) {
+			if (event.locals.largeFont) {
 				out = out.replace('<html ', '<html style="font-size: 110%;" ');
 			}
 			return out;

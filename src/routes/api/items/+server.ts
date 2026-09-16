@@ -65,7 +65,7 @@ export async function GET({ url, setHeaders, locals }) {
     const unassigned = url.searchParams.get('unassigned') === 'true';
     const attrKey = url.searchParams.get('attrKey');
     const attrVal = url.searchParams.get('attrVal');
-    const sort = url.searchParams.get('sort') || (locals as any).activeSort || 'newest';
+    const sort = url.searchParams.get('sort') || locals.activeSort || 'newest';
 
     // Advanced Search/Bulk Filters
     const tag = String(url.searchParams.get('tag') || "").trim();

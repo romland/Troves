@@ -78,7 +78,7 @@ export function assertCanMutate(locals: App.Locals) {
     if (!locals.user) {
         throw error(401, 'Unauthorized');
     }
-    const role = (locals as any).role;
+    const role = locals.role;
     if (role !== 'EDITOR' && role !== 'OWNER' && !locals.user?.isAdmin) {
         throw error(403, 'Forbidden. Viewer access only.');
     }

@@ -7,16 +7,27 @@ import { PrismaClient } from "@prisma/client";
 declare global {
 	namespace App {
 		// interface Error {}
-		interface Locals {
-			user: {
-				id: number,
-                name: string,
-                isAdmin: boolean
-			}
-            activeInventoryId: number;
-		}
-		// interface PageData {}
-		// interface Platform {}
+        interface Locals {
+            user: {
+                id: number;
+                username: string;
+                name: string;
+                email: string | null;
+                avatar: string | null;
+                isAdmin: boolean;
+                preferences: string | null;
+                canCreateInventories: boolean;
+            } | null;
+            activeInventoryId: number | null;
+            role: string;
+            largeFont?: boolean;
+            activeSort?: string;
+            activeViewMode?: string;
+            activeAddMode?: string;
+        }
+        // interface PageData {}
+        // interface PageState {}
+        // interface Platform {}
 	}
 
 	var db: PrismaClient;

@@ -36,7 +36,17 @@ export async function validateAndRefreshSession(rawSessionId: string, cookies: C
         where: { sessionHash },
         include: { 
             user: { 
-                select: { id: true, username: true, name: true, email: true, avatar: true, isAdmin: true, preferences: true, inventoryAccess: true }
+                select: {
+                    id: true,
+                    username: true,
+                    name: true,
+                    email: true,
+                    avatar: true,
+                    isAdmin: true,
+                    preferences: true,
+                    inventoryAccess: true,
+                    canCreateInventories: true
+                }
             } 
         }
     });
