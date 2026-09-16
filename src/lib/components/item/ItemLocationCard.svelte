@@ -9,6 +9,7 @@
     import ContainerBreadcrumbs from "$lib/components/ContainerBreadcrumbs.svelte";
     import SpatialDiorama from '$lib/components/spatial/SpatialDiorama.svelte';
     import { getHumanLocationText } from '$lib/client/utils';
+    import { saveToQueue } from '$lib/client/offlineQueue';
 
     export let item: any;
     export let canEdit: boolean = false;
@@ -62,18 +63,20 @@
         if (!item?.id) return;
         isMoving = true;
         try {
-            const res = await fetch('/api/item', { 
-                method: 'PATCH', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify({ itemId: item.id, newContainer, spatialMap }) 
-            });
-            if (res.ok) {
-                notify('success', `Moved to ${newContainer}`);
-				// Optimistic UI update to prevent the jarring page flash
-				const newContData = globalContainers.find(c => c.name === newContainer) || { name: newContainer };
-                item.locations = [{ container: newContData, spatialMap: spatialMap ? JSON.stringify(spatialMap) : null }];
-				item = item; // Trigger Svelte reactivity
-            } else notify('error', 'Failed to move item.');
+            const fd = new FormData();
+            fd.append('action', 'move');
+            fd.append('itemId', String(item.id));
+            fd.append('newContainer', newContainer);
+            if (spatialMap) fd.append('spatialMap', JSON.stringify(spatialMap));
+            
+            await saveToQueue('/api/item', fd);
+            window.dispatchEvent(new CustomEvent('outbox-trigger'));
+
+            notify('success', `Moved to ${newContainer}`);
+            // Optimistic UI update to prevent the jarring page flash
+            const newContData = globalContainers.find(c => c.name === newContainer) || { name: newContainer };
+            item.locations = [{ container: newContData, spatialMap: spatialMap ? JSON.stringify(spatialMap) : null }];
+            item = item; // Trigger Svelte reactivity
         } catch (e) { notify('error', 'Network error.'); } 
         finally { isMoving = false; moveModal.close(); cellSelectModal?.close(); }
     }
