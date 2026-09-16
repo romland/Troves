@@ -98,6 +98,27 @@ export async function GET({ url, setHeaders, locals }) {
         case 'amount_desc': orderBy = [{ amount: 'desc' }]; break;
     }
 
+    // Surgically select only what the UI needs. 
+    // We strictly omit massive columns: `photos.ocr`, `photos.exifData`, `documents.extracts`.
+    const itemSelect: Prisma.ItemSelect = {
+        id: true, clientId: true, slug: true, amount: true, title: true, description: true, reason: true, duplicateStatus: true,
+        inventoryId: true, authorId: true, createdAt: true, updatedAt: true,
+        locations: { include: { container: true } },
+        photos: {
+            select: {
+                id: true, type: true, isPrimary: true, orgPath: true, cropPath: true, thumbPath: true,
+                showOriginal: true, colors: true, classBlip: true, classTrash: true, llmAnalysis: true,
+                categoryId: true, category: true
+            }
+        },
+        tags: true,
+        attributes: true,
+        _count: { select: { documents: true } } // Don't fetch document texts, just the count
+    };
+
+    // Only incur the cost of fetching semantic tokens if we actually need them to rank a search
+    if (q) itemSelect.semanticTokens = true;
+
     const query: Prisma.ItemFindManyArgs = {
         take: Number(count) || 12,
         skip: Math.max(0, (Number(page) || 1) - 1) * (Number(count) || 12),
@@ -105,17 +126,7 @@ export async function GET({ url, setHeaders, locals }) {
         where: {
             inventoryId: locals.activeInventoryId
         },
-        include: {
-            locations: {
-                include: {  
-                    container: true,
-                }
-            },
-            photos: { include: { category: true } },
-            "tags" : true,
-            "documents": true,      // a bit wasteful as I really only need the count()
-            attributes: true,
-        }
+        select: itemSelect
     };
 
     if (idsParam) {
@@ -205,8 +216,10 @@ export async function GET({ url, setHeaders, locals }) {
             try {
                 const richItems = await db.item.findMany({
                     where: { id: { in: docItemIds } },
-                    include: {
-                        photos: { include: { category: true } },
+                    select: {
+                        id: true,
+                        title: true,
+                        photos: { select: { id: true, thumbPath: true, orgPath: true, type: true, isPrimary: true, category: true } },
                         locations: { include: { container: true } }
                     }
                 });
@@ -324,18 +337,16 @@ export async function GET({ url, setHeaders, locals }) {
     }
 
     let tDbStart = performance.now();
-    const [rawItems, totalCount] = await Promise.all([
-        db.item.findMany(query),
-        db.item.count({ where: query.where })
-    ]);
+    const rawItems = await db.item.findMany(query);
+    
+    // Only incur the cost of counting the entire database when loading the first page
+    const totalCount = (Number(page) === 1 || !page) 
+        ? await db.item.count({ where: query.where }) 
+        : 0;
     let tDbEnd = performance.now();
 
     const items = rawItems.map((item: any) => {
-        // Strip massive background data not needed for the list view to save network/cache quota
-        delete item.semanticTokens;
-        if (item.photos) item.photos.forEach((p: any) => { delete p.ocr; delete p.exifData; });
-        if (item.documents) item.documents.forEach((d: any) => { delete d.extracts; });
-
+        // Memory cleanup no longer needed here - Prisma handles the omitting natively via the `select` block.
         if (item.duplicateStatus === 'FLAGGED') item.hasDuplicate = true;
         return item;
     });

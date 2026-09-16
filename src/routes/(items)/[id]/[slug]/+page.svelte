@@ -23,12 +23,14 @@
     import ReanalyzeButton from "$lib/components/item/ReanalyzeButton.svelte";
     import { notify } from "$lib/client/notifications";
     import { dev } from '$app/environment';
-    import { onMount } from 'svelte';
+    import { onMount, getContext } from 'svelte';
     import pageTitle from '$lib/stores';
     import ConfirmModal from "$lib/components/ConfirmModal.svelte";
 
     export let data: PageServerData;
-    
+
+    const globalTasksStore: any = getContext('globalTasksStore');
+
     let productPhotos = [], invoicePhotos = [], otherPhotos = [];
     let photoAttributes = [];
     let isSavingPasted = false;
@@ -75,8 +77,8 @@
         // const fiveMinsAgo = Date.now() - (5 * 60 * 1000);
         // isProcessingItem = data.item?.photos?.some(p => !p.thumbPath && new Date(p.createdAt).getTime() > fiveMinsAgo) || 
         //                    data.item?.documents?.some(d => !d.path && d.type !== 'note' && new Date(d.createdAt).getTime() > fiveMinsAgo);
-        // Driven completely by centralized server state now!
-        isProcessingItem = data.activeTasks && data.activeTasks.length > 0;
+        // // Driven completely by centralized server state now!
+        // isProcessingItem = data.activeTasks && data.activeTasks.length > 0;
 
 
         photoAttributes = [];
@@ -117,7 +119,10 @@
             }
         }
     }
-    
+
+$:  myTasks = $globalTasksStore.filter((t: any) => t.targetType === 'item' && t.targetId === data.item?.id);
+$:  isProcessingItem = myTasks.length > 0;
+
 $:  pageTitle.set(data.item?.title || 'Item Details');
 
 $:	itemCategories = Array.from(new Set(data.item?.photos?.filter(p => p.category).map(p => p.category.name) || []));
@@ -247,9 +252,9 @@ $: if (data.duplicateItemDetails?.debugTrace) {
         <div class="alert bg-base-200/50 border border-base-300 shadow-sm mb-6 rounded-xl flex items-start gap-3 animate-fade-in">
             <span class="loading loading-spinner text-primary mt-0.5"></span>
             <div>
-                <h3 class="font-bold text-sm">Processing background tasks ({data.activeTasks.length})&hellip;</h3>
+                <h3 class="font-bold text-sm">Processing background tasks ({myTasks.length})&hellip;</h3>
                 <ul class="text-xs text-gray-500 mt-0.5 list-disc list-inside ml-1">
-                    {#each data.activeTasks as task}
+                    {#each myTasks as task}
                         <li class="line-clamp-1">{task.description}</li>
                     {/each}
                 </ul>

@@ -35,6 +35,11 @@
     import Modal from "$lib/components/Modal.svelte";
     import DropdownSelect from "$lib/components/DropdownSelect.svelte";
     import Logo from "$lib/components/Logo.svelte";
+
+    import { writable } from 'svelte/store';
+    import { setContext } from 'svelte';
+    const globalTasksStore = writable([]);
+    setContext('globalTasksStore', globalTasksStore);
     
     let mounted = false;    
     let confirmModal: ConfirmModal;
@@ -94,6 +99,9 @@
                         const payload = JSON.parse(event.data);
                         if (payload.type === 'health') {
                             sysHealth = { status: payload.status, reason: payload.reason };
+                        }
+                        if (payload.type === 'tasks') {
+                            globalTasksStore.set(payload.tasks);
                         }
                     } catch (e) {}
                 }

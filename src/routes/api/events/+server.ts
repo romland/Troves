@@ -1,12 +1,14 @@
 import { dbEvents } from '$lib/server/database';
 import { taskEvents } from '$lib/server/taskManager';
 import { systemHealth } from '$lib/server/systemHealth';
+import { taskManager } from '$lib/server/taskManager';
 
 export function GET({ locals }) {
     if (!locals.user) return new Response('Unauthorized', { status: 401 });
 
     let listener: () => void;
     let healthListener: (data: any) => void;
+    let taskListener: () => void;
     let debounceTimeout: NodeJS.Timeout;
     let lastFireTime = 0;
 
@@ -20,6 +22,9 @@ export function GET({ locals }) {
 
             // Dispatch immediate health state on connect
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'health', ...systemHealth.getStatus() })}\n\n`));
+
+            // Broadcast active tasks instantly on connection
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'tasks', tasks: taskManager.getAllTasks() })}\n\n`));
 
             listener = () => {
                 const now = Date.now();
@@ -51,16 +56,22 @@ export function GET({ locals }) {
                 }
             };
 
+            taskListener = () => {
+                try {
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'tasks', tasks: taskManager.getAllTasks() })}\n\n`));
+                } catch (e) {}
+            };
+
             // Listen for the Prisma extension triggers and active Task updates
             dbEvents.on('mutation', listener);
-            taskEvents.on('update', listener);
+            taskEvents.on('update', taskListener);
             systemHealth.on('update', healthListener);
         },
         cancel() {
             clearTimeout(debounceTimeout);
             // Clean up memory the instant the client disconnects
             dbEvents.off('mutation', listener);
-            taskEvents.off('update', listener);
+            taskEvents.off('update', taskListener);
             systemHealth.off('update', healthListener);
         }
     });
