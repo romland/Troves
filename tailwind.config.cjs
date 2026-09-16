@@ -9,6 +9,7 @@ module.exports = {
     require("daisyui")
   ],
   daisyui: {
+    logs: false,
     themes: [
       "dark", 
       "light", 
