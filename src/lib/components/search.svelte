@@ -311,7 +311,7 @@
                 <!-- Clear Button (Fades & Slides in from the right when typing) -->
                 <div class="transition-all duration-300 origin-right {q.length === 0 ? 'scale-90 opacity-0 pointer-events-none w-0' : 'scale-100 opacity-100 w-auto'}">
                     {#if !isProcessingAudio}
-                        <button type="button" class="btn btn-xs btn-ghost btn-circle text-gray-400 hover:text-base-content" on:mousedown|preventDefault on:click|preventDefault={() => { q = ''; query(new Event('input'), ''); document.querySelector('input[name="q"]')?.focus(); }} aria-label="Clear">
+                        <button type="button" style="width: 1.75rem;" class="btn btn-xs btn-ghost btn-circle text-gray-400 hover:text-base-content" on:mousedown|preventDefault on:click|preventDefault={() => { q = ''; query(new Event('input'), ''); document.querySelector('input[name="q"]')?.focus(); }} aria-label="Clear">
                             <i class="bi bi-x-circle-fill text-base"></i>
                         </button>
                     {:else}
