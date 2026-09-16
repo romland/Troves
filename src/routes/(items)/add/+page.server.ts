@@ -108,7 +108,7 @@ export const actions = {
 		downloadAndStoreDocuments({ itemId: item.id }, uploadsRemoteSite, data, uploadsDiskFolder, uploadsWebFolder, "qr.").catch(e => console.error(e));
 		
 		if (data.llm_attributes_used === 'true') {
-			await logActivity(item.id, 'Attributes', 'Automatically structured messy attribute data using AI', 'success');
+            await logActivity(item.id, 'Attributes', 'Automatically structured messy attribute data using Smart Parsing', 'success');
 		}
 		
 		redirect(302, `/${item.id}/${item.slug}`);

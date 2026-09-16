@@ -261,7 +261,7 @@ console.log("formData:", orgData);
 		processItemPhotosBackground(item).catch(e => console.error(e));
 
 		if (data.llm_attributes_used === 'true') {
-			await logActivity(item.id, 'Attributes', 'Automatically structured messy attribute data using AI', 'success');
+            await logActivity(item.id, 'Attributes', 'Automatically structured messy attribute data using Smart Parsing', 'success');
 		}
 
         const { ioQueue } = await import('$lib/server/queue/index');

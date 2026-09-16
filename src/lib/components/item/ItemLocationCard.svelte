@@ -373,6 +373,9 @@
 
 <Modal bind:this={mapModal} title="" position="bottom" boxClass="p-0 overflow-hidden bg-base-100 shadow-2xl sm:rounded-[2.5rem] border border-base-200">
     {#if activeMapLoc}
+        <div class="absolute top-4 right-4 z-50">
+             <button class="btn btn-sm btn-circle btn-ghost bg-base-100/50 backdrop-blur-md border border-base-200 shadow-sm text-base-content hover:bg-base-200" on:click={() => mapModal.close()}><i class="bi bi-x-lg"></i></button>
+        </div>
         <div class="relative w-full aspect-square sm:aspect-video max-h-[65vh] bg-base-300 flex items-center justify-center border-b border-base-200 overflow-hidden">
             {#if activeMapLoc.container.parent?.photoPath || activeMapLoc.container?.photoPath}
                 {@const src = activeMapLoc.container.parent?.photoPath || activeMapLoc.container?.photoPath}

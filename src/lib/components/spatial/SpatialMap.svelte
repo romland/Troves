@@ -1,6 +1,10 @@
 <script lang="ts">
     import { createEventDispatcher, onMount } from 'svelte';
     import { computePerspectiveGrid } from './perspective';
+    import SpatialWarpHud from './SpatialWarpHud.svelte';
+    import SpatialControls from './SpatialControls.svelte';
+    import SpatialAuditOverlay from './SpatialAuditOverlay.svelte';
+    import { getSharedEdges, getIntersections, calculateMergedEdge, calculateSplitCell, calculateMergedIntersection } from '$lib/client/spatialMath';
     const dispatch = createEventDispatcher();
 
     export let imageUrl: string;
@@ -39,6 +43,7 @@
     export function undo() {
         if (history.length > 0) {
             polygons = JSON.parse(history.pop()!);
+            history = history;
             dispatch('change', polygons);
         }
     }
@@ -69,7 +74,6 @@
     let panStartY = 0;
 
     function startPan(e: PointerEvent) {
-        if (readonly) return;
         const target = e.target as HTMLElement;
         // Block pan ONLY on interactive elements: buttons, drag handles
         if (target.closest('button') || target.closest('.cursor-move')) return;
@@ -128,48 +132,18 @@
     }
 
     $: sharedEdges = getSharedEdges(polygons);
+    $: intersections = getIntersections(polygons);
 
-    function getSharedEdges(polys: number[][][]) {
-        if (!polys || polys.length === 0) return [];
-        const edges = [];
-        const threshold = 2;
-
-        for (let i = 0; i < polys.length; i++) {
-            for (let j = i + 1; j < polys.length; j++) {
-                const shared = [];
-                const unsharedI = [];
-                const unsharedJ = [];
-                
-                for (let pi = 0; pi < 4; pi++) {
-                    let isShared = false;
-                    for (let pj = 0; pj < 4; pj++) {
-                        if (Math.abs(polys[i][pi][0] - polys[j][pj][0]) < threshold && Math.abs(polys[i][pi][1] - polys[j][pj][1]) < threshold) {
-                            shared.push(polys[i][pi]);
-                            isShared = true;
-                            break;
-                        }
-                    }
-                    if (!isShared) unsharedI.push(polys[i][pi]);
-                }
-                
-                for (let pj = 0; pj < 4; pj++) {
-                    let isShared = false;
-                    for (let pi = 0; pi < 4; pi++) {
-                        if (Math.abs(polys[j][pj][0] - polys[i][pi][0]) < threshold && Math.abs(polys[j][pj][1] - polys[i][pi][1]) < threshold) {
-                            isShared = true;
-                            break;
-                        }
-                    }
-                    if (!isShared) unsharedJ.push(polys[j][pj]);
-                }
-
-                if (shared.length === 2 && unsharedI.length === 2 && unsharedJ.length === 2) {
-                    edges.push({ poly1: i, poly2: j, unshared: [...unsharedI, ...unsharedJ], x1: shared[0][0], y1: shared[0][1], x2: shared[1][0], y2: shared[1][1] });
-                }
-            }
-        }
-        return edges;
-    }
+    // Calculate polygon geometry and mapping state ONCE reactively
+    $: enrichedPolys = polygons.map((poly, i) => {
+        const isActive = activePolyIndex === i;
+        const isMapped = !!mappedEntities[i];
+        const cx = (poly[0][0] + poly[1][0] + poly[2][0] + poly[3][0]) / 4;
+        const cy = (poly[0][1] + poly[1][1] + poly[2][1] + poly[3][1]) / 4;
+        const minY = Math.min(poly[0][1], poly[1][1], poly[2][1], poly[3][1]);
+        const entity = mappedEntities[i] || {};
+        return { poly, i, isActive, isMapped, cx, cy, minY, entity };
+    });
 
     let lastEdgeTapTime = 0;
     let lastTapEdge: any = null;
@@ -193,67 +167,18 @@
 
     function mergeEdge(edge: any) {
         saveHistory();
-        const outerPoints = edge.unshared;
-        const cx = outerPoints.reduce((sum: number, p: number[]) => sum + p[0], 0) / 4;
-        const cy = outerPoints.reduce((sum: number, p: number[]) => sum + p[1], 0) / 4;
-        outerPoints.sort((a: number[], b: number[]) => Math.atan2(a[1] - cy, a[0] - cx) - Math.atan2(b[1] - cy, b[0] - cx));
-        
-        polygons = polygons.filter((_, idx) => idx !== edge.poly1 && idx !== edge.poly2);
-        polygons.push(outerPoints);
-        activePolyIndex = polygons.length - 1;
+        const res = calculateMergedEdge(edge, polygons);
+        polygons = res.polygons;
+        activePolyIndex = res.activeIndex;
         dispatch('change', polygons);
     }
 
     function splitCell(idx: number, mode: 'v' | 'h' | 'q') {
         saveHistory();
-        const poly = polygons[idx];
-        const p0 = poly[0], p1 = poly[1], p2 = poly[2], p3 = poly[3];
-
-        const mTop = [(p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2];
-        const mBot = [(p2[0] + p3[0]) / 2, (p2[1] + p3[1]) / 2];
-        const mRight = [(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2];
-        const mLeft = [(p3[0] + p0[0]) / 2, (p3[1] + p0[1]) / 2];
-        const c = [(p0[0] + p1[0] + p2[0] + p3[0]) / 4, (p0[1] + p1[1] + p2[1] + p3[1]) / 4];
-
-        polygons.splice(idx, 1);
-
-        if (mode === 'v') {
-            polygons.push([p0, mTop, mBot, p3], [mTop, p1, p2, mBot]);
-        } else if (mode === 'h') {
-            polygons.push([p0, p1, mRight, mLeft], [mLeft, mRight, p2, p3]);
-        } else if (mode === 'q') {
-            polygons.push([p0, mTop, c, mLeft], [mTop, p1, mRight, c], [c, mRight, p2, mBot], [mLeft, c, mBot, p3]);
-        }
-
-        polygons = [...polygons];
+        const res = calculateSplitCell(idx, mode, polygons);
+        polygons = res.polygons;
         activePolyIndex = null;
         dispatch('change', polygons);
-    }
-
-    $: intersections = getIntersections(polygons);
-
-    function getIntersections(polys: number[][][]) {
-        if (!polys || polys.length === 0) return [];
-        const threshold = 2;
-        const clusters: { x: number, y: number, points: { pIdx: number, ptIdx: number, pt: number[] }[] }[] = [];
-
-        for (let pIdx = 0; pIdx < polys.length; pIdx++) {
-            for (let ptIdx = 0; ptIdx < 4; ptIdx++) {
-                const pt = polys[pIdx][ptIdx];
-                let found = false;
-                for (let c of clusters) {
-                    if (Math.abs(c.x - pt[0]) < threshold && Math.abs(c.y - pt[1]) < threshold) {
-                        c.points.push({ pIdx, ptIdx, pt });
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
-                    clusters.push({ x: pt[0], y: pt[1], points: [{ pIdx, ptIdx, pt }] });
-                }
-            }
-        }
-        return clusters.filter(c => c.points.length === 4);
     }
 
     let lastTapTime = 0;
@@ -296,37 +221,14 @@
         console.log(`[DEBUG-SPATIAL-MAP] Dissolving joint and merging ${intersection.points.length} polygons.`);
         saveHistory();
         
-        const polyIndicesToRemove = intersection.points.map((p: any) => p.pIdx);
-        const polysToRemove = polyIndicesToRemove.map((i: number) => polygons[i]);
-        
-        const allPoints: number[][] = [];
-        polysToRemove.forEach((poly: number[][]) => { poly.forEach((pt: number[]) => allPoints.push(pt)); });
-        
-        const outerPoints: number[][] = [];
-        for (let i = 0; i < allPoints.length; i++) {
-            const pt1 = allPoints[i];
-            let count = 0;
-            for (let j = 0; j < allPoints.length; j++) {
-                const pt2 = allPoints[j];
-                if (Math.abs(pt1[0] - pt2[0]) < 2 && Math.abs(pt1[1] - pt2[1]) < 2) count++;
-            }
-            if (count === 1) outerPoints.push(pt1);
-        }
-        
-        if (outerPoints.length === 4) {
-            console.log(`[DEBUG-SPATIAL-MAP] Successfully identified 4 outer corners.`);
-            const cx = outerPoints.reduce((sum, p) => sum + p[0], 0) / 4;
-            const cy = outerPoints.reduce((sum, p) => sum + p[1], 0) / 4;
-            outerPoints.sort((a, b) => Math.atan2(a[1] - cy, a[0] - cx) - Math.atan2(b[1] - cy, b[0] - cx));
-            
-            polygons = polygons.filter((_, idx) => !polyIndicesToRemove.includes(idx));
-            polygons.push(outerPoints);
-            activePolyIndex = polygons.length - 1;
-            
+        const res = calculateMergedIntersection(intersection, polygons);
+        if (res) {
+            polygons = res.polygons;
+            activePolyIndex = res.activeIndex;
             dispatch('change', polygons);
             console.log(`[DEBUG-SPATIAL-MAP] Merge complete. New polygon added at index ${activePolyIndex}.`);
         } else {
-            console.warn(`[DEBUG-SPATIAL-MAP] Merge failed: Expected 4 outer corners, found ${outerPoints.length}`);
+            console.warn(`[DEBUG-SPATIAL-MAP] Merge failed: Expected 4 outer corners.`);
         }
     }
 
@@ -483,48 +385,23 @@
 
 <div
     class="relative w-full h-[50vh] sm:h-[65vh] bg-base-300 rounded-[2rem] overflow-hidden shadow-inner border border-base-200">
-    <!-- Floating Apple-Style Zoom Pill -->
-    <div
-        class="absolute top-1/2 -translate-y-1/2 right-4 z-40 flex flex-col gap-1 bg-base-100/80 backdrop-blur-xl p-1.5 rounded-[1.25rem] shadow-lg border border-base-200/50 items-center transition-all">
-        <!-- svelte-ignore a11y_consider_explicit_label -->
-        <button class="btn btn-circle btn-sm btn-ghost text-base-content/70" on:click|stopPropagation={()=> zoomLevel = Math.min(500, zoomLevel + 25)}><i class="bi bi-plus text-lg"></i></button>
-        <div class="text-[10px] font-bold w-full text-center select-none text-base-content/80 py-0.5">{zoomLevel}%</div>
-        <!-- svelte-ignore a11y_consider_explicit_label -->
-        <button class="btn btn-circle btn-sm btn-ghost text-base-content/70" on:click|stopPropagation={()=> zoomLevel = Math.max(25, zoomLevel - 25)}><i class="bi bi-dash text-lg"></i></button>
-        <div class="w-6 h-px bg-base-300 my-0.5"></div>
-        <button class="btn btn-circle btn-sm btn-ghost text-base-content/70" on:click|stopPropagation={()=> { zoomLevel = 100; panX = 0; panY = 0; }} title="Recenter View"><i class="bi bi-arrows-collapse text-lg"></i></button>
-    </div>
+    <SpatialControls 
+        bind:zoomLevel 
+        hasHistory={history.length > 0} 
+        {readonly} 
+        {isWarpMode} 
+        on:recenter={() => { zoomLevel = 100; panX = 0; panY = 0; }}
+        on:undo={undo}
+        on:reset={reset}
+    />
 
-    {#if history.length > 0 && !isWarpMode && !readonly}
-        <div class="absolute top-6 left-6 z-40 flex gap-2 animate-fade-in">
-            <button class="btn btn-circle btn-sm btn-ghost bg-base-100/80 backdrop-blur-xl shadow-md border border-base-200" on:click|stopPropagation={undo} title="Undo (Ctrl+Z)"><i class="bi bi-arrow-counterclockwise text-base-content/70"></i></button>
-            <button class="btn btn-circle btn-sm btn-ghost bg-base-100/80 backdrop-blur-xl shadow-md border border-base-200" on:click|stopPropagation={reset} title="Reset to last save"><i class="bi bi-trash text-error/70"></i></button>
-        </div>
-    {/if}
-
-    <!-- Floating Apple-Style Warp HUD -->
     {#if isWarpMode}
-        <div class="absolute top-4 sm:top-6 left-1/2 -translate-x-1/2 z-50 flex flex-col sm:flex-row gap-3 bg-base-100/95 backdrop-blur-2xl p-2 rounded-3xl shadow-[0_10px_40px_rgba(0,0,0,0.3)] border border-base-200/50 items-center animate-fade-in w-[95%] max-w-[350px] sm:w-auto">
-            <div class="flex items-center justify-center gap-4 px-2 w-full sm:w-auto">
-                <div class="flex items-center gap-2">
-                    <span class="text-[10px] font-bold uppercase tracking-wider text-base-content/60">Cols</span>
-                    <button class="btn btn-circle btn-sm btn-ghost bg-base-200/50" on:click={() => warpCols = Math.max(1, warpCols - 1)}><i class="bi bi-dash"></i></button>
-                    <span class="font-mono w-4 text-center font-bold text-base-content">{warpCols}</span>
-                    <button class="btn btn-circle btn-sm btn-ghost bg-base-200/50" on:click={() => warpCols++}><i class="bi bi-plus"></i></button>
-                </div>
-                <div class="w-px h-6 bg-base-300 hidden sm:block"></div>
-                <div class="flex items-center gap-2">
-                    <span class="text-[10px] font-bold uppercase tracking-wider text-base-content/60">Rows</span>
-                    <button class="btn btn-circle btn-sm btn-ghost bg-base-200/50" on:click={() => warpRows = Math.max(1, warpRows - 1)}><i class="bi bi-dash"></i></button>
-                    <span class="font-mono w-4 text-center font-bold text-base-content">{warpRows}</span>
-                    <button class="btn btn-circle btn-sm btn-ghost bg-base-200/50" on:click={() => warpRows++}><i class="bi bi-plus"></i></button>
-                </div>
-            </div>
-            <div class="flex gap-2 w-full sm:w-auto px-1">
-                <button class="btn btn-ghost btn-sm rounded-xl flex-1 hover:bg-base-200" on:click={() => { isWarpMode = false; }}>Cancel</button>
-                <button class="btn btn-primary btn-sm rounded-xl shadow-sm flex-1" on:click={bakeWarpGrid}>Apply</button>
-            </div>
-        </div>
+        <SpatialWarpHud 
+            bind:warpCols 
+            bind:warpRows 
+            on:cancel={() => isWarpMode = false} 
+            on:apply={bakeWarpGrid} 
+        />
 
         <!-- Guidance Pill -->
         <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-40 bg-base-100/95 backdrop-blur-xl px-4 sm:px-5 py-3 sm:py-4 rounded-3xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] border border-base-200/50 text-[11px] sm:text-sm font-medium text-base-content/80 flex items-center gap-3 sm:gap-4 text-left pointer-events-auto animate-fade-in w-[95%] max-w-[500px]">
@@ -566,79 +443,43 @@
                             <polygon points={poly.map(p => p.join(',')).join(' ')} class="fill-accent/10 stroke-accent/50 stroke-[2px] pointer-events-none" vector-effect="non-scaling-stroke" />
                         {/each}
                     {:else if auditSlots.length > 0}
-                        <!-- AUDIT MODE OVERLAY -->
-                        {#each auditSlots as slot, i}
-                            {@const isActive = activePolyIndex === i}
-                            {@const isDimmed = activePolyIndex !== null && !isActive}
-                            {@const cx = (slot.polygon[0][0] + slot.polygon[1][0] + slot.polygon[2][0] + slot.polygon[3][0]) / 4}
-                            {@const cy = (slot.polygon[0][1] + slot.polygon[1][1] + slot.polygon[2][1] + slot.polygon[3][1]) / 4}
-                            <!-- svelte-ignore a11y-click-events-have-key-events -->
-                            <!-- svelte-ignore a11y-no-static-element-interactions -->
-                            <g class="cursor-pointer transition-all duration-300 {isDimmed ? 'opacity-30 grayscale' : 'opacity-100 hover:opacity-80'}" on:click|stopPropagation={() => dispatch('selectAudit', i)}>
-                                <polygon 
-                                    points={slot.polygon.map(pt => pt.join(',')).join(' ')} 
-                                    class="transition-colors duration-300 status-{slot.status} {isActive ? 'active-slot' : ''}" 
-                                    vector-effect="non-scaling-stroke" stroke-linejoin="round"
-                                />
-                                <!-- Colorblind accessible iconography overlay -->
-                                {#if slot.status === 'MATCH'}
-                                    <foreignObject x={cx - 15} y={cy - 15} width="30" height="30" class="overflow-visible pointer-events-none" xmlns="http://www.w3.org/1999/xhtml">
-                                        <div class="w-full h-full rounded-full bg-success text-success-content flex items-center justify-center shadow-lg border-2 border-white/20"><i class="bi bi-check-lg text-lg drop-shadow-md"></i></div>
-                                    </foreignObject>
-                                {:else if slot.status === 'MISSING'}
-                                    <foreignObject x={cx - 15} y={cy - 15} width="30" height="30" class="overflow-visible pointer-events-none" xmlns="http://www.w3.org/1999/xhtml">
-                                        <div class="w-full h-full rounded-full bg-error text-error-content flex items-center justify-center shadow-lg border-2 border-white/20"><i class="bi bi-x-lg text-sm drop-shadow-md"></i></div>
-                                    </foreignObject>
-                                {:else if slot.status === 'ANOMALY'}
-                                    <foreignObject x={cx - 15} y={cy - 15} width="30" height="30" class="overflow-visible pointer-events-none" xmlns="http://www.w3.org/1999/xhtml">
-                                        <div class="w-full h-full rounded-full bg-warning text-warning-content flex items-center justify-center shadow-lg border-2 border-white/20"><i class="bi bi-question-lg text-lg drop-shadow-md"></i></div>
-                                    </foreignObject>
-                                {/if}
-                            </g>
-                        {/each}
+                        <SpatialAuditOverlay {auditSlots} bind:activePolyIndex on:selectAudit={(e) => dispatch('selectAudit', e.detail)} />
                     {:else}
                         <!-- STANDARD EDITOR MAP OVERLAY -->
-                        {#each polygons as poly, i}
-                            {@const isActive = activePolyIndex === i}
-                            {@const isMapped = !!mappedEntities[i]}
-                            {@const cx = (poly[0][0] + poly[1][0] + poly[2][0] + poly[3][0]) / 4}
-                            {@const cy = (poly[0][1] + poly[1][1] + poly[2][1] + poly[3][1]) / 4}
-
+                        {#each enrichedPolys as ep}
                             <!-- Base Polygon Area -->
-                            <!-- svelte-ignore a11y-click-events-have-key-events -->
-                            <!-- svelte-ignore a11y-no-static-element-interactions -->
                             <polygon 
-                                points={poly.map(p => p.join(',')).join(' ')} 
-                                class="transition-colors duration-200 {isActive ? 'fill-accent/40 stroke-accent stroke-[5px] drop-shadow-md' : (isMapped ? 'fill-success/20 stroke-success/60 stroke-[3px] hover:fill-success/40' : 'fill-base-content/10 stroke-base-content/40 stroke-[3px] hover:fill-base-content/20')} cursor-pointer"
+                                points={ep.poly.map(p => p.join(',')).join(' ')} 
+                                class="transition-colors duration-200 {ep.isActive ? 'fill-accent/40 stroke-accent stroke-[5px] drop-shadow-md' : (ep.isMapped ? 'fill-success/20 stroke-success/60 stroke-[3px] hover:fill-success/40' : 'fill-base-content/10 stroke-base-content/40 stroke-[3px] hover:fill-base-content/20')} cursor-pointer"
                                 vector-effect="non-scaling-stroke"
-                                on:click={(e) => makeActive(i, e)}
-                                on:pointerdown={(e) => startDragPoly(i, e)}
+                                on:click={(e) => makeActive(ep.i, e)}
+                                on:pointerdown={(e) => startDragPoly(ep.i, e)}
                                 on:dragover|preventDefault
-                                on:drop={(e) => handleDrop(i, e)}
+                                on:drop={(e) => handleDrop(ep.i, e)}
                             />
 
-                            {#if zoomLevel >= 250 && isMapped && EXPERIMENTAL_PERSPECTIVE_LABELS}
+                            {#if zoomLevel >= 250 && ep.isMapped && EXPERIMENTAL_PERSPECTIVE_LABELS}
                                 <!-- 2.5D Affine Warp Projection -->
-                                {@const w = Math.hypot(poly[1][0] - poly[0][0], poly[1][1] - poly[0][1]) || 1}
-                                {@const h = Math.hypot(poly[3][0] - poly[0][0], poly[3][1] - poly[0][1]) || 1}
+                                {@const w = Math.hypot(ep.poly[1][0] - ep.poly[0][0], ep.poly[1][1] - ep.poly[0][1]) || 1}
+                                {@const h = Math.hypot(ep.poly[3][0] - ep.poly[0][0], ep.poly[3][1] - ep.poly[0][1]) || 1}
                                 {@const ratio = h / w}
                                 
-                                {@const a = (poly[1][0] - poly[0][0]) / w}
-                                {@const b = (poly[1][1] - poly[0][1]) / w}
-                                {@const floorC = (poly[3][0] - poly[0][0]) / h}
-                                {@const floorD = (poly[3][1] - poly[0][1]) / h}
+                                {@const a = (ep.poly[1][0] - ep.poly[0][0]) / w}
+                                {@const b = (ep.poly[1][1] - ep.poly[0][1]) / w}
+                                {@const floorC = (ep.poly[3][0] - ep.poly[0][0]) / h}
+                                {@const floorD = (ep.poly[3][1] - ep.poly[0][1]) / h}
                                 
                                 <!-- Smoothly transition from Floor plane to Wall plane as perspective steepens -->
                                 {@const wallBlend = Math.max(0, Math.min(1, (0.8 - ratio) / 0.4))}
                                 {@const c = floorC * (1 - wallBlend) + (-b) * wallBlend}
                                 {@const d = floorD * (1 - wallBlend) + (a) * wallBlend}
 
-                                <g transform="matrix({a}, {b}, {c}, {d}, {cx}, {cy})">
+                                <g transform="matrix({a}, {b}, {c}, {d}, {ep.cx}, {ep.cy})">
                                     <text x="0" y="0" text-anchor="middle" dominant-baseline="middle" class="fill-transparent stroke-black/80 text-[14px] sm:text-[18px] font-black pointer-events-none hidden md:block" stroke-width="4" stroke-linejoin="round">
-                                        {mappedEntities[i].title || mappedEntities[i].name}
+                                        {ep.entity.title || ep.entity.name}
                                     </text>
                                     <text x="0" y="0" text-anchor="middle" dominant-baseline="middle" class="fill-white text-[14px] sm:text-[18px] font-black pointer-events-none hidden md:block">
-                                        {mappedEntities[i].title || mappedEntities[i].name}
+                                        {ep.entity.title || ep.entity.name}
                                     </text>
                                 </g>
                             {/if}
@@ -657,7 +498,7 @@
                         {/if}
                     {/if}
                 </svg>
-                                
+                
                 <!-- HTML OVERLAY FOR PERFECT CIRCLES -->
                 <div class="absolute inset-0 w-full h-full z-20 pointer-events-none overflow-visible">
                     {#if isWarpMode}
@@ -684,45 +525,31 @@
                             {/each}
                         {/if}
 
-                        <!-- Center Markers (Not Active) -->
-                        {#each polygons as poly, i}
-                            {@const isActive = activePolyIndex === i}
-                            {@const isMapped = !!mappedEntities[i]}
-                            {@const cx = (poly[0][0] + poly[1][0] + poly[2][0] + poly[3][0]) / 4}
-                            {@const cy = (poly[0][1] + poly[1][1] + poly[2][1] + poly[3][1]) / 4}
-                            
-                            {#if !isActive}
-                                {#if isMapped}
-                                    <div class="absolute w-7 h-7 -ml-3.5 -mt-3.5 bg-success rounded-full shadow-sm flex items-center justify-center pointer-events-none" style="left: {cx / 10}%; top: {cy / 10}%;">
+                        <!-- Consolidated Markers and Active Drag Handles -->
+                        {#each enrichedPolys as ep}
+                            {#if !ep.isActive}
+                                {#if ep.isMapped}
+                                    <div class="absolute w-7 h-7 -ml-3.5 -mt-3.5 bg-success rounded-full shadow-sm flex items-center justify-center pointer-events-none" style="left: {ep.cx / 10}%; top: {ep.cy / 10}%;">
                                         <i class="bi bi-check text-white text-2xl mt-0.5"></i>
                                     </div>
                                 {:else}
-                                    <div class="absolute w-3 h-3 -ml-1.5 -mt-1.5 bg-base-content/30 rounded-full pointer-events-none" style="left: {cx / 10}%; top: {cy / 10}%;"></div>
+                                    <div class="absolute w-3 h-3 -ml-1.5 -mt-1.5 bg-base-content/30 rounded-full pointer-events-none" style="left: {ep.cx / 10}%; top: {ep.cy / 10}%;"></div>
                                 {/if}
                             {/if}
 
-                            {#if isMapped && zoomLevel >= 250 && !EXPERIMENTAL_PERSPECTIVE_LABELS}
-                                <div class="absolute -translate-x-1/2 -translate-y-1/2 pointer-events-none text-[8px] sm:text-[10px] font-bold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] whitespace-nowrap hidden md:block" style="left: {cx / 10}%; top: {cy / 10}%; margin-top: 1.5rem;">
-                                    <span class="truncate block px-1 py-0.5 bg-black/40 backdrop-blur-sm rounded max-w-[120px]">{mappedEntities[i].title || mappedEntities[i].name}</span>
+                            {#if ep.isMapped && zoomLevel >= 250 && !EXPERIMENTAL_PERSPECTIVE_LABELS}
+                                <div class="absolute -translate-x-1/2 -translate-y-1/2 pointer-events-none text-[8px] sm:text-[10px] font-bold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] whitespace-nowrap hidden md:block" style="left: {ep.cx / 10}%; top: {ep.cy / 10}%; margin-top: 1.5rem;">
+                                    <span class="truncate block px-1 py-0.5 bg-black/40 backdrop-blur-sm rounded max-w-[120px]">{ep.entity.title || ep.entity.name}</span>
                                 </div>
                             {/if}
-                        {/each}
 
-                        <!-- Active Handles -->
-                        {#each polygons as poly, i}
-                            {@const isActive = activePolyIndex === i}
-                            {@const isMapped = !!mappedEntities[i]}
-                            {@const cx = (poly[0][0] + poly[1][0] + poly[2][0] + poly[3][0]) / 4}
-                            {@const cy = (poly[0][1] + poly[1][1] + poly[2][1] + poly[3][1]) / 4}
-                            {@const minY = Math.min(poly[0][1], poly[1][1], poly[2][1], poly[3][1])}
-
-                            {#if isActive && !readonly}
+                            {#if ep.isActive && !readonly}
                                 <!-- Corner Drag Handles -->
-                                {#each poly as pt, ptIdx}
+                                {#each ep.poly as pt, ptIdx}
                                     <div 
                                         class="absolute w-6 h-6 -ml-3 -mt-3 bg-base-100 rounded-full border-[3px] border-accent cursor-move drop-shadow-lg hover:border-[5px] transition-all pointer-events-auto"
                                         style="left: {pt[0] / 10}%; top: {pt[1] / 10}%;"
-                                        on:pointerdown={(e) => startDrag(i, ptIdx, e)}
+                                        on:pointerdown={(e) => startDrag(ep.i, ptIdx, e)}
                                         on:click|stopPropagation
                                     ></div>
                                 {/each}
@@ -730,23 +557,23 @@
                                 <!-- Split Actions Toolbar -->
                                 <div 
                                     class="absolute w-max -translate-x-1/2 -translate-y-full -mt-3 pointer-events-auto bg-base-100/95 backdrop-blur-md shadow-lg rounded-full px-2 py-1.5 border border-base-200 flex items-center gap-1 animate-fade-in z-50"
-                                    style="left: {cx / 10}%; top: {minY / 10}%;"
+                                    style="left: {ep.cx / 10}%; top: {ep.minY / 10}%;"
                                 >
-                                    <button class="btn btn-xs btn-ghost btn-circle text-gray-500 hover:text-primary hover:bg-primary/10" title="Split Vertically" on:click|stopPropagation={() => splitCell(i, 'v')}><i class="bi bi-layout-split"></i></button>
-                                    <button class="btn btn-xs btn-ghost btn-circle text-gray-500 hover:text-primary hover:bg-primary/10" title="Split Horizontally" on:click|stopPropagation={() => splitCell(i, 'h')}><i class="bi bi-layout-split rotate-90"></i></button>
-                                    <button class="btn btn-xs btn-ghost btn-circle text-gray-500 hover:text-primary hover:bg-primary/10" title="Split into 4" on:click|stopPropagation={() => splitCell(i, 'q')}><i class="bi bi-grid"></i></button>
+                                    <button class="btn btn-xs btn-ghost btn-circle text-gray-500 hover:text-primary hover:bg-primary/10" title="Split Vertically" on:click|stopPropagation={() => splitCell(ep.i, 'v')}><i class="bi bi-layout-split"></i></button>
+                                    <button class="btn btn-xs btn-ghost btn-circle text-gray-500 hover:text-primary hover:bg-primary/10" title="Split Horizontally" on:click|stopPropagation={() => splitCell(ep.i, 'h')}><i class="bi bi-layout-split rotate-90"></i></button>
+                                    <button class="btn btn-xs btn-ghost btn-circle text-gray-500 hover:text-primary hover:bg-primary/10" title="Split into 4" on:click|stopPropagation={() => splitCell(ep.i, 'q')}><i class="bi bi-grid"></i></button>
                                 </div>
 
                                 <!-- Action Center Button -->
                                 <div 
                                     class="absolute w-16 h-16 -ml-8 -mt-8 cursor-pointer pointer-events-auto flex items-center justify-center"
-                                    style="left: {cx / 10}%; top: {cy / 10}%;"
-                                    on:click|stopPropagation={() => dispatch('select', i)} 
+                                    style="left: {ep.cx / 10}%; top: {ep.cy / 10}%;"
+                                    on:click|stopPropagation={() => dispatch('select', ep.i)} 
                                     on:pointerdown|stopPropagation
                                 >
                                     <div class="w-11 h-11 bg-base-100 rounded-full drop-shadow-xl hover:bg-base-200 transition-colors flex items-center justify-center relative">
-                                        <div class="w-8 h-8 rounded-full flex items-center justify-center {isMapped ? 'bg-success text-white' : 'bg-accent text-white'}">
-                                            {#if isMapped}
+                                        <div class="w-8 h-8 rounded-full flex items-center justify-center {ep.isMapped ? 'bg-success text-white' : 'bg-accent text-white'}">
+                                            {#if ep.isMapped}
                                                 <i class="bi bi-check text-2xl mt-0.5"></i>
                                             {:else}
                                                 <i class="bi bi-three-dots text-lg"></i>

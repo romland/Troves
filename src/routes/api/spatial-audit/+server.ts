@@ -60,7 +60,7 @@ export const POST = async ({ request, locals }) => {
             warpedPolygons = await alignPolygonsToNewImage(baselinePath, localDraftPath, originalPolygons);
         } catch (cvError: any) {
             console.error("Homography alignment failed:", cvError);
-            return json({ error: "We couldn't align this photo with your original layout map. Try holding the camera at the same angle and ensure all outer edges of the container are visible." }, { status: 400 });
+            return json({ success: false, error: "Perspective Alignment Failed", message: "Not enough distinct anchor points matched to align the perspective. Try holding the camera at the same angle and ensure the outer rim is visible." }, { status: 400 });
         }
 
         taskManager.update(taskId, 'Verifying contents...');
@@ -83,6 +83,15 @@ export const POST = async ({ request, locals }) => {
                 return JSON.stringify(p) === origPolyStr;
             } catch(e) { return false; }
         });
+        
+        let expectedFillStatus = null;
+        if (expectedRecord && expectedRecord.spatialMap) {
+            try {
+                const parsed = JSON.parse(expectedRecord.spatialMap);
+                expectedFillStatus = parsed.fill_status || null;
+            } catch (e) {}
+        }
+
             if (!expectedRecord) continue;
             
             baselineMap.push({
@@ -93,7 +102,7 @@ export const POST = async ({ request, locals }) => {
             });
             
             // Keep track of both formats: warped for the UI/crops, original string for DB linking
-            activePolygons.push({ index: i, warpedPoly, origPolyStr, expectedItem: expectedRecord.item });
+            activePolygons.push({ index: i, warpedPoly, origPolyStr, expectedItem: expectedRecord.item, expectedFillStatus });
         }
 
         if (baselineMap.length === 0) {
@@ -106,7 +115,7 @@ export const POST = async ({ request, locals }) => {
 
         // 6. Slot Mapping Reconciliation
         for (let i = 0; i < activePolygons.length && i < bulkResults.length; i++) {
-            const { warpedPoly, origPolyStr, expectedItem } = activePolygons[i];
+            const { warpedPoly, origPolyStr, expectedItem, expectedFillStatus } = activePolygons[i];
             const llmResult = bulkResults[i];
 
             let status = 'UNKNOWN';
@@ -119,6 +128,7 @@ export const POST = async ({ request, locals }) => {
                 spatialMapRaw: origPolyStr,
                 status,
                 expectedItem: expectedItem ? { id: expectedItem.id, title: expectedItem.title, amount: expectedItem.amount, slug: expectedItem.slug, thumbPath: expectedItem.photos?.[0]?.thumbPath || null } : null,
+                expectedFillStatus,
                 detectedTitle: llmResult.title || null,
                 detectedDescription: llmResult.description || null,
                 fill_status: llmResult.fill_status

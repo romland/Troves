@@ -1,6 +1,5 @@
 <script lang="ts">
     import type { PageServerData } from "./$types";
-    import { goto } from "$app/navigation";
     import Delete from "$lib/components/delete.svelte";
     import Items from "$lib/components/items.svelte";
     import Navigation from "$lib/components/navigation.svelte";
@@ -16,10 +15,12 @@
     import Modal from "$lib/components/Modal.svelte";
     import MoveContainerModal from "$lib/components/MoveContainerModal.svelte";
     import { saveToQueue, outboxStore, completedOutboxStore } from "$lib/client/offlineQueue";
-    import { invalidateAll } from '$app/navigation';
+    import { invalidateAll, beforeNavigate, goto } from '$app/navigation';
     import FillStatusSlider from "$lib/components/spatial/FillStatusSlider.svelte";
     import BottomSheet from "$lib/components/BottomSheet.svelte";
     import ActionCard from "$lib/components/ActionCard.svelte";
+    import ConfirmModal from "$lib/components/ConfirmModal.svelte";
+    import ContentUnavailable from "$lib/components/ContentUnavailable.svelte";
 
     export let data: PageServerData;
 
@@ -43,6 +44,8 @@
     let isWarpMode = false;
     let showSpatialSetup = false;
 
+    let initialPolygonsStr = JSON.stringify(data.polygons || []);
+
     $: if (!isMapDirty && !isWarpMode) {
         polygons = data.polygons || [];
         warpMap = data.warpMap || null;
@@ -64,7 +67,8 @@
     let currentTriageIdx = 0;
     let moveModal: MoveContainerModal;
     let analyzeWithVision = false;
-    let removeBackground = true;
+    let removeBackground = false;
+    let confirmModal: ConfirmModal;
 
     // New Audit Flow State
     let isAuditing = false;
@@ -73,6 +77,20 @@
     let auditResolutionSheet: BottomSheet;
     let activeAuditSlotIndex: number | null = null;
     $: activeAuditSlot = activeAuditSlotIndex !== null && auditData?.slots ? auditData.slots[activeAuditSlotIndex] : null;
+    let auditModal: HTMLDialogElement;
+
+    let pendingNav: string | null = null;
+    beforeNavigate(async ({ cancel, to }) => {
+        if (isMapDirty && !pendingNav) {
+            cancel();
+            const res = await confirmModal.ask('Unsaved Map', 'You have unsaved changes to the spatial map. Leave without saving?', 'Leave', 'Stay', true);
+            if (res) {
+                isMapDirty = false;
+                pendingNav = to?.url?.href || '/';
+                goto(pendingNav);
+            }
+        }
+    });
 
     async function triggerAiMapping() {
         isMapping = true;
@@ -169,11 +187,17 @@
         }
     }
 
+    let auditErrorTitle: string | null = null;
+    let auditErrorMessage: string | null = null;
+
     async function runAudit(e: Event) {
         const file = (e.target as HTMLInputElement).files?.[0];
         if (!file) return;
         
         isAuditing = true;
+        auditData = null;
+        auditErrorTitle = null;
+        if (auditModal && !auditModal.open) auditModal.showModal();
         
         const fd = new FormData();
         fd.append('file', file);
@@ -182,16 +206,19 @@
         try {
             const res = await fetch('/api/spatial-audit', { method: 'POST', body: fd });
             const json = await res.json();
-            if (json.success) {
+            if (res.ok && json.success) {
                 auditData = json;
             } else {
-                notify('error', json.error || 'Audit failed');
+                auditErrorTitle = json.error || 'Audit Failed';
+                auditErrorMessage = json.message || 'The layout could not be verified.';
             }
         } catch(e) {
-            notify('error', 'Network error');
+            auditErrorTitle = 'Network Error';
+            auditErrorMessage = 'Could not reach the server.';
         } finally {
             isAuditing = false;
             if (auditFileInput) auditFileInput.value = '';
+            if (!auditData && !auditErrorTitle) auditModal.close();
         }
     }
 
@@ -355,6 +382,7 @@
                                     if (polygons.length > 0 && !hasMapped) {
                                         postSaveWizard.showModal();
                                     } else {
+                                        initialPolygonsStr = JSON.stringify(polygons);
                                         notify('success', 'Map saved!'); 
                                     }
                                 };
@@ -430,7 +458,7 @@
                         imageUrl={data.item.photoPath} 
                         bind:polygons 
                         mappedEntities={mappedEntities}
-                        on:change={() => isMapDirty = true} 
+                        on:change={() => isMapDirty = JSON.stringify(polygons) !== initialPolygonsStr}
                         on:select={handlePolySelect}
                         on:assign={handleAssign}
                         bind:isWarpMode
@@ -495,52 +523,59 @@
 
 <MoveContainerModal bind:this={moveModal} allContainers={data.allContainers} />
 
-<!-- Fullscreen Auditing Modal -->
-{#if isAuditing}
-    <div class="fixed inset-0 z-[100] bg-base-100/95 backdrop-blur-xl flex flex-col items-center justify-center animate-fade-in">
-        <div class="relative w-32 h-32 mb-8">
-            <div class="absolute inset-0 border-[4px] border-base-200 rounded-full"></div>
-            <div class="absolute inset-0 border-[4px] border-secondary rounded-full border-t-transparent animate-spin"></div>
-            <div class="absolute inset-0 border-[4px] border-primary rounded-full border-b-transparent animate-spin" style="animation-duration: 2s; animation-direction: reverse;"></div>
-            <i class="bi bi-camera absolute inset-0 flex items-center justify-center text-4xl text-primary animate-pulse"></i>
-        </div>
-        <h3 class="text-3xl font-bold tracking-tight text-base-content mb-3">Auditing Container...</h3>
-        <p class="text-sm text-gray-500 font-medium max-w-sm text-center px-4">Aligning grid, inspecting compartments, and verifying items against your Trove.</p>
-    </div>
-{/if}
-
-<!-- The New Fullscreen Audit View -->
-{#if auditData}
-    <div class="fixed inset-0 z-50 bg-base-100/95 backdrop-blur-xl flex flex-col animate-fade-in pb-[env(safe-area-inset-bottom)]">
-        <div class="flex items-center justify-between p-4 shrink-0 border-b border-base-200">
-            <div>
-                <h2 class="text-xl font-bold tracking-tight">Audit Results</h2>
-                <p class="text-xs text-gray-500">
-                    <span class="text-success font-bold">{auditData.slots.filter(s => s.status === 'MATCH').length} Matched</span> •
-                    <span class="text-error font-bold">{auditData.slots.filter(s => s.status === 'MISSING').length} Missing</span> •
-                    <span class="text-warning font-bold">{auditData.slots.filter(s => s.status === 'ANOMALY').length} Anomalies</span>
-                </p>
+<!-- Unified Audit Modal -->
+<dialog bind:this={auditModal} class="modal modal-bottom sm:modal-middle backdrop-blur-sm" on:close={() => { auditData = null; auditErrorTitle = null; }}>
+    <div class="modal-box p-0 overflow-hidden w-11/12 max-w-5xl bg-base-100 shadow-2xl border border-base-200 sm:rounded-[2.5rem] flex flex-col">
+        {#if isAuditing}
+            <div class="flex flex-col items-center justify-center py-20 px-6 text-center gap-6">
+                <div class="relative w-32 h-32">
+                    <div class="absolute inset-0 border-[4px] border-base-200 rounded-full"></div>
+                    <div class="absolute inset-0 border-[4px] border-secondary rounded-full border-t-transparent animate-spin"></div>
+                    <div class="absolute inset-0 border-[4px] border-primary rounded-full border-b-transparent animate-spin" style="animation-duration: 2s; animation-direction: reverse;"></div>
+                    <i class="bi bi-camera absolute inset-0 flex items-center justify-center text-4xl text-primary animate-pulse"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-2xl tracking-tight text-base-content mb-2">Auditing Container</h3>
+                    <p class="text-sm text-gray-500 font-medium max-w-xs mx-auto">Aligning grid, inspecting compartments, and verifying items against your Trove.</p>
+                </div>
             </div>
-            <button class="btn btn-sm btn-ghost btn-circle" on:click={() => auditData = null}><i class="bi bi-x-lg text-lg"></i></button>
-        </div>
-        
-        {#if auditData.totalVisibleCount - auditData.slots.length > 0}
-             <div class="alert bg-warning/20 border-warning text-warning-content shadow-sm rounded-none border-x-0 border-t-0 flex items-start">
-                 <i class="bi bi-exclamation-triangle-fill mt-0.5"></i>
-                 <div>
-                     <h3 class="font-bold text-sm">Partial Audit</h3>
-                     <p class="text-xs">{auditData.totalVisibleCount - auditData.slots.length} compartments were cut off or out of frame.</p>
+        {:else if auditErrorTitle}
+            <div class="flex flex-col items-center justify-center py-16 px-6 text-center animate-fade-in">
+                <ContentUnavailable type="error" icon="bi-exclamation-triangle" title={auditErrorTitle} message={auditErrorMessage || ''} actionLabel="Try Again" actionIcon="bi-camera" on:click={() => { auditErrorTitle = null; auditFileInput.click(); }} />
+                <button class="btn btn-ghost mt-4 font-bold text-gray-500 hover:text-base-content" on:click={() => auditModal.close()}>Cancel</button>
+            </div>
+        {:else if auditData}
+            <div class="flex items-center justify-between p-4 shrink-0 border-b border-base-200 bg-base-100">
+                <div>
+                    <h2 class="text-xl font-bold tracking-tight">Audit Results</h2>
+                    <p class="text-xs text-gray-500">
+                        <span class="text-success font-bold">{auditData.slots.filter(s => s.status === 'MATCH').length} Matched</span> •
+                        <span class="text-error font-bold">{auditData.slots.filter(s => s.status === 'MISSING').length} Missing</span> •
+                        <span class="text-warning font-bold">{auditData.slots.filter(s => s.status === 'ANOMALY').length} Anomalies</span>
+                    </p>
+                </div>
+                <button class="btn btn-sm btn-ghost btn-circle" on:click={() => auditModal.close()}><i class="bi bi-x-lg text-lg"></i></button>
+            </div>
+            
+            {#if auditData.totalVisibleCount - auditData.slots.length > 0}
+                 <div class="alert bg-info/10 border-info/30 text-info-content shadow-sm rounded-none border-x-0 border-t-0 flex items-start">
+                     <i class="bi bi-info-circle-fill mt-0.5 text-info"></i>
+                     <div>
+                         <h3 class="font-bold text-sm text-info">Unmapped Slots Skipped</h3>
+                         <p class="text-xs text-info/80">{auditData.totalVisibleCount - auditData.slots.length} compartments don't have items assigned in Troves yet.</p>
+                     </div>
                  </div>
-             </div>
-        {/if}
-        
-        <div class="flex-1 overflow-hidden p-2 sm:p-6 flex flex-col items-center">
-            <div class="w-full max-w-4xl mx-auto h-full flex flex-col items-center justify-center">
-                <SpatialMap imageUrl={auditData.draftPath} auditSlots={auditData.slots} readonly={true} bind:activePolyIndex={activeAuditSlotIndex} on:selectAudit={(e) => { activeAuditSlotIndex = e.detail; auditResolutionSheet.showModal(); }} />
+            {/if}
+            
+            <div class="flex-1 overflow-hidden p-2 sm:p-6 flex flex-col items-center bg-base-300 max-h-[70vh]">
+                <div class="w-full max-w-4xl mx-auto h-full flex flex-col items-center justify-center">
+                    <SpatialMap imageUrl={auditData.draftPath} auditSlots={auditData.slots} readonly={true} bind:activePolyIndex={activeAuditSlotIndex} on:selectAudit={(e) => { activeAuditSlotIndex = e.detail; auditResolutionSheet.showModal(); }} />
+                </div>
             </div>
-        </div>
+        {/if}
     </div>
-{/if}
+    <form method="dialog" class="modal-backdrop"><button>close</button></form>
+</dialog>
 
 <!-- Audit Resolution Drawer -->
 <BottomSheet bind:this={auditResolutionSheet} title="Slot Details" on:close={() => activeAuditSlotIndex = null}>
@@ -566,7 +601,23 @@
 
             <div class="flex flex-col gap-2">
                 {#if activeAuditSlot.status === 'MATCH' && activeAuditSlot.expectedItem}
-                    <ActionCard title="View Item" subtitle="Open details page" icon="bi-arrow-right" iconColorClass="bg-base-200 text-base-content" variant="flat" buttonClass="border border-base-200 hover:border-primary rounded-2xl" href="/{activeAuditSlot.expectedItem.id}/{activeAuditSlot.expectedItem.slug}" on:click={() => auditResolutionSheet.close()} />
+                    <div class="bg-base-200/50 p-4 rounded-3xl border border-base-300 flex flex-col gap-2 mt-2">
+                        <h4 class="font-bold text-sm text-base-content/70 uppercase tracking-wider">Volume & Fill</h4>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="bg-base-100 rounded-2xl p-3 border border-base-200 shadow-sm">
+                                <div class="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-0.5">Expected Fill</div>
+                                <div class="font-bold text-sm">{activeAuditSlot.expectedFillStatus ? activeAuditSlot.expectedFillStatus.replace('_', ' ') : 'Not set'}</div>
+                            </div>
+                            <div class="bg-base-100 rounded-2xl p-3 border border-base-200 shadow-sm">
+                                <div class="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-0.5">Detected Fill</div>
+                                <div class="font-bold text-sm {activeAuditSlot.fill_status === activeAuditSlot.expectedFillStatus ? 'text-success' : (activeAuditSlot.expectedFillStatus ? 'text-warning' : 'text-primary')}">{activeAuditSlot.fill_status ? activeAuditSlot.fill_status.replace('_', ' ') : 'Unknown'}</div>
+                            </div>
+                        </div>
+                        {#if activeAuditSlot.expectedItem.amount !== null}
+                            <div class="text-xs text-gray-500 mt-1"><strong>Database Quantity:</strong> {activeAuditSlot.expectedItem.amount}</div>
+                        {/if}
+                        <div class="text-xs text-gray-500 mt-1"><strong>Note:</strong> To edit this item fully, finish your audit and return to the main inventory.</div>
+                    </div>
                 {:else if activeAuditSlot.status === 'ANOMALY'}
                     <ActionCard title="Accept New Reality" subtitle="Add '{activeAuditSlot.detectedTitle || 'Unknown'}' to database" icon="bi-plus-lg" iconColorClass="bg-warning/20 text-warning" variant="flat" buttonClass="border border-base-200 hover:border-warning rounded-2xl" on:click={() => { auditResolutionSheet.close(); notify('info', 'Routing to Add Screen... (Will be queued)'); }} />
                     {#if activeAuditSlot.expectedItem}
@@ -699,6 +750,8 @@
     </div>
     <form method="dialog" class="modal-backdrop"><button>close</button></form>
 </dialog>
+
+<ConfirmModal bind:this={confirmModal} />
 
 <Modal bind:this={postSaveWizard} position="bottom" boxClass="p-0 overflow-hidden bg-base-100 shadow-2xl border border-base-200 sm:rounded-[2.5rem]">
     <div class="flex flex-col items-center text-center gap-4 py-10 px-6">
