@@ -11,14 +11,20 @@
 
     let mode: 'single' | 'batch' = 'single';
     let printLabel = false;
+    let isSaving = false;
 </script>
 
 {#if form?.error}
     <Alert>{@html form?.message}</Alert>
 {/if}
 
-
-<form method="post" enctype="multipart/form-data" use:enhance class="flex flex-col gap-4 max-w-4xl mx-auto pb-8">
+<form method="post" enctype="multipart/form-data" use:enhance={() => {
+    isSaving = true;
+    return async ({ update }) => {
+        await update();
+        isSaving = false;
+    };
+}} class="flex flex-col gap-4 max-w-4xl mx-auto pb-8">
     <input type="hidden" name="mode" value={mode}>
     
     <!-- iOS-Style Segmented Control -->
@@ -73,6 +79,9 @@
     </div>
 
     <div class="mt-6 flex justify-end">
-        <button type="submit" class="btn btn-primary w-full md:w-auto md:px-12">Save Container</button>
+        <button type="submit" class="btn btn-primary w-full md:w-auto md:px-12" disabled={isSaving}>
+            {#if isSaving}<span class="loading loading-spinner"></span>{/if}
+            Save Container
+        </button>
     </div>
 </form>
