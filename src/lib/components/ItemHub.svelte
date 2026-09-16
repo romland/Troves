@@ -19,6 +19,7 @@
     import { marked } from 'marked';
     import { createEventDispatcher, onMount } from 'svelte';
 	import type { SubmitFunction } from '@sveltejs/kit';
+    import { goto } from '$app/navigation';
     import { ambientLocation } from '$lib/client/ambientContext';
     import { page } from '$app/stores';
     import { notify } from "$lib/client/notifications";
@@ -650,7 +651,10 @@
                     </div>
                     {#if item}
                         <div class="mt-4 pt-3 border-t border-base-200">
-                            <ReanalyzeButton {item} {confirmModal} asMenuItem={false} />
+                            <ReanalyzeButton {item} {confirmModal} asMenuItem={false} on:queued={() => {
+                                isDirty = false;
+                                goto(`/${item.id}/${item.slug}`);
+                            }} />
                         </div>
                     {/if}
                 </div>

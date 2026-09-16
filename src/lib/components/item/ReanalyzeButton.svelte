@@ -1,11 +1,13 @@
 <script lang="ts">
     import { notify } from "$lib/client/notifications";
     import type ConfirmModal from "$lib/components/ConfirmModal.svelte";
+    import { createEventDispatcher } from "svelte";
 
     export let item: { id: number, slug: string };
     export let confirmModal: ConfirmModal;
     export let asMenuItem: boolean = false;
 
+    const dispatch = createEventDispatcher();
     let isQueuing = false;
 
     async function triggerReanalyze() {
@@ -29,6 +31,7 @@
             });
             if (req.ok) {
                 notify('info', 'Item queued for re-analysis.');
+                dispatch('queued');
             } else {
                 notify('error', 'Failed to queue re-analysis.');
             }
