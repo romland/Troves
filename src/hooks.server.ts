@@ -4,7 +4,6 @@ import { db } from "$lib/server/database";
 import { initFTS } from "$lib/server/fts";
 import { validateAndRefreshSession } from "$lib/server/session";
 
-// Strictly typed JSON structure for User.preferences
 export interface UserPreferences {
 	largeFont?: boolean;
 	documentDarkMode?: boolean;
@@ -17,7 +16,6 @@ export interface UserPreferences {
 let isSetupComplete = false;
 
 export const handle = (async ({ event, resolve }) => {
-
 	// 1. Initial Setup Guard: Route new installations directly to the Setup Wizard
 	if (!building && !isSetupComplete) {
 		const userCount = await db.user.count();
@@ -27,12 +25,16 @@ export const handle = (async ({ event, resolve }) => {
 			throw redirect(307, '/setup');
 		}
 	}
-	if (isSetupComplete && event.url.pathname.startsWith('/setup')) throw redirect(303, '/login');
 
-// Initialize the SQLite FTS5 engine once on server boot (skip during build)
-if (!building) {
-    initFTS().catch(console.error);
-}
+	if (isSetupComplete && event.url.pathname.startsWith('/setup')) {
+        throw redirect(303, '/login');
+    }
+
+    // Initialize the SQLite FTS5 engine once on server boot (skip during build)
+    if (!building) {
+        initFTS().catch(console.error);
+    }
+
 	let theme: string = 'coffee';  // default theme
 
 	const session = event.cookies.get('session');
@@ -123,17 +125,11 @@ if (!building) {
     
     // Now check authorization independently of the cookie's mere existence
     if (!event.locals.user) {
-        if (
-            path == '/' ||
-            /^\/\d/.test(path) ||
-            path.startsWith('/search') ||
-            path.startsWith('/container') ||
-            path.startsWith('/tag') ||
-            path.startsWith('/timeline') ||
-            path.startsWith('/add') ||
-			path.startsWith('/settings') ||
-			path.startsWith('/profile')
-        ) {
+        // Protected by default: Lock down the entire app except specific auth flows
+        if (!path.startsWith('/login') && !path.startsWith('/register') && !path.startsWith('/setup')) {
+            if (path.startsWith('/api/')) {
+                return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
+            }
             redirect(303, '/login');
         }
     } else if (event.locals.activeInventoryId === null && !path.startsWith('/settings') && !path.startsWith('/profile') && !path.startsWith('/logout') && !path.startsWith('/activity') && !path.startsWith('/api')) {
