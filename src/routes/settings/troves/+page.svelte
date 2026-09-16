@@ -4,7 +4,7 @@
     import { notify } from "$lib/client/notifications";
     import SettingToggle from "$lib/components/SettingToggle.svelte";
     import ConfirmModal from "$lib/components/ConfirmModal.svelte";
-    import CreateInventoryModal from "$lib/components/CreateInventoryModal.svelte";
+    import CreateInventoryModal from "$lib/components/CreateTroveModal.svelte";
     import pageTitle from '$lib/stores';
 
     pageTitle.set("Manage Troves");

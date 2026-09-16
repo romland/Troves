@@ -80,7 +80,7 @@
 		if (collectionHint.trim()) fd.append('hint', collectionHint.trim());
 
         try {
-            const res = await fetch('/api/analyze-collection', { method: 'POST', body: fd });
+            const res = await fetch('/api/analyze-multiscan', { method: 'POST', body: fd });
 
             let data;
             try { data = await res.json(); } catch (err) { data = null; }

@@ -69,7 +69,7 @@
         if (scanHint.trim()) fd.append('hint', scanHint.trim());
 
         try {
-            const res = await fetch('/api/compare-collection', { method: 'POST', body: fd });
+            const res = await fetch('/api/compare-multiscan', { method: 'POST', body: fd });
 
             const data = await res.json();
             if (res.ok && data.success) {

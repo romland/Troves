@@ -27,7 +27,7 @@
     
     import KeyboardManager from '$lib/components/KeyboardManager.svelte';
     import ContainerSelector from "$lib/components/ContainerSelector.svelte";
-    import CreateInventoryModal from "$lib/components/CreateInventoryModal.svelte";
+    import CreateInventoryModal from "$lib/components/CreateTroveModal.svelte";
     import { ambientLocation } from '$lib/client/ambientContext';
     import ConfirmModal from "$lib/components/ConfirmModal.svelte";
     import InstallPrompt from "$lib/components/InstallPrompt.svelte";

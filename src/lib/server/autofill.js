@@ -13,17 +13,17 @@ export async function autoFill(localFilePath)
 {
     // 1. Primary: Fast local Gemini vision call
     try {
-        const geminiResult = await guessProductDetails(localFilePath);
-        if (geminiResult?.title) {
-            console.log("autoFill(): Gemini success:", geminiResult);
-            return geminiResult;
+        const visionResult = await guessProductDetails(localFilePath);
+        if (visionResult?.title) {
+            console.log("autoFill(): Gemini success:", visionResult);
+            return visionResult;
         }
     } catch (e) {
         const message = e instanceof Error ? e.message : String(e);
         console.warn("Tier-One autoFill failed, falling back to reverse search:", message);
     }
 
-    // 2. Fallback: Google Reverse Image Search
+    // 2. Fallback: Google Reverse Image Search (this is currently very very broken)
     try {
         const uniqueName = "" + process.hrtime.bigint();
         const remotePath = env.SCP_THUMBNAIL_STORAGE + uniqueName;
@@ -44,7 +44,7 @@ export async function autoFill(localFilePath)
 }
 
 
-// Google Image Reverse Search
+// Get name/description using Google Image Reverse Search
 async function getNameDescription(thumbUrl)
 {
     const pageTitles = await reverseImageSearch(thumbUrl);
@@ -61,12 +61,11 @@ async function getNameDescription(thumbUrl)
 }
 
 /**
- * To make thumbnail accessible to non-whitelisted server (i.e. Google Image Search)
+ * Copy thumbnail to a public place to make it accessible to non-whitelisted server (i.e. Google Image Search)
  */
 function scp(source, destination)
 {
     return new Promise((resolve, reject) => {
-
         const scpProcess = spawn('scp', ['-i', '~/.ssh/id_rsa', source, destination]);
 
         scpProcess.stdout.on('data', (data) => {

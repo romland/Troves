@@ -11,10 +11,6 @@ import pkg from './package.json' with { type: 'json' };
 const gitHash = execSync('git rev-parse --short HEAD 2>/dev/null || echo "dev"').toString().trim();
 const buildVersion = `v${pkg.version}-${gitHash}`;
 
-
-// For dev-env (self signed cert)
-// import basicSsl from '@vitejs/plugin-basic-ssl';
-
 export default defineConfig(({ command }) => ({
     define: {
         'import.meta.env.PUBLIC_APP_VERSION': JSON.stringify(buildVersion)
@@ -34,41 +30,6 @@ export default defineConfig(({ command }) => ({
                 '**/*.log'
             ]
         },
-		// JR NOTE: 
-		// For local development and PWA, I want to test with phone on LAN using a reverse proxy
-		// via dev.providi.nl. I have issues getting websockets to work (for PWA). A hint is that
-		// Vite is the problem: https://github.com/vitejs/vite/issues/1653 
-		// 
-		// I am note certain if it's Vite's, Apache's or my own fault yet.
-		//
-		// This has information about doing this with Apache:
-		// https://github.com/vitejs/vite/discussions/6473
-		// server: {
-		// 	hmr: {
-		// 	  clientPort: 443,
-		// 	  host: 'dev.providi.nl',
-		// 	  port: 5173,
-		// 	  protocol: 'wss'
-		// 	}
-		//   }
-		// server: {
-		// 	// host: "0.0.0.0",
-		// 	port: 5173,
-		// 	hmr: {
-		// 	  port: 5173,
-		// 	  clientPort: 443,
-		// 	  protocol: 'wss'
-		// 	},
-		//   },
-		//
-
-		// Instead of the above, I went with a self-signed cert and the plugin:
-		// https://github.com/vitejs/vite-plugin-basic-ssl
-		// It still means you have to accept a "dodgy site", but at least it's flagged
-		// as https and we can use full PWA capabilities (I hope at least?)
-		// Commented this out in August 2026
-		// https: false,
-        // https: true,		
         allowedHosts: true
     },
 	ssr: {
@@ -191,51 +152,6 @@ export default defineConfig(({ command }) => ({
 				includeVersionFile: true,
 			},
 		}),
-
-		// For dev-env (self signed cert)
-		// basicSsl({
-		// 	// /** name of certification */
-		// 	// name: 'Vinventory',
-		// 	// /** custom trust domains */
-		// 	// domains: ['*.custom.com'],
-		// 	// /** custom certification directory */
-		// 	// certDir: '/Users/.../.devServer/cert'
-		//   })
-
-
-		// {
-		// 	// This is to make sure we're not fucking things up.
-		// 	name: 'dump-server-handles',
-		// 	closeBundle() {
-        //         if (command !== 'build') return;
-		// 		// Delay dump so it runs AFTER adapter-node finishes its work
-		// 		setTimeout(() => {
-		// 		console.log('\n========================================');
-		// 		console.log('   ACTUAL UNCLOSED HANDLES (AFTER ADAPTER)');
-		// 		console.log('========================================');
-				
-		// 		const handles = (process as any)._getActiveHandles?.() || [];
-		// 		handles.forEach((h: any, i: number) => {
-		// 			const type = h?.constructor?.name || typeof h;
-		// 			if (type === 'TTY' || type === 'WriteStream' || type === 'ReadStream' || h.fd === 1 || h.fd === 2) return;
-					
-		// 			console.log(`[Handle #${i}] Type: ${type}`);
-		// 			if (h.spawnfile) console.log(`   -> Spawned Process: ${h.spawnfile}`);
-		// 			if (h._idleTimeout) console.log(`   -> Active Timer: ${h._idleTimeout}ms`);
-		// 			if (h.filename) console.log(`   -> File: ${h.filename}`);
-		// 		});
-		// 		console.log('========================================\n');
-		// 		}, 2000);
-		// 	}
-		// },
-        // {
-		// 	// Well, let's kill ourselves after build then, something Rust or C++ is hanging.
-        //     name: 'terminate-native-threads-after-build',
-        //     closeBundle() {
-        //         if (command !== 'build') return;
-        //         setTimeout(() => process.exit(0), 3000);
-        //     }
-        // }
 
 	],
 }));

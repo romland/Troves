@@ -265,7 +265,7 @@ async function uploadCollection(filePath: string, headers: Record<string, string
     const fdColl = new FormData();
     fdColl.append('file', new Blob([fileBuffer], { type: mimeType }), filename);
 
-    const collRes = await fetch(`${BASE_URL}/api/analyze-collection`, {
+    const collRes = await fetch(`${BASE_URL}/api/analyze-multiscan`, {
         method: 'POST',
         headers,
         body: fdColl

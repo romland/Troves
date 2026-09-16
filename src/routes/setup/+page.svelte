@@ -5,7 +5,7 @@
     import FormInput from "$lib/components/FormInput.svelte";
     import SystemDiagnostics from "$lib/components/SystemDiagnostics.svelte";
     import Logo from "$lib/components/Logo.svelte";
-    import CreateInventoryModal from "$lib/components/CreateInventoryModal.svelte";
+    import CreateInventoryModal from "$lib/components/CreateTroveModal.svelte";
     import pageTitle from '$lib/stores';
 
     export let data;
