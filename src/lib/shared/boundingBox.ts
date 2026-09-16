@@ -83,9 +83,9 @@ export function getCropStyles(boxRaw: any, padding: number = 25) {
     const zoomFactor = 1000 / maxDim;
 
     const wrapper = `position: relative; overflow: hidden; width: 100%; height: 100%; min-width: 100%; min-height: 100%; flex-shrink: 0; border-radius: inherit;`;
-    const image = `position: absolute; width: ${zoomFactor * 100}%; height: auto; max-width: none; max-height: none; top: 50%; left: 50%; transform: translate(-${cx}%, -${cy}%);`;
 
     return { wrapper, image };
+    const image = `position: absolute; width: ${zoomFactor * 100}%; height: auto; max-width: none; max-height: none; top: 50%; left: 50%; transform: translate3d(-${cx}%, -${cy}%, 0);`;
 }
 
 export function getHighlightStyle(boxRaw: any): string {

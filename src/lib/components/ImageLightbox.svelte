@@ -687,7 +687,7 @@
             >
                 <div 
                     class="w-full h-full flex items-center justify-center origin-center will-change-transform"
-                    style="transform: translate({$translateX}px, {$translateY}px) scale({$scaleVal})"
+                    style="transform: translate3d({$translateX}px, {$translateY}px, 0) scale({$scaleVal}); will-change: transform;"
                     in:scale={{ start: 0.9, duration: 300, easing: cubicOut }}
                     on:click|self={handleBackgroundClick}
                 >
@@ -749,7 +749,7 @@
                         <!-- Active Pill Background -->
                         <div 
                             class="absolute top-1 bottom-1 w-[calc(50%-0.25rem)] bg-white rounded-full shadow transition-transform duration-300 ease-out"
-                            style="transform: translateX({showOriginal ? 'calc(100% + 0.25rem)' : '0'});"
+                        style="transform: translate3d({showOriginal ? 'calc(100% + 0.25rem)' : '0'}, 0, 0);"
                         ></div>
                     </div>
                 {/if}

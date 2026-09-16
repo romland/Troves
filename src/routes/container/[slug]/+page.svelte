@@ -733,7 +733,7 @@
                 <div class="w-full h-48 sm:h-64 bg-base-300 relative overflow-hidden">
                     
                     <!-- Minimap Abstract Context Overlay -->
-                    <div class="absolute pointer-events-none transition-all duration-500 ease-out" style="width: {zoomFactor * 100}%; top: 50%; left: 50%; transform: translate(-{cx}%, -{cy}%);">
+                    <div class="absolute pointer-events-none transition-all duration-500 ease-out" style="width: {zoomFactor * 100}%; top: 50%; left: 50%; transform: translate3d(-{cx}%, -{cy}%, 0);">
                         <img src={data.item?.photoPath} class="w-full h-auto block" alt="Slot View" />
                         <svg viewBox="0 0 1000 1000" preserveAspectRatio="none" class="absolute inset-0 w-full h-full">
                             <path d="M 0,0 L 1000,0 L 1000,1000 L 0,1000 Z M {poly[0].join(',')} L {poly[1].join(',')} L {poly[2].join(',')} L {poly[3].join(',')} Z" fill="rgba(0,0,0,0.6)" fill-rule="evenodd" />

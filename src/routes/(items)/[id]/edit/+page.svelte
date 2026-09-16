@@ -34,9 +34,6 @@
         }
     });
 
-        // Stop SvelteKit from natively submitting the form
-            // Detach execution to ensure router cleanly navigates away
-    
     pageTitle.set("Edit " + data.item?.title);
 </script>
 

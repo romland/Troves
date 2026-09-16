@@ -43,17 +43,27 @@ body {
 html, body {
     -webkit-tap-highlight-color: transparent; /* Kill the blue flash on tap */
     overscroll-behavior-y: none; /* Stop the entire app from rubber-banding */
-    -webkit-touch-callout: none; /* Stop iOS from popping up 'Save Image' on long press */
-    -webkit-user-select: none; /* Stop accidental text highlighting while swiping */
-    user-select: none;
 }
 
-/* Re-enable text selection ONLY where it actually makes sense */
-input, textarea, [contenteditable], .prose {
-    -webkit-user-select: auto;
-    user-select: auto;
-    -webkit-touch-callout: default;
+/* Restrict touch callouts and swipe selection locks strictly to touchscreens */
+@media (pointer: coarse) {
+    html, body {
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+    }
+    input, textarea, [contenteditable], .prose {
+        -webkit-user-select: auto;
+        user-select: auto;
+        -webkit-touch-callout: default;
+    }
 }
+
+/* Trap scroll momentum inside scrolling containers so the background doesn't rubber-band */
+.overflow-y-auto, .overflow-auto, .overflow-y-scroll {
+    overscroll-behavior-y: contain;
+}
+
 /* ========================================================================== */
 
 /* Make all standard interactive elements feel physical and heavy */

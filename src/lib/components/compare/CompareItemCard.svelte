@@ -8,35 +8,36 @@
     export let type: 'unregistered' | 'missing' | 'elsewhere' | 'correct';
     export let draftPath: string;
     
+    import { spring } from 'svelte/motion';
     const dispatch = createEventDispatcher();
 
     // Swipe Physics State
+    const swipePos = spring(0, { stiffness: 0.1, damping: 0.5 });
     let touchStartX = 0;
-    let swipeOffset = 0;
     let isSwiping = false;
 
     function handleTouchEnd() {
         isSwiping = false;
-        if (type !== 'unregistered') { swipeOffset = 0; return; }
+        if (type !== 'unregistered') { swipePos.set(0); return; }
 
-        if (swipeOffset < -80) {
+        if ($swipePos < -80) {
             dispatch('discard', item);
             if (navigator.vibrate) navigator.vibrate(40);
-        } else if (swipeOffset > 80) {
+        } else if ($swipePos > 80) {
             dispatch('link', item);
             if (navigator.vibrate) navigator.vibrate(40);
-            swipeOffset = 0; // Bounce back after triggering modal
+            swipePos.set(0); // Let the spring handle the bounce back
         } else {
-            swipeOffset = 0;
+            swipePos.set(0);
         }
     }
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="relative w-full rounded-2xl overflow-hidden {swipeOffset < 0 ? 'bg-error/90' : 'bg-info/90'}" 
+<div class="relative w-full rounded-2xl overflow-hidden {$swipePos < -5 ? 'bg-error/90' : ($swipePos > 5 ? 'bg-info/90' : 'bg-transparent')}" 
      style="touch-action: pan-y;"
      on:touchstart={(e) => { if (type === 'unregistered') { touchStartX = e.touches[0].clientX; isSwiping = true; } }}
-     on:touchmove={(e) => { if (isSwiping) swipeOffset = e.touches[0].clientX - touchStartX; }}
+     on:touchmove={(e) => { if (isSwiping) swipePos.set(e.touches[0].clientX - touchStartX, { hard: true }); }}
      on:touchend={handleTouchEnd}
 >
     <!-- Background Swipe Icons -->
@@ -49,8 +50,8 @@
         </div>
     {/if}
 
-    <div class="bg-base-100 border border-base-200 p-4 rounded-2xl shadow-sm flex items-center justify-between gap-3 hover:border-primary/40"
-         style="transform: translateX({swipeOffset}px); transition: {isSwiping ? 'none' : 'transform 0.2s cubic-bezier(0.1, 0.7, 0.1, 1)'}"
+    <div class="bg-base-100 border border-base-200 p-4 rounded-2xl shadow-sm flex items-center justify-between gap-3 hover:border-primary/40 relative z-10"
+         style="transform: translate3d({$swipePos}px, 0, 0);"
     >
         {#if item.box}
             {@const styles = getCropStyles(item.box)}

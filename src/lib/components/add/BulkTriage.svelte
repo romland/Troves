@@ -347,9 +347,8 @@
                          if (item.swipeOffset < -80) { 
                              toggleItem(item.id);
                              if (navigator.vibrate) navigator.vibrate(40);
-                         } else { 
-                             item.swipeOffset = 0; items = items; 
-                         } 
+                         }
+                         item.swipeOffset = 0; items = items; 
                      }}
                 >
                         <div class="absolute inset-y-0 right-0 flex items-center pr-6 text-white pointer-events-none">
@@ -357,8 +356,8 @@
                         </div>
 
                         <!-- svelte-ignore a11y_click_events_have_key_events -->
-                        <div class="group flex items-center gap-4 bg-base-100 shadow-sm border border-base-200 p-3 rounded-2xl w-full transition-all select-none {item.optedOut ? 'opacity-40 grayscale' : 'hover:border-primary/30 active:scale-[0.98]'}"
-                            style="transform: translateX({item.swipeOffset}px); transition: {item.isSwiping ? 'none' : 'transform 0.2s cubic-bezier(0.1, 0.7, 0.1, 1)'}"
+                        <div class="group flex items-center gap-4 bg-base-100 shadow-sm border border-base-200 p-3 rounded-2xl w-full select-none relative z-10 {item.optedOut ? 'opacity-40 grayscale' : 'hover:border-primary/30 active:scale-[0.98]'}"
+                            style="transform: translate3d({item.swipeOffset}px, 0, 0); transition: {item.isSwiping ? 'none' : 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)'};"
                             on:click={() => { 
                                 if (Math.abs(item.swipeOffset) > 5) return;
                                 if (item.optedOut) toggleItem(item.id);

@@ -446,7 +446,7 @@
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div class="w-full h-full relative overflow-hidden bg-base-300 select-none {isPanning ? 'cursor-grabbing' : 'cursor-grab'}" on:pointerdown={startPan} on:click={(e) => { if (Math.abs(e.clientX - panStartX) < 5 && Math.abs(e.clientY - panStartY) < 5) activePolyIndex = null; }}>
         <div class="absolute inset-0 flex items-center justify-center p-6 sm:p-12 pointer-events-none">
-            <div class="relative origin-center shadow-2xl ring-1 ring-black/5 shrink-0 pointer-events-auto" style="width: {zoomLevel}%; transform: translate({panX}px, {panY}px); transition: width 0.2s ease-out;">
+            <div class="relative origin-center shadow-2xl ring-1 ring-black/5 shrink-0 pointer-events-auto" style="width: {zoomLevel}%; transform: translate3d({panX}px, {panY}px, 0); transition: width 0.2s cubic-bezier(0.1, 0.7, 0.1, 1); will-change: transform, width;">
                 <img src={imageUrl} alt="Container map" class="w-full h-auto block pointer-events-none" />
                 
                 <svg 
