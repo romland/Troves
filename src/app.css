@@ -37,6 +37,34 @@ body {
     font-family: 'Jura', sans-serif;
 }
 
+/* ==========================================================================
+   NATIVE PWA TOUCH OPTIMIZATIONS
+   ========================================================================== */
+html, body {
+    -webkit-tap-highlight-color: transparent; /* Kill the blue flash on tap */
+    overscroll-behavior-y: none; /* Stop the entire app from rubber-banding */
+    -webkit-touch-callout: none; /* Stop iOS from popping up 'Save Image' on long press */
+    -webkit-user-select: none; /* Stop accidental text highlighting while swiping */
+    user-select: none;
+}
+
+/* Re-enable text selection ONLY where it actually makes sense */
+input, textarea, [contenteditable], .prose {
+    -webkit-user-select: auto;
+    user-select: auto;
+    -webkit-touch-callout: default;
+}
+/* ========================================================================== */
+
+/* Make all standard interactive elements feel physical and heavy */
+.btn, .badge[role="button"], a.card {
+    transition: transform 0.2s cubic-bezier(0.1, 0.7, 0.1, 1), background-color 0.2s ease, opacity 0.2s ease !important;
+}
+.btn:active, .badge[role="button"]:active, a.card:active {
+    transform: scale(0.96) !important;
+    transition: transform 0.05s ease !important; /* Depress instantly, bounce back slowly */
+}
+
 @keyframes fade-in {
     from {
         opacity: 0;
