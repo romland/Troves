@@ -19,9 +19,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
     if (!photo) return json({ error: 'Photo not found' }, { status: 404 });
 
-    // We overwrite the file directly instead of renaming. 
-    // This prevents Vite dev server 404s on newly created static files,
-    // and we rely on ?v= timestamp cache-busting instead.
+    // We rename the file to naturally bust the browser cache without requiring
+    // ?v= cache-busting parameters spread everywhere in the UI templates.
     const applyRotation = async (webPath: string | null) => {
         if (!webPath) return null;
         const cleanWebPath = webPath.split('?')[0]; // Strip existing query params
@@ -36,9 +35,14 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
         const buffer = fs.readFileSync(localPath);
         const rotatedBuffer = await sharp(buffer).rotate(degrees).toBuffer();
-        fs.writeFileSync(localPath, rotatedBuffer);
         
-        return cleanWebPath;
+        const newWebPath = cleanWebPath.replace(/\.webp$/, `_r${Date.now()}.webp`);
+        const newLocalPath = `data${newWebPath}`;
+
+        fs.writeFileSync(newLocalPath, rotatedBuffer);
+        try { fs.unlinkSync(localPath); } catch(e) {}
+        
+        return newWebPath;
     };
 
     try {
@@ -47,14 +51,18 @@ export const POST: RequestHandler = async ({ request, locals }) => {
         const cleanCrop = await applyRotation(photo.cropPath);
         
         // Rotate the implicitly derived org_thumb
-        if (cleanOrg) {
-            const oldOrgThumb = cleanOrg.replace(/\.[^/.]+$/, '_org_thumb.webp');
+        if (cleanOrg && photo.orgPath) {
+            const oldOrgThumb = photo.orgPath.split('?')[0].replace(/\.[^/.]+$/, '_org_thumb.webp');
             const localOldOrgThumb = `data${oldOrgThumb}`;
+            
+            const newOrgThumb = cleanOrg.replace(/\.[^/.]+$/, '_org_thumb.webp');
+            const localNewOrgThumb = `data${newOrgThumb}`;
             
             if (fs.existsSync(localOldOrgThumb)) {
                  const buffer = fs.readFileSync(localOldOrgThumb);
                  const rotatedBuffer = await sharp(buffer).rotate(degrees).toBuffer();
-                 fs.writeFileSync(localOldOrgThumb, rotatedBuffer);
+                 fs.writeFileSync(localNewOrgThumb, rotatedBuffer);
+                 try { fs.unlinkSync(localOldOrgThumb); } catch(e) {}
             }
         }
 

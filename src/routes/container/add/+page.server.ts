@@ -1,10 +1,8 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions } from './$types';
-import slugify from 'slugify';
-import { writeFileSync } from "fs";
 import { db } from '$lib/server/database';
-import { getTagIds } from "$lib/server/services";
 import sharp from 'sharp';
+import { MediaIngest } from '$lib/server/services/MediaIngest';
 
 export const actions = {
     default: async ({ locals, request }) => {
@@ -24,22 +22,13 @@ export const actions = {
         let filename = null;
 
         if (file.size > 0) {
-			const buffer = Buffer.from(await file.arrayBuffer());
-            const date = new Date().toISOString()
-                .replaceAll('-', '')
-                .replaceAll(':', '')
-                .replace(/T/, '')
-                .replace(/\..+/, '');
-
-            filename = date + '-' + slugify(file.name.toLowerCase()).replace(/\.[^/.]+$/, '') + '.webp';
+            const { localPath, webPath } = await MediaIngest.saveUploadedImage(file, 'container');
+            filename = webPath;
 
 			try {
-                await sharp(buffer).webp({ quality: 85 }).toFile(`data/images/containers/${filename}`);
-				const thumbFilename = filename.replace(/\.[^/.]+$/, "_thumb.webp");
-                await sharp(buffer).resize({ width: 256 }).webp({ quality: 80 }).toFile(`data/images/containers/${thumbFilename}`);
+                const thumbLocalPath = localPath.replace(/\.[^/.]+$/, '_thumb.webp');
+                await sharp(localPath).resize({ width: 256 }).webp({ quality: 80 }).toFile(thumbLocalPath);
 			} catch (e) { console.error("Failed to generate container thumbnail", e); }
-
-            filename = "/images/containers/" + filename;
         }
 
         const container = await db.container.create({

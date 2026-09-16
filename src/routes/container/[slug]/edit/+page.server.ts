@@ -1,9 +1,9 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from "./$types";
-import fs, { writeFileSync } from "fs";
-import slugify from 'slugify';
+import fs from "fs";
 import { db } from '$lib/server/database';
 import sharp from 'sharp';
+import { MediaIngest } from '$lib/server/services/MediaIngest';
 
 export const load = (async ({ locals, params }) => {
     console.log(params);
@@ -67,22 +67,13 @@ export const actions = {
         let filename = post?.photoPath;
 
         if (file.size > 0) {
-			const buffer = Buffer.from(await file.arrayBuffer());
-            const date = new Date().toISOString()
-                .replaceAll('-', '')
-                .replaceAll(':', '')
-                .replace(/T/, '')
-                .replace(/\..+/, '');
-
-            filename = date + '-' + slugify(file.name.toLowerCase()).replace(/\.[^/.]+$/, '') + '.webp';
+            const { localPath, webPath } = await MediaIngest.saveUploadedImage(file, 'container');
+            filename = webPath;
 
 			try {
-                await sharp(buffer).webp({ quality: 85 }).toFile(`data/images/containers/${filename}`);
-				const thumbFilename = filename.replace(/\.[^/.]+$/, "_thumb.webp");
-                await sharp(buffer).resize({ width: 256 }).webp({ quality: 80 }).toFile(`data/images/containers/${thumbFilename}`);
+                const thumbLocalPath = localPath.replace(/\.[^/.]+$/, '_thumb.webp');
+                await sharp(localPath).resize({ width: 256 }).webp({ quality: 80 }).toFile(thumbLocalPath);
 			} catch (e) { console.error("Failed to generate container thumbnail", e); }
-
-            filename = "/images/containers/" + filename;
         }
 
         const oldName = data.id as string;
@@ -141,15 +132,26 @@ export const actions = {
         const localPath = `data${post.photoPath}`;
         if (!fs.existsSync(localPath)) return fail(404, { error: true, message: "Physical photo file not found." });
 
+        const newWebPath = post.photoPath.replace(/\.webp$/, `_r${Date.now()}.webp`);
+        const newLocalPath = `data${newWebPath}`;
+
         const buffer = fs.readFileSync(localPath);
         const rotatedBuffer = await sharp(buffer).rotate(90).webp({ quality: 85 }).toBuffer();
-        fs.writeFileSync(localPath, rotatedBuffer);
+        fs.writeFileSync(newLocalPath, rotatedBuffer);
         
-        const thumbPath = localPath.replace(/\.[^/.]+$/, '_thumb.webp');
-        if (fs.existsSync(thumbPath)) {
-            const thumbBuffer = await sharp(rotatedBuffer).resize({ width: 256 }).webp({ quality: 80 }).toBuffer();
-            fs.writeFileSync(thumbPath, thumbBuffer);
-        }
+        const thumbPath = newLocalPath.replace(/\.[^/.]+$/, '_thumb.webp');
+        const thumbBuffer = await sharp(rotatedBuffer).resize({ width: 256 }).webp({ quality: 80 }).toBuffer();
+        fs.writeFileSync(thumbPath, thumbBuffer);
+
+        await db.container.update({
+            where: { id: post.id },
+            data: { photoPath: newWebPath }
+        });
+
+        try { 
+            fs.unlinkSync(localPath); 
+            fs.unlinkSync(localPath.replace(/\.[^/.]+$/, '_thumb.webp')); 
+        } catch(e) {}
 
         return { success: true, message: "Image rotated 90 degrees." };
     }
