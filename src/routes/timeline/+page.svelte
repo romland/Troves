@@ -61,7 +61,7 @@
         setTimeout(() => {
             const f = document.getElementById('timelineForm');
             if (f) {
-                let input = f.querySelector('input[name="category"]');
+                let input = f.querySelector('input[name="category"]') as HTMLInputElement;
                 if (!input) { input = document.createElement('input'); input.type = 'hidden'; input.name = 'category'; f.appendChild(input); }
                 input.value = data.currentCategory === 'all' ? 'idea' : data.currentCategory;
             }

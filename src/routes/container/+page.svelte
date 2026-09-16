@@ -38,7 +38,7 @@
 <div class="max-w-2xl mx-auto pt-4 pb-20 px-4 sm:px-0">
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-3xl font-bold tracking-tight">Containers</h1>
-        <a href="/container/add" class="btn btn-circle btn-primary shadow-sm">
+        <a href="/container/add" aria-label="Add Container" class="btn btn-circle btn-primary shadow-sm">
             <i class="bi bi-plus-lg text-xl"></i>
         </a>
     </div>
@@ -48,7 +48,7 @@
         <i class="bi bi-search text-gray-400 ml-2"></i>
         <input type="text" bind:value={searchQuery} placeholder="Search containers, locations..." class="bg-transparent border-none focus:outline-none w-full text-base" />
         {#if searchQuery}
-            <button class="btn btn-ghost btn-circle btn-xs mr-1" on:click={() => searchQuery = ""}><i class="bi bi-x-circle-fill text-gray-400"></i></button>
+            <button aria-label="Clear Search" class="btn btn-ghost btn-circle btn-xs mr-1" on:click={() => searchQuery = ""}><i class="bi bi-x-circle-fill text-gray-400"></i></button>
         {/if}
     </div>
 

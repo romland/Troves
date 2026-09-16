@@ -51,7 +51,7 @@
                 <h3 class="font-bold text-lg leading-tight">{title}</h3>
                 <p class="text-xs text-gray-500 mt-1">{subtitle}</p>
             </div>
-            <button type="button" class="btn btn-sm btn-circle btn-ghost" on:click={close}><i class="bi bi-x-lg"></i></button>
+            <button type="button" aria-label="Close" class="btn btn-sm btn-circle btn-ghost" on:click={close}><i class="bi bi-x-lg"></i></button>
         </div>
         
         <div class="p-4 bg-base-50 border-b border-base-200">

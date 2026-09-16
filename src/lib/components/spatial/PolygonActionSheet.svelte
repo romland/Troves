@@ -157,7 +157,7 @@
                     <input type="hidden" name="parentContainerId" value={parentContainerId}>
                     <input type="hidden" name="fillStatus" value={currentFillStatus}>
                     
-                    <FillStatusSlider bind:value={currentFillStatus} on:change={() => document.getElementById(`fillStatusForm-${mappedEntity.id}`)?.requestSubmit()} />
+                    <FillStatusSlider bind:value={currentFillStatus} on:change={() => (document.getElementById(`fillStatusForm-${mappedEntity.id}`) as HTMLFormElement)?.requestSubmit()} />
                 </form>
             </div>
             <form method="POST" action="?/unmapEntity" use:enhance={() => {

@@ -97,7 +97,7 @@
                                         <form method="POST" action="?/revokeAccess" use:enhance={createEnhancer}>
                                             <input type="hidden" name="userId" value={access.userId}>
                                             <input type="hidden" name="inventoryId" value={access.inventoryId}>
-                                            <button type="submit" class="btn btn-ghost btn-xs text-error"><i class="bi bi-trash"></i></button>
+                                            <button type="submit" aria-label="Revoke Access" class="btn btn-ghost btn-xs text-error"><i class="bi bi-trash"></i></button>
                                         </form>
                                     {/if}
                                 </td>

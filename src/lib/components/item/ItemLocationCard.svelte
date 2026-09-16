@@ -94,13 +94,13 @@
     if (item.amount === null) item.amount = 1; else item.amount += 1;
     return async ({ update }) => { await update({ reset: false }); notify('success', 'Stock increased (+1)'); };
 }}>
-    <button id="incStockBtn" type="submit"></button>
+    <button id="incStockBtn" aria-label="Increase Stock" type="submit"></button>
 </form>
 <form id="decStockForm" method="POST" action="?/decStock" style="display: none;" use:enhance={() => {
     if (item.amount !== null && item.amount > 0) item.amount -= 1;
     return async ({ update }) => { await update({ reset: false }); notify('info', 'Stock decreased (-1)'); };
 }}>
-    <button id="decStockBtn" type="submit"></button>
+    <button id="decStockBtn" aria-label="Decrease Stock" type="submit"></button>
 </form>
 
 <!-- MOBILE ONLY: Compact Side-by-Side Row -->
@@ -111,11 +111,11 @@
             <div class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Stock</div>
             <div class="text-2xl font-bold leading-tight flex items-center justify-center gap-1 {item.amount === 0 ? 'opacity-50' : ''}">
                 {#if canEdit}
-                    <button class="btn btn-xs btn-ghost p-0 w-5 h-5 -ml-1 print:hidden" on:click={() => item.amount > 0 && document.getElementById('decStockBtn')?.click()} disabled={item.amount === 0}><i class="bi bi-dash"></i></button>
+                    <button class="btn btn-xs btn-ghost p-0 w-5 h-5 -ml-1 print:hidden" aria-label="Decrease Stock" on:click={() => item.amount > 0 && document.getElementById('decStockBtn')?.click()} disabled={item.amount === 0}><i class="bi bi-dash"></i></button>
                 {/if}
                 <span>{item.amount !== null ? item.amount : '-'}</span>
                 {#if canEdit}
-                    <button class="btn btn-xs btn-ghost p-0 w-5 h-5 -mr-1 print:hidden" on:click={() => document.getElementById('incStockBtn')?.click()}><i class="bi bi-plus"></i></button>
+                    <button class="btn btn-xs btn-ghost p-0 w-5 h-5 -mr-1 print:hidden" aria-label="Increase Stock" on:click={() => document.getElementById('incStockBtn')?.click()}><i class="bi bi-plus"></i></button>
                 {/if}
             </div>
             {#if item.amount === 0 && item?.inventory?.enableNotebook}
@@ -152,7 +152,7 @@
                         {@const clipPathStr = `polygon(${polyMap.map(p => `${(p[0]/10).toFixed(2)}% ${(p[1]/10).toFixed(2)}%`).join(', ')})`}
                         <div class="relative w-full h-full flex items-center justify-center overflow-hidden p-0.5">
                             <div class="relative max-w-full max-h-full flex items-center justify-center shrink-0">
-                                <img class="block max-w-full max-h-full blur-[1px] brightness-[0.75] saturate-[0.8]" src="{src}" alt="Background" on:error={(e) => { if (!(e.currentTarget).dataset.fb) { (e.currentTarget).dataset.fb = '1'; (e.currentTarget).src = loc.container.parent?.photoPath || loc.container.photoPath; } }}/>
+                                <img class="block max-w-full max-h-full blur-[1px] brightness-[0.75] saturate-[0.8]" src="{src}" alt="Background"on:error={(e) => { const target = e.currentTarget as HTMLImageElement; if (!target.dataset.fb) { target.dataset.fb = '1'; target.src = loc.container.parent?.photoPath || loc.container.photoPath; } }}/>
                                 <img class="absolute inset-0 w-full h-full object-fill drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)] z-10" style="clip-path: {clipPathStr};" src="{src}" alt="Focus" />
                                 <svg viewBox="0 0 1000 1000" preserveAspectRatio="none" class="absolute inset-0 w-full h-full pointer-events-none z-20">
                                     <polygon points={polyMap.map(p => p.join(',')).join(' ')} class="fill-transparent stroke-white/80 drop-shadow-[0_0_2px_rgba(255,255,255,0.8)]" stroke-width="12" stroke-linejoin="round" vector-effect="non-scaling-stroke" />
@@ -160,7 +160,7 @@
                             </div>
                         </div>
                     {:else if loc.container.parent?.photoPath || loc.container?.photoPath}
-                        <img class="w-full h-full object-cover" src="{src}" alt="Container thumbnail" on:error={(e) => { if (!(e.currentTarget).dataset.fb) { (e.currentTarget).dataset.fb = '1'; (e.currentTarget).src = loc.container.parent?.photoPath || loc.container.photoPath; } }}/>
+                        <img class="w-full h-full object-cover" src="{src}" alt="Container thumbnail" on:error={(e) => { const target = e.currentTarget as HTMLImageElement; if (!target.dataset.fb) { target.dataset.fb = '1'; target.src = loc.container.parent?.photoPath || loc.container.photoPath; } }}/>
                     {:else}
                         <i class="bi bi-box-seam text-2xl text-gray-400"></i>
                     {/if}
@@ -217,11 +217,11 @@
             <div class="stat-title"><span class="text-xs">Stock</span></div>
             <div class="stat-value text-secondary flex items-center gap-2 {item.amount === 0 ? 'opacity-50' : ''}">
                 {#if canEdit}
-                    <button class="btn btn-sm btn-ghost p-0 w-8 h-8 print:hidden" on:click={() => item.amount > 0 && document.getElementById('decStockBtn')?.click()} disabled={item.amount === 0}><i class="bi bi-dash"></i></button>
+                    <button class="btn btn-sm btn-ghost p-0 w-8 h-8 print:hidden" aria-label="Decrease Stock" on:click={() => item.amount > 0 && document.getElementById('decStockBtn')?.click()} disabled={item.amount === 0}><i class="bi bi-dash"></i></button>
                 {/if}
                 <span>{#if item.amount !== null}{item.amount}{:else}-{/if}</span>
                 {#if canEdit}
-                    <button class="btn btn-sm btn-ghost p-0 w-8 h-8 print:hidden" on:click={() => document.getElementById('incStockBtn')?.click()}><i class="bi bi-plus"></i></button>
+                    <button class="btn btn-sm btn-ghost p-0 w-8 h-8 print:hidden" aria-label="Increase Stock" on:click={() => document.getElementById('incStockBtn')?.click()}><i class="bi bi-plus"></i></button>
                 {/if}
             </div>
             <div class="stat-desc mt-1 h-5 print:hidden">
@@ -286,7 +286,7 @@
                     {:else if polyMap && src}
                         <SpatialDiorama imageUrl={src} polygon={polyMap} containerClass="w-full h-full" />
                     {:else if loc.container.parent?.photoPath || loc.container?.photoPath}
-                        <img class="w-full h-full object-cover" src="{src}" alt="Container thumbnail" on:error={(e) => { if (!(e.currentTarget).dataset.fb) { (e.currentTarget).dataset.fb = '1'; (e.currentTarget).src = loc.container.parent?.photoPath || loc.container.photoPath; } }}/>
+                        <img class="w-full h-full object-cover" src="{src}" alt="Container thumbnail" on:error={(e) => { const target = e.currentTarget as HTMLImageElement; if (!target.dataset.fb) { target.dataset.fb = '1'; target.src = loc.container.parent?.photoPath || loc.container.photoPath; } }}/>
                     {:else}
                         <div class="w-full h-full flex items-center justify-center"><i class="bi bi-box-seam text-4xl text-gray-400"></i></div>
                     {/if}
@@ -377,7 +377,7 @@
 <Modal bind:this={mapModal} title="" position="bottom" boxClass="p-0 overflow-hidden bg-base-100 shadow-2xl sm:rounded-[2.5rem] border border-base-200">
     {#if activeMapLoc}
         <div class="absolute top-4 right-4 z-50">
-             <button class="btn btn-sm btn-circle btn-ghost bg-base-100/50 backdrop-blur-md border border-base-200 shadow-sm text-base-content hover:bg-base-200" on:click={() => mapModal.close()}><i class="bi bi-x-lg"></i></button>
+             <button aria-label="Close" class="btn btn-sm btn-circle btn-ghost bg-base-100/50 backdrop-blur-md border border-base-200 shadow-sm text-base-content hover:bg-base-200" on:click={() => mapModal.close()}><i class="bi bi-x-lg"></i></button>
         </div>
         <div class="relative w-full aspect-square sm:aspect-video max-h-[65vh] bg-base-300 flex items-center justify-center border-b border-base-200 overflow-hidden">
             {#if activeMapLoc.container.parent?.photoPath || activeMapLoc.container?.photoPath}

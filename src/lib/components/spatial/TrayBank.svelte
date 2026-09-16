@@ -16,6 +16,7 @@
     
     <div class="flex overflow-x-auto gap-2 pb-2 hide-scrollbar snap-x">
         {#each entities as entity (entity.type + entity.id)}
+            <!-- svelte-ignore a11y_no_static_element_interactions -->
             <div 
                 draggable="true"
                 on:dragstart={(e) => handleDragStart(e, entity)}

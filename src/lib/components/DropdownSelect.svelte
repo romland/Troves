@@ -15,6 +15,7 @@
     export let name: string = "";
     export let formAction: string = "";
     export let reload: boolean = false;
+    $: _unused = reload;
 
     function handleSelect(optValue: string | number, e: MouseEvent) {
         value = optValue;

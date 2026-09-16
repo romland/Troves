@@ -259,7 +259,7 @@
             <div class="form-control mb-3">
                 <div class="input input-bordered flex items-center gap-2 rounded-xl shadow-sm">
                     <i class="bi bi-search text-gray-400"></i>
-                    <input type="text" bind:this={searchInput} autofocus bind:value={searchQuery} placeholder="Search containers..." class="grow bg-transparent border-none focus:outline-none" />
+                    <input type="text" bind:this={searchInput} bind:value={searchQuery} placeholder="Search containers..." class="grow bg-transparent border-none focus:outline-none" />
                 </div>
             </div>
 

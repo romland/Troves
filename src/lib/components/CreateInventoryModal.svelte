@@ -49,7 +49,7 @@
 			<p class="text-xs text-gray-500 mt-1">Select an archetype to automatically configure optimal system defaults.</p>
             <p class="text-xs font-bold text-warning mt-1">⚠️ Important: Archetype and the "what will be in it" choice fundamentally changes how we extract data and which tools are active. Choose with care!</p>
 		</div>
-		<button type="button" class="btn btn-sm btn-circle btn-ghost" on:click={() => modal.close()}><i class="bi bi-x-lg"></i></button>
+        <button type="button" aria-label="Close" class="btn btn-sm btn-circle btn-ghost" on:click={() => modal.close()}><i class="bi bi-x-lg"></i></button>
 	</div>
 	
     <form method="POST" action="/settings/troves?/createInventory" use:enhance={handleEnhance} class="flex flex-col overflow-hidden">
@@ -59,7 +59,7 @@
 			<FormInput label="What will be in it? (1-3 words)" labelClass="font-semibold text-lg" name="contentsHint" bind:value={contentsHint} placeholder="e.g. vintage stamps, lego, cables, electronics, whiskey, clothes..." required inputClass="rounded-2xl shadow-inner focus:border-primary" class="-mt-2" />
 			
 			<div>
-				<label class="label"><span class="label-text font-semibold text-lg">Select Archetype</span></label>
+                <div class="label pb-2"><span class="label-text font-semibold text-lg">Select Archetype</span></div>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
 					{#each ARCHETYPES as type}
 					<label class="cursor-pointer relative">

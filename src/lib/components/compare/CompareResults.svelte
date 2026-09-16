@@ -366,6 +366,7 @@
         {#if missing.length === 0} <CompareEmptyState type="missing" /> {:else}
             <div class="flex flex-col gap-2.5">
                 {#each missing as item}
+                    <!-- svelte-ignore a11y_no_static_element_interactions -->
                     <div id="card-{item.title.replace(/\s+/g, '-')}" class="scroll-mt-24 transition-transform {activeBoxId === item.title ? 'scale-[1.02] ring-2 ring-error rounded-2xl' : ''}" on:mouseenter={() => activeBoxId = item.title} on:mouseleave={() => activeBoxId = null}>
                         <CompareItemCard {item} type="missing" draftPath={results.draftPath}
                             on:zoom={() => item.thumbPath ? lightbox.open({ orgPath: item.thumbPath, showOriginal: true }) : lightbox.open({ orgPath: results.draftPath, thumbPath: results.draftPath, showOriginal: true, box: item.box })}
@@ -382,6 +383,7 @@
         {#if groupedUnregistered.length === 0} <CompareEmptyState type="unregistered" /> {:else}
             <div class="flex flex-col gap-2.5">
                 {#each groupedUnregistered as item}
+                    <!-- svelte-ignore a11y_no_static_element_interactions -->
                     <div id="card-{item.title.replace(/\s+/g, '-')}" class="scroll-mt-24 transition-transform {activeBoxId === item.title ? 'scale-[1.02] ring-2 ring-primary rounded-2xl' : ''}" on:mouseenter={() => activeBoxId = item.title} on:mouseleave={() => activeBoxId = null}>
                         <CompareItemCard {item} type="unregistered" draftPath={results.draftPath} 
                             on:zoom={() => lightbox.open({ orgPath: results.draftPath, thumbPath: results.draftPath, showOriginal: true, box: item.box })}
@@ -403,6 +405,7 @@
         {#if groupedElsewhere.length === 0} <CompareEmptyState type="elsewhere" /> {:else}
             <div class="flex flex-col gap-2.5">
                 {#each groupedElsewhere as item}
+                    <!-- svelte-ignore a11y_no_static_element_interactions -->
                     <div id="card-{item.title.replace(/\s+/g, '-')}" class="scroll-mt-24 transition-transform {activeBoxId === item.title ? 'scale-[1.02] ring-2 ring-warning rounded-2xl' : ''}" on:mouseenter={() => activeBoxId = item.title} on:mouseleave={() => activeBoxId = null}>
                         <CompareItemCard {item} type="elsewhere" draftPath={results.draftPath} on:zoom={() => lightbox.open({ orgPath: results.draftPath, thumbPath: results.draftPath, showOriginal: true, box: item.box })} on:zoomMatch={(e) => lightbox.open({ orgPath: e.detail.thumbPath || e.detail.orgPath, showOriginal: true })}>
                             <div slot="actions" class="flex flex-col sm:flex-row items-center gap-1">
@@ -423,6 +426,7 @@
         {#if groupedCorrect.length === 0} <CompareEmptyState type="correct" /> {:else}
             <div class="flex flex-col gap-2.5">
                 {#each groupedCorrect as item}
+                    <!-- svelte-ignore a11y_no_static_element_interactions -->
                     <div id="card-{item.title.replace(/\s+/g, '-')}" class="scroll-mt-24 transition-transform {activeBoxId === item.title ? 'scale-[1.02] ring-2 ring-success rounded-2xl' : ''}" on:mouseenter={() => activeBoxId = item.title} on:mouseleave={() => activeBoxId = null}>
                         <CompareItemCard {item} type="correct" draftPath={results.draftPath} on:zoom={() => lightbox.open({ orgPath: results.draftPath, thumbPath: results.draftPath, showOriginal: true, box: item.box })} on:zoomMatch={(e) => lightbox.open({ orgPath: e.detail.thumbPath || e.detail.orgPath, showOriginal: true })}>
                             <div slot="actions" class="flex flex-col sm:flex-row items-center gap-1">

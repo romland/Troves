@@ -113,9 +113,9 @@
                 setMode(newMode);
             }
         };
-        window.addEventListener('shortcut:addMode', handleShortcutMode as EventListener);
+        window.addEventListener('shortcut:addMode', handleShortcutMode as unknown as EventListener);
         return () => {
-            window.removeEventListener('shortcut:addMode', handleShortcutMode as EventListener);
+            window.removeEventListener('shortcut:addMode', handleShortcutMode as unknown as EventListener);
             if (wakeLock) wakeLock.release().catch(() => {});
         };
     });

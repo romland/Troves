@@ -195,7 +195,7 @@
                     formElement.reset();
                     notify('success', 'Category added.');
                 } else if (result.type === 'failure') {
-                    notify('error', result.data?.message || 'Failed to add category.');
+                    notify('error', (result.data as any)?.message || 'Failed to add category.');
                 }
             };
         }}>

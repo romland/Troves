@@ -33,7 +33,7 @@
             <span class="text-xs font-bold text-primary">{fillStatusMap[currentIndex].replace('_', ' ')}</span>
         </div>
     {:else}
-        <label class="label px-0"><span class="label-text font-bold text-xs text-gray-500 uppercase tracking-wider">Fill Status</span></label>
+        <div class="label px-0"><span class="label-text font-bold text-xs text-gray-500 uppercase tracking-wider">Fill Status</span></div>
     {/if}
     <input type="range" min="0" max="4" value={currentIndex} on:input={handleInput} on:change={handleChange} class="range range-primary range-sm" />
     <div class="w-full flex justify-between text-[9px] px-1 mt-2 text-gray-400 font-bold uppercase">

@@ -21,6 +21,7 @@
     export let containers: any[] = [];
     export let categories: any[] = [];
     export let tags: any[] = [];
+    void tags;
     const dispatch = createEventDispatcher();
     
    export async function processPastedFile(file: File) {

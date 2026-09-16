@@ -64,7 +64,7 @@ USER QUESTION: ${question}
                     const fileBuffer = fs.readFileSync(localFilePath);
                     const mimeType = getImageMimeType(localFilePath);
 
-                    answer = await analyzeImage(prompt, mimeType, fileBuffer.toString('base64'), false, undefined, 'AI Assistant Q&A', { itemId }, 'QNA');
+                    answer = await analyzeImage(prompt, mimeType, fileBuffer.toString('base64'), false, undefined, 'AI Assistant Q&A', { itemId } as any, 'QNA');
                 } catch (err) {
                     console.error("Failed to load photo for Vision Model context:", err);
                 }
@@ -73,7 +73,7 @@ USER QUESTION: ${question}
 
     try {
         if (!answer) {
-            answer = await generateText('You are a helpful assistant.', prompt, false, undefined, 'AI Assistant Q&A', { itemId }, 'QNA');
+            answer = await generateText('You are a helpful assistant.', prompt, false, undefined, 'AI Assistant Q&A', { itemId } as any, 'QNA');
         }
 
         // Save to Notebook (Document)

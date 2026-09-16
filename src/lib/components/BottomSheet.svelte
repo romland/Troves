@@ -21,7 +21,7 @@
                     </p>
                 {/if}
             </div>
-            <button type="button" class="btn btn-sm btn-circle btn-ghost shrink-0" on:click={close}><i class="bi bi-x-lg"></i></button>
+            <button type="button" class="btn btn-sm btn-circle btn-ghost shrink-0" aria-label="Close" on:click={close}><i class="bi bi-x-lg"></i></button>
         </div>
         
         <div class="overflow-y-auto p-4 sm:p-6 flex flex-col gap-4 bg-base-50">

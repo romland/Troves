@@ -63,19 +63,19 @@
                                         <input type="hidden" name="id" value={u.id}>
                                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                                             <div class="form-control">
-                                                <label class="label"><span class="label-text">Name</span></label>
+                                                <div class="label"><span class="label-text">Name</span></div>
                                                 <input type="text" name="name" value={u.name || ''} class="input input-sm input-bordered bg-base-100" />
                                             </div>
                                             <div class="form-control">
-                                                <label class="label"><span class="label-text">Email</span></label>
+                                                <div class="label"><span class="label-text">Email</span></div>
                                                 <input type="email" name="email" value={u.email || ''} class="input input-sm input-bordered bg-base-100" />
                                             </div>
                                             <div class="form-control">
-                                                <label class="label"><span class="label-text">New Password</span></label>
+                                                <div class="label"><span class="label-text">New Password</span></div>
                                                 <input type="password" name="password" class="input input-sm input-bordered bg-base-100" placeholder="Leave blank to keep" />
                                             </div>
                                             <div class="form-control">
-                                                <label class="label"><span class="label-text">Repeat Password</span></label>
+                                                <div class="label"><span class="label-text">Repeat Password</span></div>
                                                 <input type="password" name="passwordConfirm" class="input input-sm input-bordered bg-base-100" placeholder="Leave blank to keep" />
                                             </div>
                                             <div class="form-control justify-end pb-1">

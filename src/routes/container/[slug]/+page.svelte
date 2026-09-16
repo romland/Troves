@@ -435,7 +435,7 @@
                                     <ul tabindex="0" class="dropdown-content z-50 p-2 shadow-2xl bg-base-100/95 backdrop-blur-xl border border-base-200 rounded-2xl w-64 mt-2 gap-1 menu">
                                         <li class="menu-title text-[10px] font-bold uppercase tracking-wider text-gray-400 pb-1">Automations</li>
                                         <li>
-                                            <button class="font-medium text-base-content hover:text-primary" on:click={triggerDeepScan} disabled={isDeepScanning}>
+                                            <button class="font-medium text-base-content hover:text-primary" on:click={() => triggerDeepScan()} disabled={isDeepScanning}>
                                                 {#if isDeepScanning}<span class="loading loading-spinner loading-xs"></span>{:else}<i class="bi bi-stars text-primary text-lg opacity-80"></i> Auto-Detect Contents{/if}
                                             </button>
                                         </li>
@@ -447,12 +447,12 @@
                                         <div class="divider my-0 h-[1px] bg-base-200"></div>
                                         <li class="menu-title text-[10px] font-bold uppercase tracking-wider text-gray-400 pb-1 pt-2">Display & Map</li>
                                         <li>
-                                            <button class="font-medium text-base-content" on:click={() => { spatialMapRef?.enterWarpMode(); (document.activeElement)?.blur(); }}>
+                                            <button class="font-medium text-base-content" on:click={() => { spatialMapRef?.enterWarpMode(); (document.activeElement as HTMLElement)?.blur(); }}>
                                                 <i class="bi bi-grid-3x3 text-lg opacity-70"></i> Adjust Grid Alignment
                                             </button>
                                         </li>
                                         <li>
-                                            <button class="font-medium text-base-content flex justify-between w-full" on:click={() => { labelTargeterModal.showModal(); (document.activeElement)?.blur(); }}>
+                                            <button class="font-medium text-base-content flex justify-between w-full" on:click={() => { labelTargeterModal.showModal(); (document.activeElement as HTMLElement)?.blur(); }}>
                                                 <span class="flex items-center gap-2"><i class="bi bi-upc-scan text-lg opacity-70"></i> Targeting</span>
                                                 <span class="text-[10px] uppercase font-bold text-gray-500 bg-base-200/50 border border-base-300 px-2 py-0.5 rounded-md">{labelPositionDisplay}</span>
                                             </button>
@@ -589,7 +589,7 @@
                         <span class="text-warning font-bold">{auditData.slots.filter(s => s.status === 'ANOMALY').length} Anomalies</span>
                     </p>
                 </div>
-                <button class="btn btn-sm btn-ghost btn-circle" on:click={() => auditModal.close()}><i class="bi bi-x-lg text-lg"></i></button>
+                <button aria-label="Close" class="btn btn-sm btn-ghost btn-circle" on:click={() => auditModal.close()}><i class="bi bi-x-lg text-lg"></i></button>
             </div>
             
             {#if auditData.totalVisibleCount - auditData.slots.length > 0}

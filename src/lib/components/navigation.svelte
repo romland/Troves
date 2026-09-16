@@ -8,6 +8,7 @@
     
     export let prevPage: number;
     export let nextPage: number;
+    void prevPage;
     export let href: string;
     
     let loadedPages: any[] = [];

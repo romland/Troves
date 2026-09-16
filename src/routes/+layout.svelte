@@ -301,7 +301,7 @@
         if (navigation.from?.url.pathname === navigation.to?.url.pathname) return;
         
         // Determine if we're programmatically going backwards
-        if (typeof navigation.delta === 'number' && navigation.delta < 0) {
+        if (typeof (navigation as any).delta === 'number' && (navigation as any).delta < 0) {
             document.documentElement.classList.add('back-transition');
         } else {
             document.documentElement.classList.remove('back-transition');

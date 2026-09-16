@@ -843,7 +843,7 @@
                 {:else if docType === 'markdown'}
                     <div bind:this={markdownContainerRef} class="w-full h-full overflow-y-auto p-6 sm:p-10 relative z-10 bg-base-100 text-base-content transition-all duration-300"
                          style={invertIframe ? "filter: invert(1) hue-rotate(180deg);" : ""}
-                         on:click={(e) => { if(e.target.tagName !== 'A') toggleMenu(); }} role="presentation"
+                         on:click={(e) => { if((e.target as HTMLElement).tagName !== 'A') toggleMenu(); }} role="presentation"
                          on:scroll={() => {
                              if (!markdownContainerRef || returnToPosition) return;
                              clearTimeout(mdScrollTimeout);
@@ -912,9 +912,9 @@
                 <div class="flex flex-col gap-2">
                     <div class="text-xs font-bold uppercase tracking-wider text-gray-500 px-1">Font Size</div>
                     <div class="flex items-center gap-3 bg-base-200 p-2 rounded-xl">
-                        <button class="btn btn-circle btn-sm btn-ghost" on:click={() => changeFontSize(-10)}><i class="bi bi-dash text-lg"></i></button>
+                        <button class="btn btn-circle btn-sm btn-ghost" aria-label="Decrease Font Size" on:click={() => changeFontSize(-10)}><i class="bi bi-dash text-lg"></i></button>
                         <div class="flex-1 text-center font-mono font-bold text-sm">{fontSize}%</div>
-                        <button class="btn btn-circle btn-sm btn-ghost" on:click={() => changeFontSize(10)}><i class="bi bi-plus text-lg"></i></button>
+                        <button class="btn btn-circle btn-sm btn-ghost" aria-label="Increase Font Size" on:click={() => changeFontSize(10)}><i class="bi bi-plus text-lg"></i></button>
                     </div>
                 </div>
                 
@@ -929,18 +929,18 @@
                 <div class="flex flex-col gap-2">
                     <div class="text-xs font-bold uppercase tracking-wider text-gray-500 px-1">Spacing</div>
                     <div class="grid grid-cols-3 gap-2">
-                        <button class="btn border-base-300 bg-base-200 {lineHeight === 1.2 ? 'border-primary text-primary bg-primary/10' : ''}" on:click={() => changeLineHeight(1.2)}><i class="bi bi-list text-lg"></i></button>
-                        <button class="btn border-base-300 bg-base-200 {lineHeight === 1.6 ? 'border-primary text-primary bg-primary/10' : ''}" on:click={() => changeLineHeight(1.6)}><i class="bi bi-distribute-vertical text-lg"></i></button>
-                        <button class="btn border-base-300 bg-base-200 {lineHeight === 2.0 ? 'border-primary text-primary bg-primary/10' : ''}" on:click={() => changeLineHeight(2.0)}><i class="bi bi-arrows-expand text-lg"></i></button>
+                        <button class="btn border-base-300 bg-base-200 {lineHeight === 1.2 ? 'border-primary text-primary bg-primary/10' : ''}" aria-label="Line Height 1.2" on:click={() => changeLineHeight(1.2)}><i class="bi bi-list text-lg"></i></button>
+                        <button class="btn border-base-300 bg-base-200 {lineHeight === 1.6 ? 'border-primary text-primary bg-primary/10' : ''}" aria-label="Line Height 1.6" on:click={() => changeLineHeight(1.6)}><i class="bi bi-distribute-vertical text-lg"></i></button>
+                        <button class="btn border-base-300 bg-base-200 {lineHeight === 2.0 ? 'border-primary text-primary bg-primary/10' : ''}" aria-label="Line Height 2.0" on:click={() => changeLineHeight(2.0)}><i class="bi bi-arrows-expand text-lg"></i></button>
                     </div>
                 </div>
 
                 <div class="flex flex-col gap-2">
                     <div class="text-xs font-bold uppercase tracking-wider text-gray-500 px-1">Margins</div>
                     <div class="grid grid-cols-3 gap-2">
-                        <button class="btn border-base-300 bg-base-200 {pageMargin === 4 ? 'border-primary text-primary bg-primary/10' : ''}" on:click={() => changeMargin(4)}><i class="bi bi-arrows-collapse text-lg"></i></button>
-                        <button class="btn border-base-300 bg-base-200 {pageMargin === 16 ? 'border-primary text-primary bg-primary/10' : ''}" on:click={() => changeMargin(16)}><i class="bi bi-distribute-horizontal text-lg"></i></button>
-                        <button class="btn border-base-300 bg-base-200 {pageMargin === 32 ? 'border-primary text-primary bg-primary/10' : ''}" on:click={() => changeMargin(32)}><i class="bi bi-arrows-expand text-lg" style="transform: rotate(90deg)"></i></button>
+                        <button class="btn border-base-300 bg-base-200 {pageMargin === 4 ? 'border-primary text-primary bg-primary/10' : ''}" aria-label="Margin 4" on:click={() => changeMargin(4)}><i class="bi bi-arrows-collapse text-lg"></i></button>
+                        <button class="btn border-base-300 bg-base-200 {pageMargin === 16 ? 'border-primary text-primary bg-primary/10' : ''}" aria-label="Margin 16" on:click={() => changeMargin(16)}><i class="bi bi-distribute-horizontal text-lg"></i></button>
+                        <button class="btn border-base-300 bg-base-200 {pageMargin === 32 ? 'border-primary text-primary bg-primary/10' : ''}" aria-label="Margin 32" on:click={() => changeMargin(32)}><i class="bi bi-arrows-expand text-lg" style="transform: rotate(90deg)"></i></button>
                     </div>
                 </div>
 

@@ -121,7 +121,7 @@
     <div class="flex flex-col gap-4 {mode === 'edit' ? 'overflow-y-auto max-h-[50vh] pr-2' : ''}">
         {#each requiredFields as field}
             <div class="form-control w-full">
-                <label class="label pb-1"><span class="label-text font-semibold">{field.uiLabel}</span></label>
+                <div class="label pb-1"><span class="label-text font-semibold">{field.uiLabel}</span></div>
                 
                 {#if field.type === 'enum' && field.options}
                 {@const processedOptions = getProcessedOptions(field.options, field.name)}
@@ -162,7 +162,7 @@
                         {#if customInputs[field.name]}
                             <input type="text" placeholder="Add new..." class="input input-bordered input-sm rounded-lg w-28" 
                                 on:keydown={(e) => { if(e.key === 'Enter') { setEnum(field.name, e.currentTarget.value); customInputs[field.name] = false; } }} 
-                                on:blur={(e) => { if(e.currentTarget.value) setEnum(field.name, e.currentTarget.value); customInputs[field.name] = false; }} autofocus />
+                                on:blur={(e) => { if(e.currentTarget.value) setEnum(field.name, e.currentTarget.value); customInputs[field.name] = false; }} />
                         {:else}
                             <button type="button" class="badge badge-lg badge-outline border-dashed hover:border-primary py-4 px-4 transition-all text-gray-500" on:click={() => customInputs[field.name] = true}>+ Custom</button>
                         {/if}

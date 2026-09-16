@@ -117,7 +117,7 @@
                     <div class="flex items-center p-2 sm:p-3 bg-base-100 border border-base-200 shadow-sm rounded-xl gap-3 transition-all {deletedImageIds.includes(photo.id) ? 'opacity-50 grayscale scale-[0.98]' : ''}">
                         <div class="w-12 h-12 sm:w-16 sm:h-16 shrink-0 rounded-lg overflow-hidden border border-base-200 bg-base-50 flex items-center justify-center">
                             {#if photo.thumbPath || photo.orgPath}
-                                <img src={photo.thumbPath || photo.orgPath} alt="Item photo" class="w-full h-full object-cover" />
+                                <img src={photo.thumbPath || photo.orgPath} alt="Item" class="w-full h-full object-cover" />
                             {:else}
                                 <i class="bi bi-image text-2xl text-gray-400"></i>
                             {/if}

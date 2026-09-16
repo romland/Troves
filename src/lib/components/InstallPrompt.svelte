@@ -51,7 +51,7 @@
     <div class="bg-base-100/80 backdrop-blur-3xl border border-base-200 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.3)] rounded-3xl p-4 flex gap-4 items-center pointer-events-auto relative overflow-hidden ring-1 ring-white/10">
         <div class="absolute -top-10 -right-10 w-32 h-32 bg-primary/20 rounded-full blur-3xl pointer-events-none"></div>
         <div class="w-12 h-12 bg-base-100 rounded-2xl flex items-center justify-center shrink-0 shadow-sm border border-base-200/50 z-10">
-            <img src="/troves512.webp" alt="Troves" class="w-8 h-8 rounded-lg" on:error={(e) => e.currentTarget.style.display='none'}/>
+            <img src="/troves512.webp" alt="Troves" class="w-8 h-8 rounded-lg" on:error={(e) => (e.currentTarget as HTMLElement).style.display='none'}/>
         </div>
         <div class="flex-1 z-10">
             <h3 class="text-sm font-bold text-base-content leading-tight tracking-tight">Install Troves</h3>

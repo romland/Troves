@@ -480,7 +480,7 @@
         <p class="py-4 text-sm text-gray-600 mt-[-10px]">You are about to permanently delete <strong>{selectedIds.length}</strong> items. This action cannot be undone and will destroy all associated photos, documents, and data.</p>
         <div class="modal-action">
             <button type="button" class="btn btn-ghost" on:click={() => bulkDeleteModal.close()}>Cancel</button>
-            <button type="button" class="btn btn-error" on:click={() => { bulkDeleteModal.close(); document.getElementById('bulkEditForm')?.requestSubmit(); }}>Delete Forever</button>
+            <button type="button" class="btn btn-error" on:click={() => { bulkDeleteModal.close(); (document.getElementById('bulkEditForm') as HTMLFormElement)?.requestSubmit(); }}>Delete Forever</button>
         </div>
     </Modal>
 

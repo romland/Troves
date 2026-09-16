@@ -79,7 +79,7 @@
     function submitForm(formData: FormData, cancelSubmit: () => void) {
         cancelSubmit(); // Always cancel default Sveltekit behavior
         const hasPasted = Array.from(formData.keys()).some(k => k.startsWith('pasted_') || k.startsWith('preprocessed_'));
-        const hasFiles = Array.from(formData.values()).some(v => (v instanceof File || v instanceof Blob) && v.size > 0);
+        const hasFiles = Array.from(formData.values()).some(v => ((v as any) instanceof File || (v as any) instanceof Blob) && (v as any).size > 0);
         
         if (!content.trim() && !hasFiles && !hasPasted) return;
         if (isUploading) return;
@@ -160,7 +160,7 @@
                 on:keydown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault();
-                        e.currentTarget.form?.requestSubmit();
+                        (e.currentTarget as HTMLTextAreaElement).form?.requestSubmit();
                     }
                 }}
         >

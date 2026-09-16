@@ -249,12 +249,12 @@
             </div>
             
             <div class="form-control w-full">
-                <label class="label"><span class="label-text font-semibold">Display Name</span></label>
+                <div class="label"><span class="label-text font-semibold">Display Name</span></div>
                 <input type="text" name="name" value={$page.data.user?.name || ''} class="input input-bordered w-full bg-base-100" />
             </div>
             
             <div class="form-control w-full">
-                <label class="label"><span class="label-text font-semibold">Email Address</span></label>
+                <div class="label"><span class="label-text font-semibold">Email Address</span></div>
                 <input type="email" name="email" value={$page.data.user?.email || ''} class="input input-bordered w-full bg-base-100" />
             </div>
             <button type="submit" class="btn btn-primary mt-2">Save Profile</button>

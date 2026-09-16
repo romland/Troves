@@ -157,6 +157,7 @@
             </div>
             
             {#if i < segments.length - 1}
+                <!-- svelte-ignore a11y_no_static_element_interactions -->
                 <div class="w-8 -ml-4 -mr-4 h-full relative z-10 flex items-center justify-center cursor-col-resize group touch-none"
                      on:pointerdown={(e) => startDrag(e, i)}>
                     <div class="w-1.5 h-6 bg-white/50 group-hover:bg-white group-active:bg-white rounded-full shadow-sm transition-colors"></div>

@@ -55,7 +55,7 @@
             {#if photo.orgPath.match(/\.(mp4|webm|mov|ogg|mkv)$/i)}
                 <video class="object-cover w-12 h-12 bg-black rounded relative z-10" src="{photo.orgPath}#t=0.1" muted playsinline></video>
             {:else}
-                <img class="object-scale-down w-12 h-12 bg-transparent relative z-10" src="{(photo.showOriginal ? photo.orgPath?.replace(/\.[^/.]+(?=\?|$)/, '_org_thumb.webp') : photo.thumbPath)}{photo.updatedAt ? '?v=' + new Date(photo.updatedAt).getTime() : ''}" on:error={(e) => { if (!(e.currentTarget).dataset.fb) { (e.currentTarget).dataset.fb = '1'; (e.currentTarget).src = photo.thumbPath || photo.orgPath || ''; } }} alt="Thumbnail {i + 1}"/>
+                <img class="object-scale-down w-12 h-12 bg-transparent relative z-10" src="{(photo.showOriginal ? photo.orgPath?.replace(/\.[^/.]+(?=\?|$)/, '_org_thumb.webp') : photo.thumbPath)}{photo.updatedAt ? '?v=' + new Date(photo.updatedAt).getTime() : ''}" on:error={(e) => { const target = e.currentTarget as HTMLImageElement; if (!target.dataset.fb) { target.dataset.fb = '1'; target.src = photo.thumbPath || photo.orgPath || ''; } }} alt="Thumbnail {i + 1}"/>
             {/if}
         </button>
     {/each}

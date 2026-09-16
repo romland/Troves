@@ -187,6 +187,7 @@
                 <span class="hidden sm:inline"></span> {activeSortLabel}
                 <i class="bi bi-chevron-down text-[10px] opacity-50 ml-0.5"></i>
             </button>
+            <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
             <ul tabindex="0" class="dropdown-content z-[100] menu p-2 shadow-2xl bg-base-100 rounded-xl w-56 border border-base-200 mt-2 gap-1">
                 {#each sortOptions as opt}
                     <li>

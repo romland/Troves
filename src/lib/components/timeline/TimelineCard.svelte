@@ -99,10 +99,10 @@
                     name="content" 
                     bind:value={editContent} 
                     inputClass="text-sm leading-snug resize-none min-h-[4rem] max-h-[18rem] [field-sizing:content]" 
-                    on:input={(e) => { e.currentTarget.style.height = 'auto'; e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px'; }}
+                    on:input={(e) => { const target = e.currentTarget as HTMLTextAreaElement; target.style.height = 'auto'; target.style.height = target.scrollHeight + 'px';}}
                     on:keydown={(e) => {
                         if (e.key === 'Escape') isEditing = false;
-                        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); }
+                        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); (e.currentTarget as HTMLTextAreaElement).form?.requestSubmit(); }
                     }}
                 />
                 <div class="flex justify-end gap-2 mt-2">

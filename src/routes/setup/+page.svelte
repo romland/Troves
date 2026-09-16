@@ -132,7 +132,7 @@
                             };
                         }}>
                             <div class="form-control w-full mb-3">
-                                    <label class="label pb-2"><span class="label-text font-bold uppercase tracking-wider text-[10px] text-base-content/40">Database File (.db / .sqlite)</span></label>
+                                    <div class="label pb-2"><span class="label-text font-bold uppercase tracking-wider text-[10px] text-base-content/40">Database File (.db / .sqlite)</span></div>
                                     <input type="file" name="backup" accept=".db,.sqlite" class="file-input file-input-bordered file-input-md w-full bg-base-200/40 shadow-inner" required />
                             </div>
                             <button type="submit" class="btn btn-neutral w-full rounded-xl shadow-sm h-12 transition-all active:scale-[0.98]" disabled={isRestoring || isSubmitting}>
