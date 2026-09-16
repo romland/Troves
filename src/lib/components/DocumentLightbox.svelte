@@ -749,7 +749,7 @@
             <div class="flex-1 min-w-0 px-3 flex flex-col items-center justify-center">
                 <h2 class="font-bold text-sm tracking-tight truncate w-full text-center">{doc?.title || 'Document'}</h2>
                 {#if returnToPosition}
-                    <button type="button" class="badge badge-primary badge-sm font-bold shadow-sm mt-1 animate-fade-in hover:scale-105 transition-transform cursor-pointer border-none" on:click|stopPropagation={resumeReading}>
+                    <button type="button" class="badge badge-primary badge-sm font-bold shadow-sm mt-1 animate-fade-in hover:scale-105 cursor-pointer border-none" on:click|stopPropagation={resumeReading}>
                         <i class="bi bi-arrow-return-left mr-1"></i> {returnToLabel}
                     </button>
                 {/if}

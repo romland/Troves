@@ -144,7 +144,7 @@
                 
                 {#if activeIdx === i}
                     <div class="absolute inset-0 bg-black/40 flex items-center justify-center animate-fade-in">
-                        <button type="button" class="bg-white/90 hover:bg-white text-black w-8 h-8 rounded-full shadow-lg flex items-center justify-center active:scale-90 transition-transform" 
+                        <button type="button" class="bg-white/90 hover:bg-white text-black w-8 h-8 rounded-full shadow-lg flex items-center justify-center" 
                                 on:click|stopPropagation={() => removeColor(i)} aria-label="Remove color">
                             <i class="bi bi-x-lg text-lg leading-none"></i>
                         </button>
@@ -170,7 +170,7 @@
         <!-- Full-width scrolling pucks -->
         <div class="flex gap-2 overflow-x-auto hide-scrollbar pb-2 px-1 w-full after:content-[''] after:w-2 after:shrink-0">
             {#each Object.keys(BASE_COLORS_RGB) as colorName}
-                    <button type="button" class="w-8 h-8 shrink-0 rounded-full shadow-sm border-2 transition-transform active:scale-90 {segments.some(s => s.name.toLowerCase() === colorName.toLowerCase()) ? 'border-primary ring-2 ring-primary/30 opacity-50' : 'border-base-200 hover:border-base-300'}"
+                    <button type="button" class="w-8 h-8 shrink-0 rounded-full shadow-sm border-2 {segments.some(s => s.name.toLowerCase() === colorName.toLowerCase()) ? 'border-primary ring-2 ring-primary/30 opacity-50' : 'border-base-200 hover:border-base-300'}"
                         style="background-color: #{BASE_COLORS_RGB[colorName].map(x => x.toString(16).padStart(2, '0')).join('')}"
                         on:click={() => addColor(colorName)} aria-label="Add {colorName}"></button>
             {/each}

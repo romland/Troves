@@ -247,7 +247,7 @@ on:processingComplete={(ev) => {
             </div>
 
             <div class="flex flex-col w-full gap-4">
-                <button type="button" class="btn btn-secondary btn-lg w-full rounded-2xl shadow-xl text-lg h-16 active:scale-95 transition-transform" disabled={isRapidSaving} on:click={() => rapidFileInput.click()}>
+                <button type="button" class="btn btn-secondary btn-lg w-full rounded-2xl shadow-xl text-lg h-16" disabled={isRapidSaving} on:click={() => rapidFileInput.click()}>
                     <i class="bi bi-camera-fill text-2xl mr-2"></i> {#if rapidScanCount > 0}Scan Next Item{:else}Start Scanning{/if}
                 </button>
                 {#if rapidScanCount > 0}

@@ -135,10 +135,10 @@
             </div>
         {:else}
             <div class="flex gap-3 w-full">
-                <button type="button" class="btn btn-primary flex-1 shadow-lg rounded-2xl active:scale-95 transition-transform" on:click={() => fileInputCamera.click()}>
+                <button type="button" class="btn btn-primary flex-1 shadow-lg rounded-2xl" on:click={() => fileInputCamera.click()}>
                     <i class="bi bi-camera text-xl"></i> Snap Photo
                 </button>
-                <button type="button" class="btn btn-secondary flex-1 shadow-lg rounded-2xl active:scale-95 transition-transform" on:click={() => fileInputGallery.click()}>
+                <button type="button" class="btn btn-secondary flex-1 shadow-lg rounded-2xl" on:click={() => fileInputGallery.click()}>
                     <i class="bi bi-images text-xl"></i> Gallery
                 </button>
             </div>

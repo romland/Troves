@@ -8,7 +8,7 @@
 
 <div class="relative overflow-visible p-2 {containerClass}" style="perspective: 1200px;">
     <!-- 3D Stage with Subpixel Anti-Aliasing to prevent WebKit rasterization blur -->
-    <div class="relative w-full h-full transform-3d rounded-2xl bg-base-300/40 border border-white/10 shadow-2xl transition-transform duration-500 ease-out hover:rotate-x-6 hover:-rotate-y-6" style="transform-style: preserve-3d; transform: rotateX(14deg) rotateY(-16deg);">
+    <div class="relative w-full h-full transform-3d rounded-2xl bg-base-300/40 border border-white/10 shadow-2xl duration-500 ease-out hover:rotate-x-6 hover:-rotate-y-6" style="transform-style: preserve-3d; transform: rotateX(14deg) rotateY(-16deg);">
         
         <!-- Ambient Top-Light Gradient Overlay -->
         <div class="absolute inset-0 rounded-2xl bg-gradient-to-b from-white/10 via-transparent to-black/40 z-10 pointer-events-none" style="transform: translateZ(0px);"></div>

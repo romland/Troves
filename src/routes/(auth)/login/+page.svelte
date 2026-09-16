@@ -56,7 +56,7 @@
                 
                 <FormInput autocomplete="current-password" icon="bi-lock" inputClass="bg-base-200/40 focus:bg-base-100 shadow-inner backdrop-blur-md text-base" name="password" placeholder="Password" required type="password" class="mb-2"/>
 
-                <button type="submit" class="btn btn-primary w-full rounded-xl shadow-lg shadow-primary/20 text-base h-12 mt-2 transition-all active:scale-[0.98]" disabled={isLoggingIn}>
+                <button type="submit" class="btn btn-primary w-full rounded-xl shadow-lg shadow-primary/20 text-base h-12 mt-2 transition-all" disabled={isLoggingIn}>
                     {#if isLoggingIn}
                         <span class="loading loading-spinner loading-sm"></span>
                     {/if}

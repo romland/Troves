@@ -279,8 +279,8 @@
                 </div>
             {:else}
                 <div class="flex gap-3 w-full max-w-sm justify-center">
-                    <button type="button" class="btn btn-primary flex-1 shadow-lg rounded-2xl active:scale-95 transition-transform" on:click={() => fileInputCamera.click()}><i class="bi bi-camera text-xl"></i> Camera</button>
-                    <button type="button" class="btn btn-secondary flex-1 shadow-lg rounded-2xl active:scale-95 transition-transform" on:click={() => fileInputGallery.click()}><i class="bi bi-images text-xl"></i> Gallery</button>
+                    <button type="button" class="btn btn-primary flex-1 shadow-lg rounded-2xl" on:click={() => fileInputCamera.click()}><i class="bi bi-camera text-xl"></i> Camera</button>
+                    <button type="button" class="btn btn-secondary flex-1 shadow-lg rounded-2xl" on:click={() => fileInputGallery.click()}><i class="bi bi-images text-xl"></i> Gallery</button>
                 </div>
             {/if}
             <input type="file" bind:this={fileInputCamera} accept="image/*" capture="environment" class="hidden" on:change={handleFileSelect} />
@@ -306,12 +306,12 @@
                 {#if items.some(isCompletelyUnknown)}
                     {@const unknownItems = items.filter(isCompletelyUnknown)}
                     {@const allOut = unknownItems.every(i => i.optedOut)}
-                    <button type="button" class="badge {allOut ? 'badge-success text-white border-transparent' : 'badge-warning'} gap-1 p-3 cursor-pointer whitespace-nowrap active:scale-95 transition-transform font-medium" on:click={toggleUnknowns}>
+                    <button type="button" class="badge {allOut ? 'badge-success text-white border-transparent' : 'badge-warning'} gap-1 p-3 cursor-pointer whitespace-nowrap font-medium" on:click={toggleUnknowns}>
                         <i class="bi {allOut ? 'bi-arrow-counterclockwise' : 'bi-question-circle'}"></i> Unknown ({unknownItems.length})
                     </button>
                 {/if}
                 {#if items.some(i => i.isDuplicate && !i.optedOut)}
-                    <button type="button" class="badge badge-error badge-outline gap-1 p-3 cursor-pointer whitespace-nowrap active:scale-95 transition-transform font-medium" on:click={() => {
+                    <button type="button" class="badge badge-error badge-outline gap-1 p-3 cursor-pointer whitespace-nowrap font-medium" on:click={() => {
                         items = items.map(i => i.isDuplicate ? { ...i, optedOut: true, resolution: 'ignore' } : i);
                     }}>
                         <i class="bi bi-trash3"></i> Trash All Duplicates
@@ -320,7 +320,7 @@
                 {#each presentCategories as cat}
                     {@const catItems = items.filter(i => (i.category || 'unknown') === cat)}
                     {@const allOut = catItems.every(i => i.optedOut)}
-                    <button type="button" class="badge {allOut ? 'badge-success text-white border-transparent' : 'badge-outline bg-base-100 hover:bg-error/10 hover:text-error hover:border-error/50'} gap-1 p-3 cursor-pointer whitespace-nowrap active:scale-95 transition-transform font-medium" on:click={() => toggleCategory(cat)}>
+                    <button type="button" class="badge {allOut ? 'badge-success text-white border-transparent' : 'badge-outline bg-base-100 hover:bg-error/10 hover:text-error hover:border-error/50'} gap-1 p-3 cursor-pointer whitespace-nowrap font-medium" on:click={() => toggleCategory(cat)}>
                         <i class="bi {allOut ? 'bi-arrow-counterclockwise' : 'bi-trash3'}"></i> All {pluralize(cat)} ({catItems.length})
                     </button>
                 {/each}
@@ -356,7 +356,7 @@
                         </div>
 
                         <!-- svelte-ignore a11y_click_events_have_key_events -->
-                        <div class="group flex items-center gap-4 bg-base-100 shadow-sm border border-base-200 p-3 rounded-2xl w-full select-none relative z-10 {item.optedOut ? 'opacity-40 grayscale' : 'hover:border-primary/30 active:scale-[0.98]'}"
+                        <div class="group flex items-center gap-4 bg-base-100 shadow-sm border border-base-200 p-3 rounded-2xl w-full select-none relative z-10 {item.optedOut ? 'opacity-40 grayscale' : 'hover:border-primary/30'}"
                             style="transform: translate3d({item.swipeOffset}px, 0, 0); transition: {item.isSwiping ? 'none' : 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)'};"
                             on:click={() => { 
                                 if (Math.abs(item.swipeOffset) > 5) return;
@@ -450,7 +450,7 @@
         </div>
 
         <div class="p-4 bg-base-100 border border-base-200 mt-4 rounded-2xl shadow-sm mb-8">
-            <button class="btn btn-primary btn-lg w-full max-w-md mx-auto block rounded-2xl shadow-lg active:scale-95 transition-transform" on:click={saveCollection} disabled={isSaving || activeItems.length === 0}>
+            <button class="btn btn-primary btn-lg w-full max-w-md mx-auto block rounded-2xl shadow-lg" on:click={saveCollection} disabled={isSaving || activeItems.length === 0}>
                 {#if isSaving}
                     <span class="loading loading-spinner"></span> Saving...
                 {:else}

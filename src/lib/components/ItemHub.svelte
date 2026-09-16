@@ -380,7 +380,7 @@
         <!-- HERO CAMERA BUTTON (Pure 1-Tap Capture) -->
         <div class="flex justify-center items-center gap-4 mb-4 relative">
             <!-- Gallery Button -->
-            <button type="button" class="btn btn-secondary btn-circle h-14 w-14 shadow-lg hover:scale-105 active:scale-95 transition-transform p-0 bg-base-100 text-base-content border-base-200" aria-label="Add from Gallery"
+            <button type="button" class="btn btn-secondary btn-circle h-14 w-14 shadow-lg hover:scale-105 p-0 bg-base-100 text-base-content border-base-200" aria-label="Add from Gallery"
                 on:click={() => {
                     const fileInputs = document.querySelectorAll('input[type="file"][name^="file."]');
                     const fileInput = fileInputs[fileInputs.length - 1] as HTMLInputElement;
@@ -401,7 +401,7 @@
                     <div class="absolute w-28 h-28 rounded-full bg-primary/40 animate-ping pointer-events-none" style="animation-duration: 3s;"></div>
                 {/if}
 
-                <button type="button" class="btn btn-primary btn-circle relative h-28 w-28 shadow-2xl shadow-primary/40 hover:scale-105 active:scale-95 transition-all duration-300 overflow-hidden p-0 z-10 border-4 border-base-100 group" aria-label="Quick Take Photo"
+                <button type="button" class="btn btn-primary btn-circle relative h-28 w-28 shadow-2xl shadow-primary/40 hover:scale-105 transition-all duration-300 overflow-hidden p-0 z-10 border-4 border-base-100 group" aria-label="Quick Take Photo"
                 on:click={triggerCamera}>
                 {#if pendingPhotos.length > 0 && pendingPhotos[pendingPhotos.length - 1].isAnalyzing}
                     <div class="absolute inset-0 bg-base-100/60 backdrop-blur-sm flex items-center justify-center z-10">
@@ -414,7 +414,7 @@
                 {:else}
                     <!-- glass sheen sweep -->
                     <div class="absolute top-0 -left-[100%] w-full h-full bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-[-20deg] animate-shimmer pointer-events-none"></div>
-                    <i class="bi bi-camera text-5xl relative z-10 drop-shadow-md group-hover:scale-110 transition-transform duration-300"></i>
+                    <i class="bi bi-camera text-5xl relative z-10 drop-shadow-md group-hover:scale-110 duration-300"></i>
                 {/if}
                 </button>
                 {#if photoCount > 0}
@@ -425,7 +425,7 @@
             </div>
 
             <!-- File/Doc Button -->
-            <button type="button" class="btn btn-secondary btn-circle h-14 w-14 shadow-lg hover:scale-105 active:scale-95 transition-transform p-0 bg-base-100 text-base-content border-base-200" aria-label="Add Document"
+            <button type="button" class="btn btn-secondary btn-circle h-14 w-14 shadow-lg hover:scale-105 p-0 bg-base-100 text-base-content border-base-200" aria-label="Add Document"
                 on:click={() => {
                     const fileInputs = document.querySelectorAll('input[type="file"][name^="file."]');
                     const fileInput = fileInputs[fileInputs.length - 1] as HTMLInputElement;
@@ -507,7 +507,7 @@
                 on:click={() => activeView = 'details'}
             >
                 {#if showNudgeTip}
-                    <span role="button" tabindex="0" class="text-primary hover:scale-110 transition-transform animate-bounce cursor-pointer p-1" title="Refine with AI" 
+                    <span role="button" tabindex="0" class="text-primary hover:scale-110 animate-bounce cursor-pointer p-1" title="Refine with AI" 
                           on:click|stopPropagation={(e) => { e.preventDefault(); showNudgeTip = false; aiDialog.showModal(); }} 
                           on:keydown|stopPropagation={(e) => { if (e.key === 'Enter') { e.preventDefault(); showNudgeTip = false; aiDialog.showModal(); } }}>
                         <i class="bi bi-stars text-xl"></i>
@@ -534,7 +534,7 @@
         {/each}
 
         <div class="sticky bottom-16 left-0 w-full p-4 bg-base-100/90 backdrop-blur-md border-t border-base-200 rounded-b-xl md:rounded-b-[2rem] mt-6">
-            <button disabled={saving || !isDirty} type="submit" class="btn btn-primary btn-lg w-full max-w-lg mx-auto block rounded-xl shadow-md transition-all active:scale-95">
+            <button disabled={saving || !isDirty} type="submit" class="btn btn-primary btn-lg w-full max-w-lg mx-auto block rounded-xl shadow-md transition-all">
                 {#if saving}
                     <span class="loading loading-spinner"></span> Saving...
                 {:else}

@@ -123,7 +123,7 @@
                     <input type="hidden" name="content" value="Need to restock: {item.title}">
                     <input type="hidden" name="category" value="to buy">
                     <input type="hidden" name="linkedItemIds[]" value={item.id}>
-                    <button type="submit" class="text-[9px] font-bold text-primary hover:bg-primary/20 bg-primary/10 rounded-full px-2 py-1 mt-1 transition-colors leading-tight block mx-auto whitespace-nowrap active:scale-95 transition-transform"><i class="bi bi-cart-plus"></i> Buy List</button>
+                    <button type="submit" class="text-[9px] font-bold text-primary hover:bg-primary/20 bg-primary/10 rounded-full px-2 py-1 mt-1 transition-colors leading-tight block mx-auto whitespace-nowrap"><i class="bi bi-cart-plus"></i> Buy List</button>
                 </form>
             {/if}
         </div>
@@ -231,7 +231,7 @@
                         <input type="hidden" name="content" value="Need to restock: {item.title}">
                         <input type="hidden" name="category" value="to buy">
                         <input type="hidden" name="linkedItemIds[]" value={item.id}>
-                        <button type="submit" class="text-[10px] font-bold text-primary hover:bg-primary/20 bg-primary/10 rounded-full px-2 py-0.5 transition-colors active:scale-95 transition-transform"><i class="bi bi-cart-plus"></i> Add to list</button>
+                        <button type="submit" class="text-[10px] font-bold text-primary hover:bg-primary/20 bg-primary/10 rounded-full px-2 py-0.5 transition-colors"><i class="bi bi-cart-plus"></i> Add to list</button>
                     </form>
                 {:else}
                     &nbsp;

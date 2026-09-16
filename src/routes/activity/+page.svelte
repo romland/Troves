@@ -73,7 +73,7 @@
             <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-secondary/10 rounded-full blur-2xl"></div>
             <div class="flex justify-between items-center w-full relative z-10">
                 <div class="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-1">System Log</div>
-                <i class="bi bi-arrow-right-short text-2xl text-gray-400 group-hover:text-primary transition-transform group-hover:translate-x-1"></i>
+                <i class="bi bi-arrow-right-short text-2xl text-gray-400 group-hover:text-primary group-hover:translate-x-1"></i>
             </div>
             <div class="text-xl font-bold tracking-tight text-base-content flex items-center gap-2 relative z-10">
                 <i class="bi bi-database"></i> View History

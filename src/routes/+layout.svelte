@@ -428,7 +428,7 @@
     <progress class="progress progress-primary bg-transparent w-full fixed top-0 left-0 z-[10000] rounded-none h-1"></progress>
 {/if}
 
-<div class="navbar bg-base-100/90 backdrop-blur-xl border-b border-base-200/50 sticky top-0 z-50 transition-transform duration-300 ease-out print:hidden {hideNav ? '-translate-y-full md:translate-y-0' : 'translate-y-0'}">
+<div class="navbar bg-base-100/90 backdrop-blur-xl border-b border-base-200/50 sticky top-0 z-50 duration-300 ease-out print:hidden {hideNav ? '-translate-y-full md:translate-y-0' : 'translate-y-0'}">
     <!-- Mobile menu -->
     <div class="navbar-start pl-3">
         <button on:click={()=>history.back()} class="pt-1" aria-label="Go back">
@@ -501,7 +501,7 @@
             </div>
         {/if}
         
-        <button type="button" id="profile-menu-btn" class="btn btn-ghost btn-circle active:scale-95 transition-transform" on:click={() => mobileMenuModal.showModal()} aria-label="Open Menu">
+        <button type="button" id="profile-menu-btn" class="btn btn-ghost btn-circle" on:click={() => mobileMenuModal.showModal()} aria-label="Open Menu">
             {#if $page.data.user}
                 <div class="avatar {$page.data.user.avatar ? '' : 'placeholder'}">
                     <div class="bg-base-200 text-base-content rounded-full w-9 shadow-sm border border-base-300 overflow-hidden">
@@ -528,20 +528,20 @@
 {/if}
 
 <div class="btm-nav print:hidden" style="z-index: 50; padding-bottom: env(safe-area-inset-bottom); height: calc(5rem + env(safe-area-inset-bottom));">
-    <a class="active:scale-95 transition-transform duration-200 flex flex-col items-center justify-center gap-1 {$page.url.pathname==='/' ? 'active' : ''}" href="/">
+    <a class="duration-200 flex flex-col items-center justify-center gap-1 {$page.url.pathname==='/' ? 'active' : ''}" href="/">
         <i class="bi bi-house-door text-xl"></i>
         <span class="btm-nav-label text-[10px]">Home</span>
     </a>
     
     {#if $page.data.user}
-        <a class="active:scale-95 transition-transform duration-200 flex flex-col items-center justify-center gap-1 {$page.url.pathname==='/add' ? 'active' : ''}" href="/add" title="Add new item">
+        <a class="duration-200 flex flex-col items-center justify-center gap-1 {$page.url.pathname==='/add' ? 'active' : ''}" href="/add" title="Add new item">
             <i class="bi bi-plus-circle text-xl"></i>
             <span class="btm-nav-label text-[10px]">New</span>
         </a>
     {/if}
     
     {#if $page.data.inventories?.find(i => i.id === $page.data.activeInventoryId)?.enableNotebook !== false}
-        <a class="active:scale-95 transition-all duration-200 flex flex-col items-center justify-center gap-1 select-none relative {$page.url.pathname.startsWith('/timeline') ? 'active' : ''} {quickNoteReady ? 'text-primary drop-shadow-md' : ''}" href="/timeline"
+        <a class="transition-all duration-200 flex flex-col items-center justify-center gap-1 select-none relative {$page.url.pathname.startsWith('/timeline') ? 'active' : ''} {quickNoteReady ? 'text-primary drop-shadow-md' : ''}" href="/timeline"
             style="-webkit-touch-callout: none; touch-action: none;"
             on:click={(e) => { if (quickNoteFired) e.preventDefault(); }}
             on:pointerdown={quickNoteTouchStart}

@@ -233,7 +233,7 @@
         <!-- Control Overlay -->
         <div class="absolute bottom-6 left-0 right-0 flex flex-col items-center gap-4 z-50 pointer-events-auto">
             {#if !autoScan}
-                <button type="button" aria-label="Manual Capture" class="btn btn-primary btn-circle h-16 w-16 shadow-xl hover:scale-105 active:scale-95 transition-transform border-4 border-base-100" on:click={() => manualTrigger = true}>
+                <button type="button" aria-label="Manual Capture" class="btn btn-primary btn-circle h-16 w-16 shadow-xl hover:scale-105 border-4 border-base-100" on:click={() => manualTrigger = true}>
                     <i class="bi bi-camera text-2xl"></i>
                 </button>
             {/if}

@@ -24,7 +24,7 @@
     </p>
 
     {#if actionLabel}
-        <button type="button" class="btn btn-primary rounded-2xl shadow-md active:scale-95 transition-transform px-8" on:click>
+        <button type="button" class="btn btn-primary rounded-2xl shadow-md px-8" on:click>
             <i class="bi {actionIcon} mr-1"></i> {actionLabel}
         </button>
     {/if}

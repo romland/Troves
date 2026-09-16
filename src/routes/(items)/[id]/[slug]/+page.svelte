@@ -177,7 +177,7 @@ $: if (data.duplicateItemDetails?.debugTrace) {
                 <span class="loading loading-spinner loading-sm text-primary"></span>
             {/if}
             <div class="dropdown dropdown-end">
-                <button tabindex="0" class="btn btn-circle btn-ghost bg-base-200/50 border-base-300 shadow-sm text-gray-500 hover:text-primary transition-all active:scale-95" aria-label="Item Options">
+                <button tabindex="0" class="btn btn-circle btn-ghost bg-base-200/50 border-base-300 shadow-sm text-gray-500 hover:text-primary transition-all" aria-label="Item Options">
                     <i class="bi bi-three-dots text-xl"></i>
                 </button>
                 <ul tabindex="-1" role="menu" class="dropdown-content z-[100] menu p-2 shadow-2xl bg-base-100 rounded-box w-52 border border-base-200 mt-2 gap-1">
@@ -364,7 +364,7 @@ $: if (data.duplicateItemDetails?.debugTrace) {
                 </div>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {#each data.relatedItems as related}
-                        <div class="block hover:scale-[1.02] transition-transform">
+                        <div class="block hover:scale-[1.02]">
                             <ItemMiniCard item={related} />
                         </div>
                     {/each}

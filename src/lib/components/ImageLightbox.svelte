@@ -692,7 +692,7 @@
                     on:click|self={handleBackgroundClick}
                 >
                     <!-- Tightly wrapped container ensures absolute percentage math perfectly matches the image -->
-                    <div class="relative inline-flex max-w-full max-h-full shadow-2xl transition-transform duration-300 ease-out {photo?.box ? 'overflow-hidden rounded-xl' : ''}" style="transform: rotate({rotation}deg);">
+                    <div class="relative inline-flex max-w-full max-h-full shadow-2xl duration-300 ease-out {photo?.box ? 'overflow-hidden rounded-xl' : ''}" style="transform: rotate({rotation}deg);">
                         <img 
                             src="{(showOriginal ? photo?.orgPath : (photo?.cropPath || photo?.orgPath)) + (photo?.updatedAt ? '?v=' + new Date(photo.updatedAt).getTime() : '')}"
                             alt="Product preview" 
@@ -748,7 +748,7 @@
                         </button>
                         <!-- Active Pill Background -->
                         <div 
-                            class="absolute top-1 bottom-1 w-[calc(50%-0.25rem)] bg-white rounded-full shadow transition-transform duration-300 ease-out"
+                            class="absolute top-1 bottom-1 w-[calc(50%-0.25rem)] bg-white rounded-full shadow duration-300 ease-out"
                         style="transform: translate3d({showOriginal ? 'calc(100% + 0.25rem)' : '0'}, 0, 0);"
                         ></div>
                     </div>
