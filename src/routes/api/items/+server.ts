@@ -79,6 +79,7 @@ export async function GET({ url, setHeaders, locals }) {
     const duplicateStatus = url.searchParams.get('duplicateStatus');
     const colorMix = url.searchParams.get('color');
     const attrsJson = url.searchParams.get('attrs');
+    const fetchDocs = url.searchParams.get('fetchDocs') === 'true';
 
     // Fetch inventory settings for search logic
     const inventory = await db.inventory.findUnique({
@@ -146,7 +147,7 @@ export async function GET({ url, setHeaders, locals }) {
 
     // Prevent FTS5 index explosions on 1-character prefix queries (like "t*") which take 5+ seconds
     const ftsTerms = parsedTerms.map(t => t.text).filter(text => text.length > 1);
-    if (ftsTerms.length > 0) {
+    if (ftsTerms.length > 0 && fetchDocs) {
         const matchQuery = ftsTerms.map(word => `"${word}"*`).join(' AND ');
         try {
             documentResults = await db.$queryRawUnsafe(`
@@ -166,8 +167,8 @@ export async function GET({ url, setHeaders, locals }) {
                 LIMIT ?;
             `, matchQuery, locals.activeInventoryId, locals.activeInventoryId, docLimit) as any[];
         } catch (e) { console.error("FTS search failed", e); }
-    } else {
-        // No search query? Just return the most recent documents for this inventory.
+    } else if (fetchDocs) {
+        // Requested documents explicitly (e.g. search page default state)
         try {
             documentResults = await db.$queryRawUnsafe(`
                 SELECT d.id, d.title, d.path, d.source, d.itemId, 
@@ -350,7 +351,7 @@ export async function GET({ url, setHeaders, locals }) {
     const nextPage = items.length < count ? 0 : page + 1;
     
     const totalTime = (performance.now() - tStart).toFixed(2);
-    console.log(`[Search Telemetry] Total: ${totalTime}ms | FTS: ${(tFtsEnd-tFtsStart).toFixed(2)}ms | Prisma DB: ${(tDbEnd-tDbStart).toFixed(2)}ms | JS Sort: ${(tSortEnd-tSortStart).toFixed(2)}ms | Query: "${q}"`);
+    console.log(`[Search Telemetry] Total: ${totalTime}ms | ${fetchDocs ? `FTS: ${(tFtsEnd-tFtsStart).toFixed(2)}ms | ` : ''}Prisma DB: ${(tDbEnd-tDbStart).toFixed(2)}ms | JS Sort: ${(tSortEnd-tSortStart).toFixed(2)}ms | Query: "${q}"`);
 
     return new Response(JSON.stringify({ q, items, documentResults, totalCount, prevPage, nextPage }));
 }

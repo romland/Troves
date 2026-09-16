@@ -6,6 +6,7 @@ import { getActiveSchema } from '$lib/server/ontology';
 export const load = (async ({ locals, url, fetch }) => {
     // Forward all URL parameters directly to our master API
     const apiUrl = new URL('/api/items', url.origin);
+    apiUrl.searchParams.set('fetchDocs', 'true');
     url.searchParams.forEach((val, key) => apiUrl.searchParams.append(key, val));
     if (!apiUrl.searchParams.has('c')) apiUrl.searchParams.set('c', '12'); // Ensure standard grid sizing
 
