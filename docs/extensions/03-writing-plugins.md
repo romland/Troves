@@ -7,9 +7,11 @@ Plugins must `export default function`. Troves securely injects a toolkit object
 
 ### The Injected Arguments:
 - `on(eventName, handler)`: Registers your listener to a system event.
+- `registerItemAction(definition, handler?)`: Registers a UI button on items (can execute a background task or open a URL).
 - `sysLog`: The internal logger (`sysLog.info`, `sysLog.warn`, `sysLog.error`). Use this instead of `console.log` so your logs align with the system formatting.
 - `fetch`: A pure Node.js `fetch` implementation. **Always use this** instead of the global `fetch` to prevent SvelteKit SSR warnings.
 - `env`: Read-only access to the server's `.env` variables for your API keys.
+- `db`: Full access to the Prisma database client. Allows your plugin to read or modify Troves data (e.g., creating documents, reading tags, updating stock).
 
 ## Monitoring & Telemetry
 You don't need to manually configure logging or queue tracking. Troves handles this automatically for every plugin hook:

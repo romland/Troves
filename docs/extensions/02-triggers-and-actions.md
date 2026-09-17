@@ -20,6 +20,21 @@ Fires when a user manually requests a label reprint from the UI.
 - `context.inventoryId` (Number): The active Trove ID.
 - `intent.labelSize` ('small' | 'large'): Enum for the requested format.
 
+---
+
+## UI Actions
+Instead of listening to system events, plugins can inject explicit buttons into the Troves interface.
+
+### `registerItemAction(definition, handler?)`
+Adds a button to the "..." menu of an Item.
+**Definition Structure:**
+- `id` (String): Unique identifier for the action.
+- `label` (String): The text displayed on the button.
+- `icon` (String): Optional Bootstrap Icon class (e.g., `bi-google`).
+- `urlTemplate` (String): Optional. If provided, the UI renders a `<a target="_blank">` client-side link instead of a background job. Supports `{{title}}` interpolation.
+
+**Payload Structure (if handler is provided):**
+Executes in the `ioQueue`. Matches the "Fat Payload" pattern (`entity` is the Item, plus `context.user` and `context.inventoryId`).
 
 ---
 
