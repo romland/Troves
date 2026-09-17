@@ -84,8 +84,8 @@ export function getCropStyles(boxRaw: any, padding: number = 25) {
 
     const wrapper = `position: relative; overflow: hidden; width: 100%; height: 100%; min-width: 100%; min-height: 100%; flex-shrink: 0; border-radius: inherit;`;
 
-    return { wrapper, image };
     const image = `position: absolute; width: ${zoomFactor * 100}%; height: auto; max-width: none; max-height: none; top: 50%; left: 50%; transform: translate3d(-${cx}%, -${cy}%, 0);`;
+    return { wrapper, image };
 }
 
 export function getHighlightStyle(boxRaw: any): string {
