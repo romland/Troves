@@ -89,3 +89,58 @@ export default function register({ on, sysLog, fetch, env }) {
     });
 }
 ```
+
+## 3. Manual Fetcher (UI Action & Database Access)
+
+**Suggested Filename:** `data/plugins/fetch-manual.js`
+
+**The Goal:** Adds a button to the "..." menu of an item. When clicked, it searches an external API for the item's title and attaches a PDF link directly to the Troves database as a Document.
+
+```javascript
+export default function register({ registerItemAction, sysLog, fetch, db }) {
+    
+    // Register a button that the frontend will render
+    registerItemAction(
+        { 
+            id: 'fetch-user-manual', 
+            label: 'Fetch User Manual', 
+            icon: 'bi-journal-text' 
+        }, 
+        async (payload) => {
+            const item = payload.entity;
+            
+            if (!item.title) {
+                sysLog.warn(`[FetchManual] Item ${item.id} has no title to search for.`);
+                return;
+            }
+
+            sysLog.info(`[FetchManual] Searching manuals for: ${item.title}`);
+
+            // Example API call
+            const res = await fetch(`https://api.example.com/manuals?q=${encodeURIComponent(item.title)}`);
+            
+            // Do NOT try/catch this! Throwing the error allows the Troves Queue 
+            // to properly mark the task as "Failed" in the System Activity UI.
+            if (!res.ok) throw new Error(`API failed: ${res.statusText}`);
+
+            const data = await res.json();
+
+            if (data.manualUrl) {
+                // Use the injected Prisma instance to save the document!
+                await db.document.create({
+                    data: {
+                        title: `${item.title} - User Manual`,
+                        source: new URL(data.manualUrl).hostname,
+                        path: data.manualUrl, // Direct link to PDF
+                        extracts: "Automatically fetched via plugin",
+                        itemId: item.id
+                    }
+                });
+                sysLog.info(`[FetchManual] Successfully attached manual to ${item.title}`);
+            } else {
+                sysLog.info(`[FetchManual] No manual found for ${item.title}`);
+            }
+        }
+    );
+}
+```

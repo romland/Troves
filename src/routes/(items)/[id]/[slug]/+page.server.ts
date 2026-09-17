@@ -12,6 +12,7 @@ import { taskManager } from '$lib/server/taskManager';
 import { getActiveSchema } from '$lib/server/ontology';
 import { findBestMatch, buildDuplicateDetails, computeIdfMap, buildScanContextFromDbItem, findRelatedItems } from '$lib/server/matcher';
 import { dev } from '$app/environment';
+ import { extensionManager } from '$lib/server/extensions/ExtensionManager';
 
 export const load = (async ({ locals, params }) => {
 	const parsedId = Number(params.id);
@@ -88,6 +89,8 @@ export const load = (async ({ locals, params }) => {
         orderBy: { name: 'asc' }
     });
 
+    const pluginActions = await extensionManager.getEnabledItemActions(locals.activeInventoryId);
+
 	return {
 		item: {
 			...item,
@@ -100,7 +103,8 @@ export const load = (async ({ locals, params }) => {
         relatedItems,
         activeSchema,
         allContainers,
-		canEdit: locals.role === 'EDITOR' || locals.role === 'OWNER' || locals.user.isAdmin
+        canEdit: locals.role === 'EDITOR' || locals.role === 'OWNER' || locals.user.isAdmin,
+        pluginActions
 	};
 }) satisfies PageServerLoad;
 
@@ -378,6 +382,26 @@ export const actions = {
                 data: { itemId: targetItemId, timelineNoteId: null }
             });
         }
+        return { success: true };
+    },
+
+    triggerPluginAction: async ({ request, locals, params }) => {
+        if (!locals.user) return fail(401, { error: 'Unauthorized' });
+        if (locals.role !== 'EDITOR' && locals.role !== 'OWNER' && !locals.user.isAdmin) return fail(403, { error: 'Forbidden' });
+        
+        const data = await request.formData();
+        const actionId = data.get('actionId') as string;
+        const itemId = Number(params.id);
+        
+        const item = await db.item.findUnique({ where: { id: itemId, inventoryId: locals.activeInventoryId }});
+        if (!item) return fail(404, { error: 'Item not found' });
+        
+        extensionManager.triggerItemAction(actionId, {
+            entity: item,
+            context: { user: locals.user, inventoryId: locals.activeInventoryId },
+            intent: {}
+        });
+        
         return { success: true };
     }
 

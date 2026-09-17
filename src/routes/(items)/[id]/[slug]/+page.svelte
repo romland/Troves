@@ -205,6 +205,22 @@ $: if (data.duplicateItemDetails?.debugTrace) {
                             <i class="bi bi-google text-lg opacity-70"></i> Search
                         </a>
                     </li>
+
+                    {#if data.pluginActions?.length > 0}
+                        <li class="divider my-0 h-[1px] bg-base-200"></li>
+                        {#each data.pluginActions as action}
+                            <li>
+                                <form method="POST" action="?/triggerPluginAction" use:enhance={() => { return async ({ update }) => { notify('info', 'Extension task started...'); await update({reset: false}); }; }} class="p-0 m-0 w-full block hover:bg-transparent">
+                                    <input type="hidden" name="actionId" value={action.id}>
+                                    <button type="submit" class="btn btn-ghost w-full justify-start px-4 py-2 h-auto min-h-0 rounded-lg font-medium text-base-content hover:text-primary">
+                                        {#if action.icon}<i class="bi {action.icon} text-lg opacity-70"></i>{/if}
+                                        {action.label}
+                                    </button>
+                                </form>
+                            </li>
+                        {/each}
+                    {/if}
+
                     <li class="divider my-0 h-[1px] bg-base-200"></li>
                     <li>
                         <div class="p-0 hover:bg-transparent block">

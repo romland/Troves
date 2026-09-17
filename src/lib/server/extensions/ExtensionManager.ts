@@ -4,34 +4,61 @@ import fs from 'fs';
 import path from 'path';
 import { env } from '$env/dynamic/private';
 import fetch from 'node-fetch';
- import { db } from '$lib/server/database';
+import { db } from '$lib/server/database';
 
 export type EventName = 'onContainerCreated' | 'onItemAdded' | 'onPrintLabelRequested';
 export type EventHandler = (payload: any) => Promise<void>;
+
+export type ItemActionDef = { id: string; label: string; icon?: string };
 
 type HookRegistration = { pluginName: string; handler: EventHandler };
 
 class ExtensionManager {
 	private listeners: Map<EventName, HookRegistration[]> = new Map();
-    private pluginSubscriptions: Map<string, string[]> = new Map();
+	private itemActions: Map<string, ItemActionDef & { pluginName: string, handler: EventHandler }> = new Map();
+	private pluginSubscriptions: Map<string, string[]> = new Map();
+	private pluginRegisteredActions: Map<string, string[]> = new Map();
+	private loadedPluginNames: Set<string> = new Set();	
 	private isLoaded = false;
 	
 	private registerHook(pluginName: string, event: EventName, handler: EventHandler) {
 		if (!this.listeners.has(event)) this.listeners.set(event, []);
 		this.listeners.get(event)!.push({ pluginName, handler });
-
-        if (!this.pluginSubscriptions.has(pluginName)) {
-            this.pluginSubscriptions.set(pluginName, []);
-        }
-        this.pluginSubscriptions.get(pluginName)!.push(event);
+		
+		if (!this.pluginSubscriptions.has(pluginName)) {
+			this.pluginSubscriptions.set(pluginName, []);
+		}
+		this.pluginSubscriptions.get(pluginName)!.push(event);
 	}
-
-    /**
-     * Returns a list of all successfully loaded plugin filenames.
-     */
-    getLoadedPlugins(): string[] {
-        return Array.from(this.pluginSubscriptions.keys());
-    }
+	
+	private registerItemAction(pluginName: string, def: ItemActionDef, handler: EventHandler) {
+		this.itemActions.set(def.id, { ...def, pluginName, handler });
+		
+		if (!this.pluginRegisteredActions.has(pluginName)) {
+			this.pluginRegisteredActions.set(pluginName, []);
+		}
+		this.pluginRegisteredActions.get(pluginName)!.push(def.id);
+		
+		sysLog.debug(`[ExtensionManager] Plugin ${pluginName} registered UI action: ${def.id}`);
+	}
+	
+	/**
+	* Returns a list of all successfully loaded plugin filenames.
+	*/
+	getLoadedPlugins(): string[] {
+		return Array.from(this.loadedPluginNames);
+	}
+	
+	/**
+	* Returns UI actions registered by currently enabled plugins for a specific Trove.
+	*/
+	async getEnabledItemActions(inventoryId: number): Promise<ItemActionDef[]> {
+		const vault = await db.inventory.findUnique({ where: { id: inventoryId }, select: { enabledPlugins: true } });
+		const whitelist = JSON.parse(vault?.enabledPlugins || '[]');
+		return Array.from(this.itemActions.values())
+		.filter(action => whitelist.includes(action.pluginName))
+		.map(({ id, label, icon }) => ({ id, label, icon }));
+	}
 	
 	/**
 	* Triggers all registered extensions for an event.
@@ -52,19 +79,19 @@ class ExtensionManager {
 			const description = `${hook.pluginName} ➔ ${event}${entityName}`;
 			
 			ioQueue.add(async () => {
-                // The Bouncer: Drop the hook if the plugin is not whitelisted for this Trove
-                const inventoryId = payload?.context?.inventoryId;
-                if (inventoryId) {
-                    try {
-                        const vault = await db.inventory.findUnique({ where: { id: inventoryId }, select: { enabledPlugins: true } });
-                        const whitelist = JSON.parse(vault?.enabledPlugins || '[]');
-                        if (!whitelist.includes(hook.pluginName)) {
-                            sysLog.debug(`[ExtensionManager] Skipping ${hook.pluginName} for '${event}' (Not enabled for Trove ID ${inventoryId})`);
-                            return;
-                        }
-                    } catch (err) {}
-                }
-
+				// The Bouncer: Drop the hook if the plugin is not whitelisted for this Trove
+				const inventoryId = payload?.context?.inventoryId;
+				if (inventoryId) {
+					try {
+						const vault = await db.inventory.findUnique({ where: { id: inventoryId }, select: { enabledPlugins: true } });
+						const whitelist = JSON.parse(vault?.enabledPlugins || '[]');
+						if (!whitelist.includes(hook.pluginName)) {
+							sysLog.debug(`[ExtensionManager] Skipping ${hook.pluginName} for '${event}' (Not enabled for Trove ID ${inventoryId})`);
+							return;
+						}
+					} catch (err) {}
+				}
+				
 				try {
 					sysLog.debug(`${prefix} Starting execution for '${event}'...`);
 					const startTime = Date.now();
@@ -76,6 +103,33 @@ class ExtensionManager {
 				}
 			}, { targetType: 'plugin', targetId: hook.pluginName, description });
 		}
+	}
+	
+	/**
+	* Triggers a specific UI action registered by a plugin.
+	*/
+	triggerItemAction(actionId: string, payload: any) {
+		const action = this.itemActions.get(actionId);
+		if (!action) {
+			sysLog.warn(`[ExtensionManager] Attempted to trigger unknown action: ${actionId}`);
+			return;
+		}
+		
+		const prefix = `[Plugin:${action.pluginName}]`;
+		const entityName = payload?.entity?.title || payload?.entity?.name ? ` for ${payload.entity.title || payload.entity.name}` : '';
+		const description = `${action.pluginName} ➔ Action: ${action.label}${entityName}`;
+		
+		ioQueue.add(async () => {
+			try {
+				sysLog.debug(`${prefix} Starting UI action '${action.label}'...`);
+				const startTime = Date.now();
+				await action.handler(payload);
+				const duration = Date.now() - startTime;
+				sysLog.info(`${prefix} Completed UI action '${action.label}' successfully in ${duration}ms.`);
+			} catch (err) {
+				sysLog.error(`${prefix} Error executing UI action '${action.label}':`, err);
+			}
+		}, { targetType: 'system', targetId: 0, description });
 	}
 	
 	async loadPlugins() {
@@ -96,14 +150,18 @@ class ExtensionManager {
 					const module = await import(/* @vite-ignore */ fileUrl);
 					
 					if (typeof module.default === 'function') {
+						this.loadedPluginNames.add(file);
 						module.default({
 							on: (eventName: EventName, handler: EventHandler) => this.registerHook(file, eventName, handler),
+							registerItemAction: (def: ItemActionDef, handler: EventHandler) => this.registerItemAction(file, def, handler),
 							sysLog,
 							fetch,
-							env
+							env,
+							db // The keys to the kingdom
 						});
-                        const subs = this.pluginSubscriptions.get(file) || [];
-                        sysLog.info(`[ExtensionManager] Loaded plugin: ${file} ➔ Listening to: [${subs.join(', ')}]`);
+						const subs = this.pluginSubscriptions.get(file) || [];
+						const actions = this.pluginRegisteredActions.get(file) || [];
+						sysLog.info(`[ExtensionManager] Loaded plugin: ${file} ➔ Hooks: [${subs.length ? subs.join(', ') : 'none'}] | UI Actions: [${actions.length ? actions.join(', ') : 'none'}]`);
 					} else {
 						sysLog.warn(`[ExtensionManager] Plugin ${file} must export a default function.`);
 					}
