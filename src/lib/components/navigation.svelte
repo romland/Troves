@@ -168,10 +168,22 @@
         if (loading || reachedEnd || internalNextPage === 0) return;
         
         loading = true;
-        query().then(() => {
+        query().then(async () => {
             loading = false;
             if (!reachedEnd) {
                 internalNextPage++;
+                
+                // Wait for Svelte to physically draw the new items into the DOM
+                await tick();
+                
+                // Force the observer to re-evaluate. If the fetched items weren't tall
+                // enough to push the trigger out of the rootMargin, this instantly triggers
+                // the next fetch, making large rootMargins completely safe.
+                const el = document.getElementById('postScrollArea');
+                if (observer && el) {
+                    observer.unobserve(el);
+                    observer.observe(el);
+                }
             }
         });
     }
