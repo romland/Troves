@@ -48,9 +48,9 @@
             </div>
 
             <div class="mt-8 flex w-full justify-center">
-                <a href="https://github.com/romland/troves" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-600 transition-colors font-medium">
+                <!-- a href="https://github.com/romland/troves" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-600 transition-colors font-medium">
                     <i class="bi bi-github text-lg"></i> Troves on GitHub
-                </a>
+                </a -->
             </div>            
         </form>
     </div>

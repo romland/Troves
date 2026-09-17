@@ -71,9 +71,9 @@
             </form>
         </div>
 
-        <a href="https://github.com/romland/troves" target="_blank" rel="noopener noreferrer" class="flex w-full justify-center items-center gap-2 text-sm text-base-content/40 hover:text-base-content/80 transition-colors font-medium mt-6" in:fly={{ y: 20, duration: 600, delay: 550 }}>
+        <!-- a href="https://github.com/romland/troves" target="_blank" rel="noopener noreferrer" class="flex w-full justify-center items-center gap-2 text-sm text-base-content/40 hover:text-base-content/80 transition-colors font-medium mt-6" in:fly={{ y: 20, duration: 600, delay: 550 }}>
             <i class="bi bi-github text-lg"></i> Troves on GitHub
-        </a>
+        </a -->
     </div>
 </div>
 
