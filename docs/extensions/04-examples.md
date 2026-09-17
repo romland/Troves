@@ -212,51 +212,151 @@ your book data.
 import fs from 'fs';
 import path from 'path';
 
-export default function register({ on, registerItemAction, sysLog, fetch, db, env }) {
-    // Core enrichment function shared by both automatic and manual triggers
-    async function lookupAndEnrichBook(item) {
-        if (!item.title) {
-            sysLog.warn(`[GoogleBooks] Item ${item.id} has no title to search for.`);
+export default function register({ on, registerItemAction, sysLog, logActivity, fetch, db, env }) {
+    async function lookupAndEnrichBook(baseItem) {
+        // Fetch the fully hydrated item to ensure we have all attributes
+        const item = await db.item.findUnique({
+            where: { id: baseItem.id },
+            include: { attributes: true }
+        });
+
+        if (!item || !item.title) {
+            sysLog.warn(`[GoogleBooks] Item ${baseItem?.id} has no title to search for.`);
             return;
         }
 
-        sysLog.info(`[GoogleBooks] Searching for: ${item.title}`);
+        const safeTitle = item.title.replace(/"/g, '').trim();
+        const additionalTerms = [];
 
-        // Automatically use an API key if defined in your .env file
-        const apiKey = env.GOOGLE_BOOKS_API_KEY;
-        const keyParam = apiKey ? `&key=${apiKey}` : '';
-        const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(item.title)}&maxResults=1${keyParam}`;
-
-        const res = await fetch(url, {
-            headers: {
-                'User-Agent': 'Troves-Inventory-Agent/1.0',
-                'Accept': 'application/json'
-            }
-        });
-        
-        if (!res.ok) {
-            let errorBody = "";
-            try { errorBody = await res.text(); } catch (e) {}
-            
-            sysLog.error(`[GoogleBooks] API rejected request. Status: ${res.status} ${res.statusText}. Body: ${errorBody}`);
-
-            if (res.status === 429) {
-                sysLog.error(`[GoogleBooks] Too Many Requests (429). You MUST add GOOGLE_BOOKS_API_KEY to your .env file.`);
-                return;
-            }
-            throw new Error(`Google Books API failed: ${res.status} ${res.statusText}`);
+        // If description is short, it was likely captured as an author/subtitle during rapid intake
+        if (item.description && item.description.length < 150) {
+            additionalTerms.push(item.description);
         }
 
-        const data = await res.json();
-        if (!data.items || data.items.length === 0) {
+        // Broaden the net: match any attribute key containing relevant terms
+        const fuzzyKeyTargets = ['author', 'subtitle', 'writer', 'creator', 'by', 'brand', 'maker', 'artist', 'publisher'];
+        if (item.attributes && item.attributes.length > 0) {
+            const relevantAttrs = item.attributes.filter(a => {
+                const lowerKey = a.key.toLowerCase();
+                return fuzzyKeyTargets.some(target => lowerKey.includes(target));
+            });
+            relevantAttrs.forEach(a => additionalTerms.push(a.value));
+        }
+
+        const extraStr = [...new Set(additionalTerms)].join(' ').trim();
+        const apiKey = env.GOOGLE_BOOKS_API_KEY;
+        const keyParam = apiKey ? `&key=${apiKey}` : '';
+
+        // Internal helper to perform a query pass with full debug activity logging
+        const executeSearchPass = async (query) => {
+            const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=1${keyParam}`;
+
+            if (logActivity) {
+                const sanitizedUrl = url.replace(/key=[^&]+/, 'key=***');
+                await logActivity(
+                    item.id,
+                    'Google Books Query',
+                    `Querying Google Books API for "${query}"`,
+                    'info',
+                    JSON.stringify({ 
+                        query, 
+                        url: sanitizedUrl,
+                        debug_InitialState: {
+                            title: item.title,
+                            description: item.description,
+                            allAttributes: item.attributes ? item.attributes.map(a => `${a.key}: ${a.value}`) : []
+                        }
+                    }, null, 2)
+                );
+            }
+
+            const res = await fetch(url, {
+                headers: {
+                    'User-Agent': 'Troves-Inventory-Agent/1.0',
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (!res.ok) {
+                let errorBody = "";
+                try { errorBody = await res.text(); } catch (e) {}
+
+                sysLog.error(`[GoogleBooks] API rejected request. Status: ${res.status} ${res.statusText}. Body: ${errorBody}`);
+
+                if (logActivity) {
+                    await logActivity(
+                        item.id,
+                        'Google Books Error',
+                        `API request failed (${res.status} ${res.statusText})`,
+                        'error',
+                        errorBody
+                    );
+                }
+
+                if (res.status === 429) {
+                    sysLog.error(`[GoogleBooks] Too Many Requests (429). You MUST add GOOGLE_BOOKS_API_KEY to your .env file.`);
+                    return { status: 429, data: null };
+                }
+                throw new Error(`Google Books API failed: ${res.status} ${res.statusText}`);
+            }
+
+            const data = await res.json();
+            return { status: 200, data };
+        };
+
+        // --- TWO PASS SEARCH STRATEGY ---
+        let data = null;
+        let queryUsed = "";
+
+        // Pass 1: Strict Title Match (Prevents general full-text false positives)
+        const pass1Query = `intitle:"${safeTitle}" ${extraStr}`.trim();
+        sysLog.info(`[GoogleBooks] Pass 1 (Strict): ${pass1Query}`);
+        let passResult = await executeSearchPass(pass1Query);
+
+        if (passResult.status === 429) return;
+
+        if (passResult.data?.items && passResult.data.items.length > 0) {
+            data = passResult.data;
+            queryUsed = pass1Query;
+        } else {
+            // Pass 2: Loose Fallback Match (In case title had typos or embedded authors)
+            const pass2Query = `${safeTitle} ${extraStr}`.trim();
+            sysLog.info(`[GoogleBooks] Pass 2 (Loose Fallback): ${pass2Query}`);
+            passResult = await executeSearchPass(pass2Query);
+            
+            if (passResult.status === 429) return;
+            if (passResult.data) {
+                data = passResult.data;
+                queryUsed = pass2Query;
+            }
+        }
+
+        if (logActivity && data) {
+            await logActivity(
+                item.id,
+                'Google Books Response',
+                data.items && data.items.length > 0 
+                    ? `Found volume: "${data.items[0].volumeInfo?.title || 'Unknown'}"` 
+                    : `No matches found for "${queryUsed}"`,
+                data.items && data.items.length > 0 ? 'success' : 'warning',
+                JSON.stringify(data, null, 2)
+            );
+        }
+
+        if (!data || !data.items || data.items.length === 0) {
             sysLog.info(`[GoogleBooks] No results found for ${item.title}`);
             return;
         }
 
         const book = data.items[0].volumeInfo;
         const updates = {};
+
         if (book.title && book.title !== item.title) updates.title = book.title;
-        if (book.description && (!item.description || item.description.trim() === '')) updates.description = book.description;
+
+        // Only overwrite description if empty or previously filled with a short author string
+        if (book.description && (!item.description || item.description.trim() === '' || item.description.length < 150)) {
+            updates.description = book.description;
+        }
 
         if (Object.keys(updates).length > 0) {
             await db.item.update({
@@ -272,7 +372,7 @@ export default function register({ on, registerItemAction, sysLog, fetch, db, en
         if (book.publishedDate) attributesToAdd.push({ key: 'Published Date', value: book.publishedDate });
         if (book.pageCount) attributesToAdd.push({ key: 'Page Count', value: String(book.pageCount) });
         if (book.industryIdentifiers) {
-            const isbn13 = book.industryIdentifiers.find(i => i.type === 'ISBN_13');
+            const isbn13 = book.industryIdentifiers.find(i => i.type === 'ISBN_13' || i.type === 'ISBN_10');
             if (isbn13) attributesToAdd.push({ key: 'ISBN', value: isbn13.identifier });
         }
 
@@ -283,51 +383,61 @@ export default function register({ on, registerItemAction, sysLog, fetch, db, en
             }
         }
 
-        // Physically Download High-Res Cover Art
+        // --- Cover Art Download ---
         if (book.imageLinks?.thumbnail) {
-            // Trick Google into giving us a larger, uncurled image instead of the tiny default thumbnail
-            const imageUrl = book.imageLinks.thumbnail
-                .replace('http:', 'https:')
-                .replace('&edge=curl', '')
-                .replace('zoom=1', 'zoom=3'); 
-                
-            // Check if we already downloaded a cover for this item
+            const baseImageUrl = book.imageLinks.thumbnail.replace('http:', 'https:');
             const coverExists = await db.photo.findFirst({ 
                 where: { itemId: item.id, orgPath: { contains: 'google-cover' } } 
             });
-            
+
             if (!coverExists) {
                 try {
                     sysLog.info(`[GoogleBooks] Downloading cover art...`);
-                    const imgRes = await fetch(imageUrl);
+                    
+                    // Try high-resolution image first
+                    const highResUrl = baseImageUrl.replace('&edge=curl', '').replace('zoom=1', 'zoom=3'); 
+                    let imgRes = await fetch(highResUrl);
+
+                    if (!imgRes.ok) {
+                        sysLog.debug(`[GoogleBooks] High-res cover not available, falling back to standard resolution.`);
+                        imgRes = await fetch(baseImageUrl);
+                    }
+
                     if (imgRes.ok) {
                         const buffer = Buffer.from(await imgRes.arrayBuffer());
                         const filename = `google-cover-${item.id}-${Date.now()}.jpg`;
                         const localPath = path.join(process.cwd(), 'data/images/u', filename);
-                        
-                        // 1. Save physically to disk
+
                         fs.writeFileSync(localPath, buffer);
 
-                        // 2. Attach as a native photo, and set isPrimary: true so it jumps to the front of the line
                         await db.photo.create({
                             data: {
                                 itemId: item.id,
                                 type: 'product',
                                 orgPath: `/images/u/${filename}`,
+                                thumbPath: `/images/u/${filename}`,
+                                cropPath: `/images/u/${filename}`,
+                                ocr: "{}",
+                                llmAnalysis: "{}",
                                 isPrimary: true
                             }
                         });
+                        sysLog.info(`[GoogleBooks] Cover art saved successfully.`);
+                    } else {
+                        sysLog.warn(`[GoogleBooks] Google returned ${imgRes.status} when fetching image.`);
                     }
                 } catch (e) {
                     sysLog.error(`[GoogleBooks] Failed to download cover art:`, e);
                 }
             }
+        } else {
+            sysLog.info(`[GoogleBooks] No cover art exists in Google's database for this book.`);
         }
 
         sysLog.info(`[GoogleBooks] Successfully enriched ${item.title}!`);
     }
 
-    // 1. Automatic Post-Processing Trigger
+    // 1. Automatic Post-Processing Trigger (Runs after background ML pipeline finishes on newly created items)
     on(
         'onItemProcessed',
         async (payload) => {
@@ -338,7 +448,7 @@ export default function register({ on, registerItemAction, sysLog, fetch, db, en
         { maxRetries: 3, retryDelayMs: 3000, rateLimitRpm: 50 }
     );
 
-    // 2. Manual UI Action Trigger
+    // 2. Manual UI Action Trigger (Available from item context menu anytime)
     registerItemAction(
         { 
             id: 'fetch-google-books', 
