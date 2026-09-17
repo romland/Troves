@@ -144,3 +144,23 @@ export default function register({ registerItemAction, sysLog, fetch, db }) {
     );
 }
 ```
+
+## 4. Client-Side URL Link (Google Search)
+
+**Suggested Filename:** `data/plugins/google-search.js`
+
+**The Goal:** Add a button to the item menu that opens a new browser tab to search for the item's title.
+
+**How it works:**
+- By providing a `urlTemplate` instead of an asynchronous backend handler function, Troves knows to render this as a standard `<a target="_blank">` HTML link rather than a background queue job.
+- The Svelte UI automatically replaces `{{title}}` in the template with the URL-encoded title of the current item.
+
+```javascript
+export default function register({ registerItemAction }) {
+    registerItemAction({
+        id: 'google-search',
+        label: 'Search on Google',
+        icon: 'bi-google',
+        urlTemplate: 'https://www.google.com/search?q={{title}}'
+    });
+}

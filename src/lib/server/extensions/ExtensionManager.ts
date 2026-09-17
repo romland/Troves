@@ -9,13 +9,13 @@ import { db } from '$lib/server/database';
 export type EventName = 'onContainerCreated' | 'onItemAdded' | 'onPrintLabelRequested';
 export type EventHandler = (payload: any) => Promise<void>;
 
-export type ItemActionDef = { id: string; label: string; icon?: string };
+ export type ItemActionDef = { id: string; label: string; icon?: string; urlTemplate?: string };
 
 type HookRegistration = { pluginName: string; handler: EventHandler };
 
 class ExtensionManager {
 	private listeners: Map<EventName, HookRegistration[]> = new Map();
-	private itemActions: Map<string, ItemActionDef & { pluginName: string, handler: EventHandler }> = new Map();
+     private itemActions: Map<string, ItemActionDef & { pluginName: string, handler?: EventHandler }> = new Map();
 	private pluginSubscriptions: Map<string, string[]> = new Map();
 	private pluginRegisteredActions: Map<string, string[]> = new Map();
 	private loadedPluginNames: Set<string> = new Set();	
@@ -31,7 +31,7 @@ class ExtensionManager {
 		this.pluginSubscriptions.get(pluginName)!.push(event);
 	}
 	
-	private registerItemAction(pluginName: string, def: ItemActionDef, handler: EventHandler) {
+     private registerItemAction(pluginName: string, def: ItemActionDef, handler?: EventHandler) {
 		this.itemActions.set(def.id, { ...def, pluginName, handler });
 		
 		if (!this.pluginRegisteredActions.has(pluginName)) {
@@ -57,7 +57,7 @@ class ExtensionManager {
 		const whitelist = JSON.parse(vault?.enabledPlugins || '[]');
 		return Array.from(this.itemActions.values())
 		.filter(action => whitelist.includes(action.pluginName))
-		.map(({ id, label, icon }) => ({ id, label, icon }));
+             .map(({ id, label, icon, urlTemplate }) => ({ id, label, icon, urlTemplate }));
 	}
 	
 	/**
@@ -114,6 +114,11 @@ class ExtensionManager {
 			sysLog.warn(`[ExtensionManager] Attempted to trigger unknown action: ${actionId}`);
 			return;
 		}
+
+         if (!action.handler) {
+             sysLog.warn(`[ExtensionManager] Action ${actionId} has no backend handler (client-side only).`);
+             return;
+         }
 		
 		const prefix = `[Plugin:${action.pluginName}]`;
 		const entityName = payload?.entity?.title || payload?.entity?.name ? ` for ${payload.entity.title || payload.entity.name}` : '';
@@ -153,7 +158,7 @@ class ExtensionManager {
 						this.loadedPluginNames.add(file);
 						module.default({
 							on: (eventName: EventName, handler: EventHandler) => this.registerHook(file, eventName, handler),
-							registerItemAction: (def: ItemActionDef, handler: EventHandler) => this.registerItemAction(file, def, handler),
+                             registerItemAction: (def: ItemActionDef, handler?: EventHandler) => this.registerItemAction(file, def, handler),
 							sysLog,
 							fetch,
 							env,
