@@ -207,5 +207,27 @@ export const actions = {
             }
         }
         return { success: true };
+    },
+
+    printLabel: async ({ request, locals, params }) => {
+        if (!locals.user) return fail(401, { error: true, message: "Unauthorized" });
+        if (locals.role !== 'EDITOR' && locals.role !== 'OWNER' && !locals.user.isAdmin) return fail(403, { error: true, message: 'Forbidden. Viewer access only.' });
+        
+        const data = await request.formData();
+        const labelSize = data.get('labelSize') as 'small' | 'large';
+
+        const container = await db.container.findUnique({
+            where: { inventoryId_name: { inventoryId: locals.activeInventoryId, name: params.slug } }
+        });
+
+        if (container) {
+            const { extensionManager } = await import('$lib/server/extensions/ExtensionManager');
+            extensionManager.trigger('onPrintLabelRequested', {
+                entity: container,
+                context: { user: locals.user, inventoryId: locals.activeInventoryId },
+                intent: { labelSize: labelSize || 'large' }
+            });
+        }
+        return { success: true };
     }
 };

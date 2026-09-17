@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { db } from '$lib/server/database';
 import type { RequestHandler } from './$types';
+ import { extensionManager } from '$lib/server/extensions/ExtensionManager';
 
 export const GET: RequestHandler = async ({ locals }) => {
     if (!locals.user) return json({ error: 'Unauthorized' }, { status: 401 });
@@ -20,7 +21,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     if (locals.role !== 'EDITOR' && locals.role !== 'OWNER' && !locals.user.isAdmin) return json({ error: 'Forbidden. Viewer access only.' }, { status: 403 });
 
     try {
-        const { name } = await request.json();
+        const { name, printLabel, labelSize } = await request.json();
         
         if (!name || name.trim() === '') {
             return json({ error: 'Name is required' }, { status: 400 });
@@ -33,6 +34,20 @@ export const POST: RequestHandler = async ({ request, locals }) => {
                 inventoryId: locals.activeInventoryId
             }
         });
+
+        // Fat Payload: Give extensions the complete picture so they don't have to query the DB.
+        extensionManager.trigger('onContainerCreated', {
+            entity: container,
+            context: {
+                user: locals.user,
+                inventoryId: locals.activeInventoryId
+            },
+            intent: {
+                printLabel: printLabel === true,
+                labelSize: labelSize || 'small'
+            }
+         });
+
         return json(container);
     } catch (e) {
         return json({ error: 'Failed to create container (it might already exist in this Trove)' }, { status: 400 });

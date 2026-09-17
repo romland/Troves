@@ -1,0 +1,97 @@
+import { ioQueue } from '$lib/server/queue/index';
+import { sysLog } from '$lib/server/logger';
+import fs from 'fs';
+import path from 'path';
+import { env } from '$env/dynamic/private';
+import fetch from 'node-fetch';
+
+export type EventName = 'onContainerCreated' | 'onItemAdded' | 'onPrintLabelRequested';
+export type EventHandler = (payload: any) => Promise<void>;
+
+type HookRegistration = { pluginName: string; handler: EventHandler };
+
+class ExtensionManager {
+	private listeners: Map<EventName, HookRegistration[]> = new Map();
+    private pluginSubscriptions: Map<string, string[]> = new Map();
+	private isLoaded = false;
+	
+	private registerHook(pluginName: string, event: EventName, handler: EventHandler) {
+		if (!this.listeners.has(event)) this.listeners.set(event, []);
+		this.listeners.get(event)!.push({ pluginName, handler });
+
+        if (!this.pluginSubscriptions.has(pluginName)) {
+            this.pluginSubscriptions.set(pluginName, []);
+        }
+        this.pluginSubscriptions.get(pluginName)!.push(event);
+	}
+	
+	/**
+	* Triggers all registered extensions for an event.
+	* Guaranteed to execute asynchronously in the background I/O queue 
+	* to prevent blocking the user's save workflow.
+	*/
+	trigger(event: EventName, payload: any) {
+		const hooks = this.listeners.get(event) || [];
+		if (hooks.length === 0) return;
+		
+		sysLog.info(`[ExtensionManager] Event '${event}' fired. Queuing ${hooks.length} plugin hook(s).`);
+		
+		for (const hook of hooks) {
+			const prefix = `[Plugin:${hook.pluginName}]`;
+			
+			// Extract entity name if available for UI display (e.g., "romland-label-studio.js ➔ onContainerCreated for Box 001")
+			const entityName = payload?.entity?.name ? ` for ${payload.entity.name}` : '';
+			const description = `${hook.pluginName} ➔ ${event}${entityName}`;
+			
+			ioQueue.add(async () => {
+				try {
+					sysLog.debug(`${prefix} Starting execution for '${event}'...`);
+					const startTime = Date.now();
+					await hook.handler(payload);
+					const duration = Date.now() - startTime;
+					sysLog.info(`${prefix} Completed '${event}' successfully in ${duration}ms.`);
+				} catch (err) {
+					sysLog.error(`${prefix} Error executing '${event}':`, err);
+				}
+			}, { targetType: 'plugin', targetId: hook.pluginName, description });
+		}
+	}
+	
+	async loadPlugins() {
+		if (this.isLoaded) return;
+		this.isLoaded = true;
+		
+		const pluginDir = path.resolve(process.cwd(), 'data/plugins');
+		if (!fs.existsSync(pluginDir)) {
+			fs.mkdirSync(pluginDir, { recursive: true });
+		}
+		
+		const files = fs.readdirSync(pluginDir);
+		for (const file of files) {
+			if (file.endsWith('.js') || file.endsWith('.mjs')) {
+				try {
+					const pluginPath = path.join(pluginDir, file);
+					const fileUrl = 'file://' + pluginPath; 
+					const module = await import(/* @vite-ignore */ fileUrl);
+					
+					if (typeof module.default === 'function') {
+						module.default({
+							on: (eventName: EventName, handler: EventHandler) => this.registerHook(file, eventName, handler),
+							sysLog,
+							fetch,
+							env
+						});
+                        const subs = this.pluginSubscriptions.get(file) || [];
+                        sysLog.info(`[ExtensionManager] Loaded plugin: ${file} ➔ Listening to: [${subs.join(', ')}]`);
+					} else {
+						sysLog.warn(`[ExtensionManager] Plugin ${file} must export a default function.`);
+					}
+				} catch (err) {
+					sysLog.error(`[ExtensionManager] Failed to load plugin ${file}:`, err);
+				}
+			}
+		}
+	}
+}
+
+export const extensionManager = new ExtensionManager();

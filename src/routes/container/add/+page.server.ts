@@ -3,6 +3,7 @@ import type { Actions } from './$types';
 import { db } from '$lib/server/database';
 import sharp from 'sharp';
 import { MediaIngest } from '$lib/server/services/MediaIngest';
+ import { extensionManager } from '$lib/server/extensions/ExtensionManager';
 
 export const actions = {
     default: async ({ locals, request }) => {
@@ -41,13 +42,26 @@ export const actions = {
             }
         });
 
+         const printLabel = data.printLabel === 'on';
+         const printScope = (data.printScope as string) || 'all'; // 'master' or 'all'
+
+         // Construct the standard Fat Payload context for all events in this request
+         const extContext = { user: locals.user, inventoryId: locals.activeInventoryId };
+
+         // Master Container always gets a large label if print is requested
+         extensionManager.trigger('onContainerCreated', { 
+             entity: container, 
+             context: extContext, 
+             intent: { printLabel, labelSize: mode === 'batch' ? 'large' : ((data.labelSize as string) || 'large') } 
+         });
+
         if (mode === 'batch') {
             const trayCount = Number(data.numtrays) || 10;
             const startTray = Number(data.starttray) || 1;
 
             for(let i = startTray; i < (trayCount + startTray); i++) {
                 const trayId = i.toString().padStart(3, '0')
-                await db.container.create({
+                 const childTray = await db.container.create({
                     data: {
                         parentId: container.id,
                         name: `${name.trim()} ${trayId}`,
@@ -55,16 +69,16 @@ export const actions = {
                         inventoryId: locals.activeInventoryId
                     }
                 });
+
+                 // Child trays print small labels ONLY if the user selected 'Master + All Trays'
+                 extensionManager.trigger('onContainerCreated', { 
+                     entity: childTray, 
+                     context: extContext, 
+                     intent: { printLabel: printLabel && printScope === 'all', labelSize: 'small' } 
+                 });
             }
         }
 
-        // STUB: Label Studio Integration
-        const printLabel = data.printLabel;
-        const labelSize = data.labelSize as string;
-        if (printLabel === 'on') {
-            console.log(`[STUB] Queuing thermal label print for container: ${name} | Size: ${labelSize}`);
-        }
-    
         redirect(302, `/container/${container?.name}`);
     }
 } satisfies Actions;

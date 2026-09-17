@@ -64,14 +64,25 @@
                 </label>
                 {#if printLabel}
                     <div class="flex gap-4 mt-3 pl-8">
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" name="labelSize" value="small" class="radio radio-primary radio-sm" checked={mode === 'batch'} />
-                            <span class="text-sm">Small (QR Only)</span>
-                        </label>
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" name="labelSize" value="large" class="radio radio-primary radio-sm" checked={mode === 'single'} />
-                            <span class="text-sm">Large (QR + Name)</span>
-                        </label>
+                        {#if mode === 'batch'}
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="printScope" value="master" class="radio radio-primary radio-sm" checked />
+                                <span class="text-sm">Master Box Only</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="printScope" value="all" class="radio radio-primary radio-sm" />
+                                <span class="text-sm">Master + All Trays</span>
+                            </label>
+                        {:else}
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="labelSize" value="large" class="radio radio-primary radio-sm" checked />
+                                <span class="text-sm">Large (QR + Name)</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="labelSize" value="small" class="radio radio-primary radio-sm" />
+                                <span class="text-sm">Small (QR Only)</span>
+                            </label>
+                        {/if}
                     </div>
                 {/if}
             </div>

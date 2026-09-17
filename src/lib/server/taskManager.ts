@@ -40,7 +40,7 @@ import { EventEmitter } from 'events';
 
 export const taskEvents = new EventEmitter();
 
-export type TaskTargetType = 'item' | 'note' | 'global';
+export type TaskTargetType = 'item' | 'note' | 'global' | 'plugin';
 
 export interface TaskContext {
     targetType: TaskTargetType;

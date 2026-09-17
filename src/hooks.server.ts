@@ -3,6 +3,7 @@ import { redirect, type Handle } from "@sveltejs/kit";
 import { db } from "$lib/server/database";
 import { initFTS } from "$lib/server/fts";
 import { validateAndRefreshSession } from "$lib/server/session";
+ import { extensionManager } from "$lib/server/extensions/ExtensionManager";
 
 export interface UserPreferences {
 	largeFont?: boolean;
@@ -14,6 +15,12 @@ export interface UserPreferences {
 }
 
 let isSetupComplete = false;
+
+// Initialize global singletons once on server boot (skip during build)
+if (!building) {
+    initFTS().catch(console.error);
+    extensionManager.loadPlugins().catch(console.error);
+}
 
 export const handle = (async ({ event, resolve }) => {
 	// 1. Initial Setup Guard: Route new installations directly to the Setup Wizard
@@ -28,11 +35,6 @@ export const handle = (async ({ event, resolve }) => {
 
 	if (isSetupComplete && event.url.pathname.startsWith('/setup')) {
         throw redirect(303, '/login');
-    }
-
-    // Initialize the SQLite FTS5 engine once on server boot (skip during build)
-    if (!building) {
-        initFTS().catch(console.error);
     }
 
 	let theme: string = 'coffee';  // default theme

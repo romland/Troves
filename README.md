@@ -108,6 +108,9 @@ about the visuals ... But, let's get the ball rolling in 2026, the first screens
 - Bring your own model
 - ...and more
 
+### Extensions & Plugins
+Troves supports a drop-in plugin architecture. If you want to automatically ping a webhook, print physical labels to a custom thermal printer, or look up items from an external API whenever you scan something, you can just drop a `.js` file into the `data/plugins/` directory. Troves handles the asynchronous routing, offline queuing, and secure environment variable injection natively. Check out the [Extensions Documentation](docs/extensions/01-architecture.md) to write your own.
+
 ### Scanning collections
 `Tip: count the items before scanning. Gives you an idea if you had a good enough picture`
 

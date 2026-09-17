@@ -369,6 +369,26 @@
 
                 <!-- Action Buttons -->
                 <div class="flex gap-2 shrink-0">
+                    <div class="dropdown dropdown-top dropdown-end print:hidden">
+                        <button tabindex="0" class="btn btn-circle btn-ghost bg-base-100/50 backdrop-blur-md hover:bg-base-100 transition-colors" title="Print Label" aria-label="Print Options">
+                            <i class="bi bi-printer text-lg"></i>
+                        </button>
+                        <ul tabindex="-1" class="dropdown-content z-[100] menu p-2 shadow-2xl bg-base-100 rounded-2xl w-56 border border-base-200 mb-2 gap-1">
+                            <li class="menu-title text-[10px] font-bold uppercase tracking-wider text-gray-400 pb-1">Print Label</li>
+                            <li>
+                                <form method="POST" action="?/printLabel" class="p-0 m-0 w-full" use:enhance={() => { return async ({ update }) => { notify('success', 'Large label queued!'); (document.activeElement)?.blur(); await update({reset:false}); }}}>
+                                    <input type="hidden" name="labelSize" value="large">
+                                    <button type="submit" class="w-full text-left font-medium hover:text-primary px-4 py-2 h-auto min-h-0"><i class="bi bi-card-heading text-lg opacity-70 mr-2"></i> Large (QR + Name)</button>
+                                </form>
+                            </li>
+                            <li>
+                                <form method="POST" action="?/printLabel" class="p-0 m-0 w-full" use:enhance={() => { return async ({ update }) => { notify('success', 'Small label queued!'); (document.activeElement)?.blur(); await update({reset:false}); }}}>
+                                    <input type="hidden" name="labelSize" value="small">
+                                    <button type="submit" class="w-full text-left font-medium hover:text-primary px-4 py-2 h-auto min-h-0"><i class="bi bi-qr-code text-lg opacity-70 mr-2"></i> Small (QR Only)</button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
                     <button class="btn btn-circle btn-ghost bg-base-100/50 backdrop-blur-md hover:bg-base-100 transition-colors" title="Move Container" on:click={() => moveModal.show(data.item)}>
                         <i class="bi bi-arrows-move text-lg"></i>
                     </button>
