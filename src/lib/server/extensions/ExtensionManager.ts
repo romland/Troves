@@ -17,7 +17,7 @@ type HookRegistration = { pluginName: string; handler: EventHandler; options?: H
 
 class ExtensionManager {
 	private listeners: Map<EventName, HookRegistration[]> = new Map();
-     private itemActions: Map<string, ItemActionDef & { pluginName: string, handler?: EventHandler }> = new Map();
+	private itemActions: Map<string, ItemActionDef & { pluginName: string, handler?: EventHandler }> = new Map();
 	private pluginSubscriptions: Map<string, string[]> = new Map();
 	private pluginRegisteredActions: Map<string, string[]> = new Map();
 	private loadedPluginNames: Set<string> = new Set();	
@@ -34,7 +34,7 @@ class ExtensionManager {
 		this.pluginSubscriptions.get(pluginName)!.push(event);
 	}
 	
-     private registerItemAction(pluginName: string, def: ItemActionDef, handler?: EventHandler) {
+	private registerItemAction(pluginName: string, def: ItemActionDef, handler?: EventHandler) {
 		this.itemActions.set(def.id, { ...def, pluginName, handler });
 		
 		if (!this.pluginRegisteredActions.has(pluginName)) {
@@ -60,24 +60,24 @@ class ExtensionManager {
 		const whitelist = JSON.parse(vault?.enabledPlugins || '[]');
 		return Array.from(this.itemActions.values())
 		.filter(action => whitelist.includes(action.pluginName))
-             .map(({ id, label, icon, urlTemplate }) => ({ id, label, icon, urlTemplate }));
+		.map(({ id, label, icon, urlTemplate }) => ({ id, label, icon, urlTemplate }));
 	}
 	
-     /**
-      * Checks if there is at least one active, whitelisted plugin listening to a specific event.
-      * Useful for conditionally hiding UI elements (like Print buttons) when no handler exists.
-      */
-     async hasActiveListeners(event: EventName, inventoryId: number): Promise<boolean> {
-         const hooks = this.listeners.get(event) || [];
-         if (hooks.length === 0) return false;
-
-         const vault = await db.inventory.findUnique({ where: { id: inventoryId }, select: { enabledPlugins: true } });
-         const whitelist = JSON.parse(vault?.enabledPlugins || '[]');
-         
-         // Return true if at least one hook belongs to an enabled plugin
-         return hooks.some(hook => whitelist.includes(hook.pluginName));
-     }
-
+	/**
+	* Checks if there is at least one active, whitelisted plugin listening to a specific event.
+	* Useful for conditionally hiding UI elements (like Print buttons) when no handler exists.
+	*/
+	async hasActiveListeners(event: EventName, inventoryId: number): Promise<boolean> {
+		const hooks = this.listeners.get(event) || [];
+		if (hooks.length === 0) return false;
+		
+		const vault = await db.inventory.findUnique({ where: { id: inventoryId }, select: { enabledPlugins: true } });
+		const whitelist = JSON.parse(vault?.enabledPlugins || '[]');
+		
+		// Return true if at least one hook belongs to an enabled plugin
+		return hooks.some(hook => whitelist.includes(hook.pluginName));
+	}
+	
 	private async executeWithRetryAndLimits(pluginName: string, config: HookOptions, fn: () => Promise<void>) {
 		const maxRetries = config.maxRetries || 1;
 		const retryDelayMs = config.retryDelayMs || 2000;
@@ -106,7 +106,7 @@ class ExtensionManager {
 					}
 					quota.requests++;
 				}
-
+				
 				await fn();
 				return;
 			} catch (err) {
@@ -118,7 +118,7 @@ class ExtensionManager {
 			}
 		}
 	}
-
+	
 	/**
 	* Triggers all registered extensions for an event.
 	* Guaranteed to execute asynchronously in the background I/O queue 
@@ -154,6 +154,15 @@ class ExtensionManager {
 				try {
 					sysLog.debug(`${prefix} Starting execution for '${event}'...`);
 					const startTime = Date.now();
+					
+					// Snapshot the item before handoff to prevent destructive data loss
+					if (payload?.entity?.id && payload?.entity?.slug && event !== 'onItemAdded' && event !== 'onContainerCreated') {
+						try {
+							const { takeSnapshot } = await import('$lib/server/itemHistory');
+							await takeSnapshot(payload.entity.id, `Plugin: ${hook.pluginName}`);
+						} catch(e) { sysLog.error("Snapshot failed", e); }
+					}
+					
 					await this.executeWithRetryAndLimits(hook.pluginName, hook.options || {}, () => hook.handler(payload));
 					const duration = Date.now() - startTime;
 					sysLog.info(`${prefix} Completed '${event}' successfully in ${duration}ms.`);
@@ -173,11 +182,11 @@ class ExtensionManager {
 			sysLog.warn(`[ExtensionManager] Attempted to trigger unknown action: ${actionId}`);
 			return;
 		}
-
-         if (!action.handler) {
-             sysLog.warn(`[ExtensionManager] Action ${actionId} has no backend handler (client-side only).`);
-             return;
-         }
+		
+		if (!action.handler) {
+			sysLog.warn(`[ExtensionManager] Action ${actionId} has no backend handler (client-side only).`);
+			return;
+		}
 		
 		const prefix = `[Plugin:${action.pluginName}]`;
 		const entityName = payload?.entity?.title || payload?.entity?.name ? ` for ${payload.entity.title || payload.entity.name}` : '';
@@ -187,6 +196,15 @@ class ExtensionManager {
 			try {
 				sysLog.debug(`${prefix} Starting UI action '${action.label}'...`);
 				const startTime = Date.now();
+				
+				// Snapshot the item before UI action handoff
+				if (payload?.entity?.id && payload?.entity?.slug) {
+					try {
+						const { takeSnapshot } = await import('$lib/server/itemHistory');
+						await takeSnapshot(payload.entity.id, `Action: ${action.label}`);
+					} catch(e) { sysLog.error("Snapshot failed", e); }
+				}
+				
 				await this.executeWithRetryAndLimits(action.pluginName, action, () => action.handler!(payload));
 				const duration = Date.now() - startTime;
 				sysLog.info(`${prefix} Completed UI action '${action.label}' successfully in ${duration}ms.`);
@@ -217,7 +235,7 @@ class ExtensionManager {
 						this.loadedPluginNames.add(file);
 						module.default({
 							on: (eventName: EventName, handler: EventHandler, options?: HookOptions) => this.registerHook(file, eventName, handler, options),
-                            registerItemAction: (def: ItemActionDef, handler?: EventHandler) => this.registerItemAction(file, def, handler),
+							registerItemAction: (def: ItemActionDef, handler?: EventHandler) => this.registerItemAction(file, def, handler),
 							sysLog,
 							logActivity,
 							fetch,

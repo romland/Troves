@@ -39,7 +39,8 @@ export const load = (async ({ locals, params }) => {
 			},
 			attributes: true,
 			usage: true,
-			logs: { orderBy: { createdAt: 'desc' } }
+            logs: { orderBy: { createdAt: 'desc' } },
+            snapshots: { orderBy: { createdAt: 'desc' } }
 		}
 	});
 	
@@ -317,6 +318,19 @@ export const actions = {
         const freshItem = await db.item.findUnique({ where: { id: item.id }, include: { photos: true } });
         if (freshItem) processItemPhotosBackground(freshItem).catch(console.error);
 
+        return { success: true };
+    },
+
+    rollback: async ({ request, locals, params }) => {
+        if (!locals.user || (locals.role !== 'EDITOR' && locals.role !== 'OWNER' && !locals.user.isAdmin)) return fail(403);
+        
+        const data = await request.formData();
+        const snapshotId = Number(data.get('snapshotId'));
+        if (!snapshotId) return fail(400, { error: 'Missing snapshot ID' });
+        
+        const { rollbackToSnapshot } = await import('$lib/server/itemHistory');
+        await rollbackToSnapshot(snapshotId);
+        
         return { success: true };
     },
 

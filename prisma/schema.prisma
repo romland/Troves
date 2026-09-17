@@ -206,10 +206,23 @@ model Item {
   attributes  KVP[]
   usage       InUse[]
   logs        ActivityLog[]
+  snapshots   ItemSnapshot[]
   timelineNotes TimelineNote[] @relation("TimelineNoteToItem")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model ItemSnapshot {
+  id           Int      @id @unique @default(autoincrement())
+  snapshotJson String
+  source       String   @default("System")
+  createdAt    DateTime @default(now())
+
+  item         Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  itemId       Int
+
+  @@index([itemId, createdAt(sort: Desc)])
 }
 
 model TimelineNote {
