@@ -6,12 +6,13 @@ import { env } from '$env/dynamic/private';
 import fetch from 'node-fetch';
 import { db } from '$lib/server/database';
 
-export type EventName = 'onContainerCreated' | 'onItemAdded' | 'onPrintLabelRequested';
+export type EventName = 'onContainerCreated' | 'onItemAdded' | 'onItemUpdated' | 'onItemProcessed' | 'onPrintLabelRequested';
 export type EventHandler = (payload: any) => Promise<void>;
+export type HookOptions = { maxRetries?: number; retryDelayMs?: number; rateLimitRpm?: number };
 
- export type ItemActionDef = { id: string; label: string; icon?: string; urlTemplate?: string };
+export type ItemActionDef = { id: string; label: string; icon?: string; urlTemplate?: string } & HookOptions;
 
-type HookRegistration = { pluginName: string; handler: EventHandler };
+type HookRegistration = { pluginName: string; handler: EventHandler; options?: HookOptions };
 
 class ExtensionManager {
 	private listeners: Map<EventName, HookRegistration[]> = new Map();
@@ -20,10 +21,11 @@ class ExtensionManager {
 	private pluginRegisteredActions: Map<string, string[]> = new Map();
 	private loadedPluginNames: Set<string> = new Set();	
 	private isLoaded = false;
+	private pluginRateLimits: Map<string, { requests: number, minuteResetTime: number }> = new Map();
 	
-	private registerHook(pluginName: string, event: EventName, handler: EventHandler) {
+	private registerHook(pluginName: string, event: EventName, handler: EventHandler, options?: HookOptions) {
 		if (!this.listeners.has(event)) this.listeners.set(event, []);
-		this.listeners.get(event)!.push({ pluginName, handler });
+		this.listeners.get(event)!.push({ pluginName, handler, options });
 		
 		if (!this.pluginSubscriptions.has(pluginName)) {
 			this.pluginSubscriptions.set(pluginName, []);
@@ -75,6 +77,47 @@ class ExtensionManager {
          return hooks.some(hook => whitelist.includes(hook.pluginName));
      }
 
+	private async executeWithRetryAndLimits(pluginName: string, config: HookOptions, fn: () => Promise<void>) {
+		const maxRetries = config.maxRetries || 1;
+		const retryDelayMs = config.retryDelayMs || 2000;
+		const rateLimitRpm = config.rateLimitRpm || 0;
+		
+		let attempt = 0;
+		while (true) {
+			try {
+				attempt++;
+				
+				if (rateLimitRpm > 0) {
+					if (!this.pluginRateLimits.has(pluginName)) {
+						this.pluginRateLimits.set(pluginName, { requests: 0, minuteResetTime: Date.now() + 60000 });
+					}
+					const quota = this.pluginRateLimits.get(pluginName)!;
+					
+					if (quota.requests >= rateLimitRpm) {
+						const waitTime = Math.max(1000, quota.minuteResetTime - Date.now());
+						sysLog.info(`[Plugin:${pluginName}] Rate limit reached (${rateLimitRpm} RPM). Queued for ${waitTime}ms...`);
+						await new Promise(r => setTimeout(r, waitTime));
+					}
+					
+					if (Date.now() > quota.minuteResetTime) {
+						quota.requests = 0;
+						quota.minuteResetTime = Date.now() + 60000;
+					}
+					quota.requests++;
+				}
+
+				await fn();
+				return;
+			} catch (err) {
+				if (attempt >= maxRetries) {
+					throw err;
+				}
+				sysLog.warn(`[Plugin:${pluginName}] Failed (Attempt ${attempt}/${maxRetries}). Retrying in ${retryDelayMs}ms...`);
+				await new Promise(r => setTimeout(r, retryDelayMs * attempt));
+			}
+		}
+	}
+
 	/**
 	* Triggers all registered extensions for an event.
 	* Guaranteed to execute asynchronously in the background I/O queue 
@@ -110,7 +153,7 @@ class ExtensionManager {
 				try {
 					sysLog.debug(`${prefix} Starting execution for '${event}'...`);
 					const startTime = Date.now();
-					await hook.handler(payload);
+					await this.executeWithRetryAndLimits(hook.pluginName, hook.options || {}, () => hook.handler(payload));
 					const duration = Date.now() - startTime;
 					sysLog.info(`${prefix} Completed '${event}' successfully in ${duration}ms.`);
 				} catch (err) {
@@ -143,7 +186,7 @@ class ExtensionManager {
 			try {
 				sysLog.debug(`${prefix} Starting UI action '${action.label}'...`);
 				const startTime = Date.now();
-				await action.handler(payload);
+				await this.executeWithRetryAndLimits(action.pluginName, action, () => action.handler!(payload));
 				const duration = Date.now() - startTime;
 				sysLog.info(`${prefix} Completed UI action '${action.label}' successfully in ${duration}ms.`);
 			} catch (err) {
@@ -172,8 +215,8 @@ class ExtensionManager {
 					if (typeof module.default === 'function') {
 						this.loadedPluginNames.add(file);
 						module.default({
-							on: (eventName: EventName, handler: EventHandler) => this.registerHook(file, eventName, handler),
-                             registerItemAction: (def: ItemActionDef, handler?: EventHandler) => this.registerItemAction(file, def, handler),
+							on: (eventName: EventName, handler: EventHandler, options?: HookOptions) => this.registerHook(file, eventName, handler, options),
+                            registerItemAction: (def: ItemActionDef, handler?: EventHandler) => this.registerItemAction(file, def, handler),
 							sysLog,
 							fetch,
 							env,

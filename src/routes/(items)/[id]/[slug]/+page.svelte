@@ -206,15 +206,16 @@ $: if (data.duplicateItemDetails?.debugTrace) {
                         {#each data.pluginActions as action}
                             <li>
                                 {#if action.urlTemplate}
-                                    <a href="{action.urlTemplate.replace('{{title}}', encodeURIComponent(data.item?.title || ''))}" target="_blank" rel="noopener noreferrer" class="font-medium text-base-content hover:text-primary">
-                                        {#if action.icon}<i class="bi {action.icon} text-lg opacity-70"></i>{/if}
-                                        {action.label}
+                                    <a href="{action.urlTemplate.replace('{{title}}', encodeURIComponent(data.item?.title || ''))}" target="_blank" rel="noopener noreferrer" class="font-medium text-base-content hover:text-primary flex items-start gap-2">
+                                        {#if action.icon}<i class="bi {action.icon} text-lg opacity-70 mt-0.5 shrink-0"></i>{/if}
+                                        <span class="leading-tight whitespace-normal text-left">{action.label}</span>
                                     </a>
                                 {:else}
-                                    <form method="POST" action="?/triggerPluginAction" use:enhance={() => { return async ({ update }) => { notify('info', 'Extension task started...'); await update({reset: false}); }; }} class="p-0 m-0 w-full block hover:bg-transparent">
+                                    <form method="POST" action="?/triggerPluginAction" use:enhance={() => { return async ({ update }) => { notify('info', 'Extension task started...'); await update({reset: false}); }; }} style="display: contents;">
                                         <input type="hidden" name="actionId" value={action.id}>
-                                        <button type="submit" class="btn btn-ghost w-full justify-start px-4 py-2 h-auto min-h-0 rounded-lg font-medium text-base-content hover:text-primary">
-                                            {#if action.icon}<i class="bi {action.icon} text-lg opacity-70 mb-0.5 mr-2"></i>{/if}{action.label}
+                                        <button type="submit" class="font-medium text-base-content hover:text-primary flex items-start gap-2 w-full text-left">
+                                            {#if action.icon}<i class="bi {action.icon} text-lg opacity-70 mt-0.5 shrink-0"></i>{/if}
+                                            <span class="leading-tight whitespace-normal">{action.label}</span>
                                         </button>
                                     </form>
                                 {/if}

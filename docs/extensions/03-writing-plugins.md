@@ -6,8 +6,8 @@ Troves supports a zero-config, drop-in plugin architecture. To add a new integra
 Plugins must `export default function`. Troves securely injects a toolkit object containing everything the plugin needs to operate, so you never have to worry about internal module resolution or SvelteKit SSR rules.
 
 ### The Injected Arguments:
-- `on(eventName, handler)`: Registers your listener to a system event.
-- `registerItemAction(definition, handler?)`: Registers a UI button on items (can execute a background task or open a URL).
+- `on(eventName, handler, options?)`: Registers your listener to a system event. `options` allows natively configuring `{ maxRetries: 3, retryDelayMs: 2000, rateLimitRpm: 30 }`.
+- `registerItemAction(definition, handler?)`: Registers a UI button on items. The `definition` also accepts native `maxRetries`, `retryDelayMs`, and `rateLimitRpm` props.
 - `sysLog`: The internal logger (`sysLog.info`, `sysLog.warn`, `sysLog.error`). Use this instead of `console.log` so your logs align with the system formatting.
 - `fetch`: A pure Node.js `fetch` implementation. **Always use this** instead of the global `fetch` to prevent SvelteKit SSR warnings.
 - `env`: Read-only access to the server's `.env` variables for your API keys.

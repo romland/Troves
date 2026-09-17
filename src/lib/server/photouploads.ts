@@ -251,7 +251,7 @@ export async function processDraftPhotoBackground(webPath: string, type: string,
 	await heavyPromise;
 }
 
-export async function processItemPhotosBackground(item: any) {
+export async function processItemPhotosBackground(item: any, isNew: boolean = false) {
     // Queue this entire item's processing to prevent DB/Network starvation during bulk imports
     const taskId = taskManager.start('item', item.id, 'Queued for processing...');
     return ioQueue.add(async () => {
@@ -482,6 +482,23 @@ export async function processItemPhotosBackground(item: any) {
             // Doing this here prevents the sweep from running on empty items before they are hydrated with discriminators
             const { runDuplicateSweep } = await import('$lib/server/matcher');
             await runDuplicateSweep(item.id, item.inventoryId);
+
+            // FIRE THE LATE-STAGE EXTENSION HOOK
+            // Fetch the fully hydrated item because background tasks likely added attributes, OCR, and colors
+            const freshItem = await db.item.findUnique({
+                where: { id: item.id },
+                include: { photos: true, attributes: true, tags: true, documents: true }
+            });
+            const user = await db.user.findUnique({ where: { id: item.authorId } });
+            
+            if (freshItem && user) {
+                const { extensionManager } = await import('$lib/server/extensions/ExtensionManager');
+                extensionManager.trigger('onItemProcessed', {
+                    entity: freshItem,
+                    context: { user, inventoryId: item.inventoryId },
+                    intent: { isNew }
+                });
+            }
 
         } finally {
             taskManager.end(taskId);

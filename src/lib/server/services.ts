@@ -561,7 +561,15 @@ export async function createItemEntity(params: {
     }
 
     const { processItemPhotosBackground } = await import('$lib/server/photouploads');
-    processItemPhotosBackground(item).catch(e => console.error(e));
+    processItemPhotosBackground(item, true).catch(e => console.error(e));
+
+    const { extensionManager } = await import('$lib/server/extensions/ExtensionManager');
+    const user = await db.user.findUnique({ where: { id: params.userId } });
+    extensionManager.trigger('onItemAdded', {
+        entity: item,
+        context: { user, inventoryId: params.inventoryId },
+        intent: { isNew: true }
+    });
 
     for (const msg of taxonomyLogs) {
         await logActivity(item.id, 'Taxonomy Engine', msg, 'info');

@@ -244,7 +244,14 @@ console.log("formData:", orgData);
 
         // Fire and forget heavy background scraping and ML analysis (Fast Ack)
 		downloadAndStoreDocuments({ itemId: item.id }, uploadsRemoteSite, data, uploadsDiskFolder, uploadsWebFolder, "qr.").catch(e => console.error(e));
-		processItemPhotosBackground(item).catch(e => console.error(e));
+		processItemPhotosBackground(item, false).catch(e => console.error(e));
+
+        const { extensionManager } = await import('$lib/server/extensions/ExtensionManager');
+        extensionManager.trigger('onItemUpdated', {
+            entity: item,
+            context: { user: locals.user, inventoryId: item.inventoryId },
+            intent: { isNew: false }
+        });
 
 		if (data.llm_attributes_used === 'true') {
             await logActivity(item.id, 'Attributes', 'Automatically structured messy attribute data using Smart Parsing', 'success');
