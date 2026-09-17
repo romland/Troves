@@ -5,6 +5,7 @@ import path from 'path';
 import { env } from '$env/dynamic/private';
 import fetch from 'node-fetch';
 import { db } from '$lib/server/database';
+import { logActivity } from '$lib/server/logger';
 
 export type EventName = 'onContainerCreated' | 'onItemAdded' | 'onItemUpdated' | 'onItemProcessed' | 'onPrintLabelRequested';
 export type EventHandler = (payload: any) => Promise<void>;
@@ -218,6 +219,7 @@ class ExtensionManager {
 							on: (eventName: EventName, handler: EventHandler, options?: HookOptions) => this.registerHook(file, eventName, handler, options),
                             registerItemAction: (def: ItemActionDef, handler?: EventHandler) => this.registerItemAction(file, def, handler),
 							sysLog,
+							logActivity,
 							fetch,
 							env,
 							db // The keys to the kingdom
