@@ -97,6 +97,7 @@ model Inventory {
   enableDocuments     Boolean @default(true) // Whether Documents/Links are enabled for items
   notebookCategories  String  @default("[\"idea\", \"todo\", \"to buy\", \"to read\", \"other\", \"archive\"]")
   enableFuzzySearch   Boolean @default(true) // Whether to use NLP stemming/fuzzy matching in search
+  enabledPlugins      String  @default("[]") // JSON array of enabled plugin filenames
   showRelatedItems    Boolean @default(false) // Show similar/related items at bottom of item page
   containerMode       String  @default("scan") // "scan" or "select" - defaults selector to camera or list
   defaultView         String  @default("grid") // "grid" or "list"

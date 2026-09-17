@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { env } from '$env/dynamic/private';
 import fetch from 'node-fetch';
+ import { db } from '$lib/server/database';
 
 export type EventName = 'onContainerCreated' | 'onItemAdded' | 'onPrintLabelRequested';
 export type EventHandler = (payload: any) => Promise<void>;
@@ -24,6 +25,13 @@ class ExtensionManager {
         }
         this.pluginSubscriptions.get(pluginName)!.push(event);
 	}
+
+    /**
+     * Returns a list of all successfully loaded plugin filenames.
+     */
+    getLoadedPlugins(): string[] {
+        return Array.from(this.pluginSubscriptions.keys());
+    }
 	
 	/**
 	* Triggers all registered extensions for an event.
@@ -44,6 +52,19 @@ class ExtensionManager {
 			const description = `${hook.pluginName} ➔ ${event}${entityName}`;
 			
 			ioQueue.add(async () => {
+                // The Bouncer: Drop the hook if the plugin is not whitelisted for this Trove
+                const inventoryId = payload?.context?.inventoryId;
+                if (inventoryId) {
+                    try {
+                        const vault = await db.inventory.findUnique({ where: { id: inventoryId }, select: { enabledPlugins: true } });
+                        const whitelist = JSON.parse(vault?.enabledPlugins || '[]');
+                        if (!whitelist.includes(hook.pluginName)) {
+                            sysLog.debug(`[ExtensionManager] Skipping ${hook.pluginName} for '${event}' (Not enabled for Trove ID ${inventoryId})`);
+                            return;
+                        }
+                    } catch (err) {}
+                }
+
 				try {
 					sysLog.debug(`${prefix} Starting execution for '${event}'...`);
 					const startTime = Date.now();

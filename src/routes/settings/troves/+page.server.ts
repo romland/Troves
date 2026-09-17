@@ -2,6 +2,7 @@ import { fail, redirect } from '@sveltejs/kit';
 import { db } from '$lib/server/database';
 import { bootstrapInventorySchema } from '$lib/server/ontology';
 import type { PageServerLoad, Actions } from './$types';
+ import { extensionManager } from '$lib/server/extensions/ExtensionManager';
 
 export const load = (async ({ locals }) => {
     if (!locals.user) throw redirect(303, '/login');
@@ -18,7 +19,8 @@ export const load = (async ({ locals }) => {
             archiveSingleScans: true, trackQuantity: true, showExif: true,
             showColors: true, showOcr: true, enableAskAi: true, enableNotebook: true,
             showNoteContextUrl: true, enableDocuments: true, notebookCategories: true,
-            enableFuzzySearch: true, showRelatedItems: true, templateFields: true,
+            enableFuzzySearch: true, showRelatedItems: true, enabledPlugins: true,
+            templateFields: true,
             _count: { select: { items: true, notes: true, containers: true } }
         } 
     });
@@ -40,7 +42,9 @@ export const load = (async ({ locals }) => {
         });
     }
 
-    return { allInventories, accessMap, allUsers };
+    const availablePlugins = extensionManager.getLoadedPlugins();
+
+    return { allInventories, accessMap, allUsers, availablePlugins };
 }) satisfies PageServerLoad;
 
 export const actions = {
@@ -252,6 +256,13 @@ export const actions = {
         if (!cats.includes('archive')) cats.push('archive');
         await db.inventory.update({ where: { id }, data: { notebookCategories: JSON.stringify(cats) } });
         return { success: true, message: "Notebook categories updated." };
+    },
+    updateEnabledPlugins: async ({ request, locals }) => {
+        const data = await request.formData();
+        const id = Number(data.get('id'));
+        const plugins = data.getAll('plugins') as string[];
+        await db.inventory.update({ where: { id }, data: { enabledPlugins: JSON.stringify(plugins) } });
+        return { success: true, message: "Plugin whitelist updated." };
     },
     retrySchemaBootstrap: async ({ request, locals }) => {
         const data = await request.formData();

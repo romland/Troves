@@ -183,6 +183,23 @@
                             {/if}
                         </div>
 
+                        {#if $page.data.availablePlugins?.length > 0}
+                            <div class="mt-3 p-3 bg-base-300 rounded-lg border border-base-200">
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-2 block">Extensions & Plugins</span>
+                                <form method="POST" action="?/updateEnabledPlugins" use:enhance={createEnhancer} class="flex flex-col gap-2">
+                                    <input type="hidden" name="id" value={v.id}>
+                                    <div class="flex flex-wrap gap-2">
+                                        {#each $page.data.availablePlugins as plugin}
+                                            <label class="cursor-pointer label p-0 flex gap-2 items-center justify-start bg-base-100 border border-base-200 rounded-lg px-3 py-1.5 shadow-sm hover:border-primary transition-colors">
+                                                <input type="checkbox" name="plugins" value={plugin} class="checkbox checkbox-xs checkbox-primary" checked={JSON.parse(v.enabledPlugins || '[]').includes(plugin)} on:change={(e) => e.currentTarget.form?.requestSubmit()} />
+                                                <span class="label-text text-xs font-medium">{plugin}</span>
+                                            </label>
+                                        {/each}
+                                    </div>
+                                </form>
+                            </div>
+                        {/if}
+
                         <form method="POST" action="?/updateInventoryStrategy" use:enhance={createEnhancer} class="mt-3 flex flex-col sm:flex-row sm:items-center items-start gap-1 sm:gap-2">
                             <input type="hidden" name="id" value={v.id}>
                             <select name="strategy" class="select select-bordered select-xs font-medium w-full sm:w-auto bg-base-100" on:change={(e) => e.currentTarget.form?.requestSubmit()} value={v.duplicateStrategy || 'PROMPT'}>
