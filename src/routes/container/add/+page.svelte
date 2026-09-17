@@ -1,10 +1,11 @@
 <script lang="ts">
     import { enhance } from "$app/forms";
     import Alert from "$lib/components/alert.svelte";
-    import type { ActionData } from "./$types";
+    import type { ActionData, PageServerData } from "./$types";
     import FormInput from "$lib/components/FormInput.svelte";
 
     export let form: ActionData;
+    export let data: PageServerData;
 
     import pageTitle from '$lib/stores';
     pageTitle.set("Add container");
@@ -56,36 +57,38 @@
 
             <FormInput type="textarea" label="Description" name="description" rows="2" placeholder="Optional notes about what goes in here..." inputClass="shadow-sm" />
 
-            <!-- Label Studio Stub -->
-            <div class="form-control bg-base-200 rounded-xl p-4 mt-2 border border-base-300">
-                <label class="label cursor-pointer justify-start gap-3 w-max p-0 mb-1">
-                    <input type="checkbox" name="printLabel" bind:checked={printLabel} class="checkbox checkbox-primary" />
-                    <span class="label-text font-semibold">Print physical label</span>
-                </label>
-                {#if printLabel}
-                    <div class="flex gap-4 mt-3 pl-8">
-                        {#if mode === 'batch'}
-                            <label class="flex items-center gap-2 cursor-pointer">
-                                <input type="radio" name="printScope" value="master" class="radio radio-primary radio-sm" checked />
-                                <span class="text-sm">Master Box Only</span>
-                            </label>
-                            <label class="flex items-center gap-2 cursor-pointer">
-                                <input type="radio" name="printScope" value="all" class="radio radio-primary radio-sm" />
-                                <span class="text-sm">Master + All Trays</span>
-                            </label>
-                        {:else}
-                            <label class="flex items-center gap-2 cursor-pointer">
-                                <input type="radio" name="labelSize" value="large" class="radio radio-primary radio-sm" checked />
-                                <span class="text-sm">Large (QR + Name)</span>
-                            </label>
-                            <label class="flex items-center gap-2 cursor-pointer">
-                                <input type="radio" name="labelSize" value="small" class="radio radio-primary radio-sm" />
-                                <span class="text-sm">Small (QR Only)</span>
-                            </label>
-                        {/if}
-                    </div>
-                {/if}
-            </div>
+            {#if data.canPrintLabels}
+                <!-- Label Studio Configuration -->
+                <div class="form-control bg-base-200 rounded-xl p-4 mt-2 border border-base-300">
+                    <label class="label cursor-pointer justify-start gap-3 w-max p-0 mb-1">
+                        <input type="checkbox" name="printLabel" bind:checked={printLabel} class="checkbox checkbox-primary" />
+                        <span class="label-text font-semibold">Print physical label</span>
+                    </label>
+                    {#if printLabel}
+                        <div class="flex gap-4 mt-3 pl-8">
+                            {#if mode === 'batch'}
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="radio" name="printScope" value="master" class="radio radio-primary radio-sm" checked />
+                                    <span class="text-sm">Master Box Only</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="radio" name="printScope" value="all" class="radio radio-primary radio-sm" />
+                                    <span class="text-sm">Master + All Trays</span>
+                                </label>
+                            {:else}
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="radio" name="labelSize" value="large" class="radio radio-primary radio-sm" checked />
+                                    <span class="text-sm">Large (QR + Name)</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="radio" name="labelSize" value="small" class="radio radio-primary radio-sm" />
+                                    <span class="text-sm">Small (QR Only)</span>
+                                </label>
+                            {/if}
+                        </div>
+                    {/if}
+                </div>
+            {/if}
         </div>
     </div>
 

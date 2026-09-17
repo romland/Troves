@@ -1,6 +1,7 @@
 import type { PageServerLoad } from './$types';
 import { db } from '$lib/server/database';
 import { error, fail } from "@sveltejs/kit";
+ import { extensionManager } from '$lib/server/extensions/ExtensionManager';
 
 export const load = (async ({ locals, params, url, fetch }) => {
     const item = await db.container.findFirst({
@@ -97,6 +98,8 @@ export const load = (async ({ locals, params, url, fetch }) => {
         } catch(e) {}
     }
 
+    const canPrintLabels = await extensionManager.hasActiveListeners('onPrintLabelRequested', locals.activeInventoryId);
+
     return {
         item: item,
         categories,
@@ -112,7 +115,8 @@ export const load = (async ({ locals, params, url, fetch }) => {
         polygons,
         warpMap,
         renderAsGrid,
-        allContainers
+        allContainers,
+        canPrintLabels
     };
 }) satisfies PageServerLoad;
 

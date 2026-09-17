@@ -1,9 +1,15 @@
 import { fail, redirect } from '@sveltejs/kit';
-import type { Actions } from './$types';
+ import type { Actions, PageServerLoad } from './$types';
 import { db } from '$lib/server/database';
 import sharp from 'sharp';
 import { MediaIngest } from '$lib/server/services/MediaIngest';
  import { extensionManager } from '$lib/server/extensions/ExtensionManager';
+
+ export const load = (async ({ locals }) => {
+    if (!locals.user) throw redirect(303, '/login');
+    const canPrintLabels = await extensionManager.hasActiveListeners('onContainerCreated', locals.activeInventoryId);
+    return { canPrintLabels };
+ }) satisfies PageServerLoad;
 
 export const actions = {
     default: async ({ locals, request }) => {

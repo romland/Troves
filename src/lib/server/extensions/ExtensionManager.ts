@@ -60,6 +60,21 @@ class ExtensionManager {
              .map(({ id, label, icon, urlTemplate }) => ({ id, label, icon, urlTemplate }));
 	}
 	
+     /**
+      * Checks if there is at least one active, whitelisted plugin listening to a specific event.
+      * Useful for conditionally hiding UI elements (like Print buttons) when no handler exists.
+      */
+     async hasActiveListeners(event: EventName, inventoryId: number): Promise<boolean> {
+         const hooks = this.listeners.get(event) || [];
+         if (hooks.length === 0) return false;
+
+         const vault = await db.inventory.findUnique({ where: { id: inventoryId }, select: { enabledPlugins: true } });
+         const whitelist = JSON.parse(vault?.enabledPlugins || '[]');
+         
+         // Return true if at least one hook belongs to an enabled plugin
+         return hooks.some(hook => whitelist.includes(hook.pluginName));
+     }
+
 	/**
 	* Triggers all registered extensions for an event.
 	* Guaranteed to execute asynchronously in the background I/O queue 
