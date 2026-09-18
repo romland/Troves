@@ -71,7 +71,8 @@ export const actions = {
         if (!id) return fail(400, { error: true, message: "Invalid User ID." });
 
         const name = data.get('name') as string;
-        const email = data.get('email') as string;
+        let email: string | null = data.get('email') as string;
+        email = email.trim() === '' ? null : email.trim();
         const password = data.get('password') as string;
         const passwordConfirm = data.get('passwordConfirm') as string;
         const isAdmin = data.get('isAdmin') === 'true';
@@ -81,7 +82,7 @@ export const actions = {
             return fail(400, { error: true, message: "You cannot revoke your own admin status." });
         }
 
-        let updateData: any = { name: name.trim(), email: email.trim(), isAdmin, canCreateInventories };
+        let updateData: any = { name: name.trim(), email: email || null, isAdmin, canCreateInventories };
         if (password) {
             if (password !== passwordConfirm) return fail(400, { error: true, message: "Passwords do not match." });
             if (password.trim().length < 6) return fail(400, { error: true, message: "Password must be at least 6 characters." });

@@ -150,6 +150,8 @@
     
     let deletedDocIds: number[] = [];
     let refreshedDocIds: number[] = [];
+    let deletedImageIds: number[] = [];
+    let refreshedImageIds: number[] = [];
 
     // Dirty State Reactivity
     $: {
@@ -164,6 +166,8 @@
         if (pastedDocCount > 0) dirty = true;
         if (deletedDocIds.length > 0) dirty = true;
         if (refreshedDocIds.length > 0) dirty = true;
+        if (deletedImageIds.length > 0) dirty = true;
+        if (refreshedImageIds.length > 0) dirty = true;
         
         // FIX: If it's a new item, the baseline location is the ambient location, not an empty string.
         const initialLocations = item ? (item.locations?.map(l => l.container?.name).sort().join(',') || "") : [...$ambientLocation].sort().join(',');
@@ -557,6 +561,8 @@
                 <MediaHub 
                     photoTypes={photoTypes} 
                     photoValues={item?.photos || []}
+                    bind:deletedImageIds
+                    bind:refreshedImageIds
                     on:success={(ev) => dispatch('success', ev.detail)} 
                     on:analyzingStart={handleAnalyzingStart}
                     on:analyzingComplete={handleAnalyzingComplete}

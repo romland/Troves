@@ -79,17 +79,22 @@ export async function withRetry<T>(
             
             // Parse 429 Quota Exhausted & dynamic retry delays
             if (status === 429 || status === 503 || errMessage.includes('429') || errMessage.includes('503') || errMessage.includes('RESOURCE_EXHAUSTED') || errMessage.includes('Quota exceeded') || errMessage.includes('overloaded')) {
-                let waitTime = 60000;
+                const isOverloaded = status === 503 || errMessage.includes('503') || errMessage.includes('overloaded') || errMessage.includes('busy');
+                let waitTime = isOverloaded ? 10000 : 60000;
                 const match = errMessage.match(/retry in ([\d\.]+)s/);
                 if (match && match[1]) {
                     waitTime = (parseFloat(match[1]) + 2) * 1000; // Add 2s safety buffer
                 }
                 
-                console.warn(`[Quota Exceeded] ${taskName} (${service}) failed. Waiting ${Math.ceil(waitTime/1000)}s...`);
-                quota.requests = 0;
-                quota.minuteResetTime = Date.now() + waitTime;
+                const logReason = isOverloaded ? "Service overloaded" : "Quota exceeded";
+                console.warn(`[${logReason}] ${taskName} (${service}) failed. Waiting ${Math.ceil(waitTime/1000)}s...`);
+                
+                if (!isOverloaded) {
+                    quota.requests = 0;
+                    quota.minuteResetTime = Date.now() + waitTime;
+                }
 
-                await logActivity(targetItemId, 'LLM Retry', `${service} quota exceeded. Retrying ${taskName} in ${Math.ceil(waitTime/1000)}s.`, 'warning');
+                await logActivity(targetItemId, 'LLM Retry', `${service} ${logReason.toLowerCase()}. Retrying ${taskName} in ${Math.ceil(waitTime/1000)}s.`, 'warning');
                 if (context?.taskId) taskManager.update(String(context.taskId), `API Busy. Waiting ${Math.ceil(waitTime/1000)}s...`);
                 systemHealth.setDegraded(`${service} API is rate-limited. Pausing queue for ${Math.ceil(waitTime/1000)}s...`, waitTime);
                 

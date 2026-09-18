@@ -2,6 +2,7 @@
     import { notify } from "$lib/client/notifications";
     import { invalidateAll } from '$app/navigation';
     import { page } from "$app/stores";
+    import { getArchetypeExampleQuestion } from "$lib/shared/constants";
     export let itemId: number;
     export let hasPhotos: boolean = false;
 
@@ -10,12 +11,7 @@
     let includePhotoContext = true;
 
     $: archetype = $page.data.inventories?.find((i: any) => i.id === $page.data.activeInventoryId)?.archetype || 'generic';
-    $: exampleQuestion = archetype === 'apparel' ? 'What material is this made of?' :
-                         archetype === 'media' ? 'Who is the author or publisher?' :
-                         archetype === 'consumables' ? 'What is the expiration date?' :
-                         archetype === 'collectibles' ? 'What year was this made?' :
-                         archetype === 'natural' ? 'What species is this?' :
-                         'What kind of batteries does this take?';
+    $: exampleQuestion = getArchetypeExampleQuestion(archetype);
 
     async function askAiQuestion() {
         if (!aiQuestion.trim() || !itemId) return;

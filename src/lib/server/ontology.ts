@@ -67,15 +67,8 @@ export async function bootstrapInventorySchema(inventoryId: number, domainName: 
     console.log(`[Taxonomy Engine] 🚀 Starting schema generation for Trove ID ${inventoryId}: "${domainName}"`);
     
     const archetype = (inv as any)?.archetype || 'generic';
-    let archetypeGuidance = "";
-    switch (archetype) {
-        case 'media': archetypeGuidance = "This is a Media & Publications inventory. Focus on Identity and Authorship. Ignore physical materials. Extract things like Format (e.g. Hardcover, DVD), Genre, Release Era."; break;
-        case 'apparel': archetypeGuidance = "This is an Apparel & Soft Goods inventory. Focus on Fit, Form, and Fabric. Extract things like Item Style, Target Audience (e.g. Mens, Womens), Size, Material."; break;
-        case 'hardware': archetypeGuidance = "This is a Hardware & Equipment inventory. Focus on Make, Model, and Specs. Extract things like Form Factor, Power/Connectivity, Purpose."; break;
-        case 'consumables': archetypeGuidance = "This is a Consumables & Pantry inventory. Focus on Shelf-life and Volume. Extract things like Volume/Weight, Packaging Type (e.g. Can, Box), Diet/Type."; break;
-        case 'collectibles': archetypeGuidance = "This is a Collectibles & Valuables inventory. Focus on Rarity, Era, and Condition. Extract things like Franchise/Subject, Era/Year, Material/Finish."; break;
-        case 'natural': archetypeGuidance = "This is a Natural Specimens inventory. Focus on Classification and Origin. Ignore brands or model numbers. Extract things like Species/Mineral Type, Form, Pattern."; break;
-    }
+    const { getArchetypePromptGuidance } = await import('$lib/shared/constants');
+    const archetypeGuidance = getArchetypePromptGuidance(archetype);
 
     try {
         // const prompt = `You are a Principal Data Architect designing a strict EAV taxonomy for an inventory tracking: "${domainName}".

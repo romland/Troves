@@ -103,6 +103,7 @@ export const actions = {
 
 
 export const load = (async ({ locals, params }) => {
+    if (locals.role === 'VIEWER') redirect(302, '/');
 	const vault = await db.inventory.findUnique({
 		where: { id: locals.activeInventoryId },
 		include: { templateFields: true }

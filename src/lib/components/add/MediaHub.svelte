@@ -12,8 +12,8 @@
     // View state for tabs
     let activeTab = 'device'; // 'device' | 'web'
     
-    let deletedImageIds: number[] = [];
-    let refreshedImageIds: number[] = [];
+    export let deletedImageIds: number[] = [];
+    export let refreshedImageIds: number[] = [];
 
     // Map existing photos to extract vision/LLM category and format it cleanly
     $: displayValues = photoValues.map(photo => {
@@ -38,13 +38,13 @@
     function toggleDelete(id: number) {
         if (deletedImageIds.includes(id)) deletedImageIds = deletedImageIds.filter(x => x !== id);
         else deletedImageIds = [...deletedImageIds, id];
-        dispatch('change');
+        dispatch('change', { deletedImageIds, refreshedImageIds });
     }
     
     function toggleRefresh(id: number) {
         if (refreshedImageIds.includes(id)) refreshedImageIds = refreshedImageIds.filter(x => x !== id);
         else refreshedImageIds = [...refreshedImageIds, id];
-        dispatch('change');
+        dispatch('change', { deletedImageIds, refreshedImageIds });
     }
 </script>
 

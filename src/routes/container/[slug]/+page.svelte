@@ -394,13 +394,15 @@
                     <button class="btn btn-circle btn-ghost bg-base-100/50 backdrop-blur-md hover:bg-base-100 transition-colors" title="Move Container" on:click={() => moveModal.show(data.item)}>
                         <i class="bi bi-arrows-move text-lg"></i>
                     </button>
-                    <a href="/container/{encodeURIComponent(data.item?.name || '')}/edit" class="btn btn-circle btn-ghost bg-base-100/50 backdrop-blur-md hover:bg-base-100 transition-colors" title="Edit Container">
-                        <i class="bi bi-pencil-square text-lg"></i>
-                    </a>
-                    <!-- Delete wrapped safely -->
-                    <div class="bg-base-100/50 backdrop-blur-md hover:bg-error/20 transition-colors rounded-full">
-                        <Delete message='Delete this container?' action='/container/{encodeURIComponent(data.item?.name || '')}/delete' btnClass="btn btn-circle btn-ghost text-error" iconClass="bi bi-trash text-lg" />
-                    </div>
+                    {#if $page.data.role !== 'VIEWER'}
+                        <a href="/container/{encodeURIComponent(data.item?.name || '')}/edit" class="btn btn-circle btn-ghost bg-base-100/50 backdrop-blur-md hover:bg-base-100 transition-colors" title="Edit Container">
+                            <i class="bi bi-pencil-square text-lg"></i>
+                        </a>
+                        <!-- Delete wrapped safely -->
+                        <div class="bg-base-100/50 backdrop-blur-md hover:bg-error/20 transition-colors rounded-full">
+                            <Delete message='Delete this container?' action='/container/{encodeURIComponent(data.item?.name || '')}/delete' btnClass="btn btn-circle btn-ghost text-error" iconClass="bi bi-trash text-lg" />
+                        </div>
+                    {/if}
                 </div>
             </div>
         </div>

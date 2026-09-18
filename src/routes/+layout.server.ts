@@ -20,6 +20,7 @@ export const load = (async ({ locals, setHeaders }) => {
     return { 
         user: locals.user, 
         activeInventoryId: locals.activeInventoryId,
+        role: locals.role,
         activeSort: locals.activeSort || 'newest',
         activeViewMode: locals.activeViewMode || 'list',
         activeAddMode: locals.activeAddMode || 'single',

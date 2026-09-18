@@ -4,11 +4,13 @@
     export let depth: number = 0;
     import { slide } from 'svelte/transition';
     import { createEventDispatcher } from 'svelte';
+    import { page } from '$app/stores';
     const dispatch = createEventDispatcher();
 
     $: children = allContainers.filter(c => c.parentId === container.id).sort((a,b) => a.name.localeCompare(b.name));
     let expanded = depth < 1;
     let showAllChildren = false;
+    let isMobileExpanded = false;
 
     $: visibleChildren = showAllChildren ? children : children.slice(0, 12);
 </script>
@@ -40,23 +42,37 @@
                     </div>
                 </div>
             </a>
-            <div class="flex items-center gap-1 shrink-0 ml-2">
-                <button type="button" class="btn btn-ghost btn-circle btn-sm text-gray-400 hover:text-primary transition-colors" on:click|stopPropagation={() => dispatch('move', container)} aria-label="Move"><i class="bi bi-arrows-move text-lg"></i></button>
-                <a href="/container/{encodeURIComponent(container.name)}/edit" class="btn btn-ghost btn-circle btn-sm text-gray-400 hover:text-primary transition-colors" aria-label="Edit" on:click|stopPropagation><i class="bi bi-pencil text-lg"></i></a>
-                <button type="button" class="btn btn-ghost btn-circle btn-sm text-gray-400 hover:text-error transition-colors" on:click|stopPropagation={() => dispatch('delete', container)} aria-label="Delete"><i class="bi bi-trash text-lg"></i></button>
-            </div>
+            {#if $page.data.role !== 'VIEWER'}
+                <div class="flex items-center gap-1 shrink-0 ml-2">
+                    <button type="button" class="btn btn-ghost btn-circle btn-sm text-gray-400 hover:text-primary transition-colors" on:click|stopPropagation={() => dispatch('move', container)} aria-label="Move"><i class="bi bi-arrows-move text-lg"></i></button>
+                    <a href="/container/{encodeURIComponent(container.name)}/edit" class="btn btn-ghost btn-circle btn-sm text-gray-400 hover:text-primary transition-colors" aria-label="Edit" on:click|stopPropagation><i class="bi bi-pencil text-lg"></i></a>
+                    <button type="button" class="btn btn-ghost btn-circle btn-sm text-gray-400 hover:text-error transition-colors" on:click|stopPropagation={() => dispatch('delete', container)} aria-label="Delete"><i class="bi bi-trash text-lg"></i></button>
+                </div>
+            {/if}
         </div>
 
         {#if expanded && children.length > 0}
-            <!-- Dense Grid for Children -->
             <div class="p-4 pt-0 bg-base-100" transition:slide|local={{duration: 200}}>
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                <div class="sm:hidden mb-2">
+                    {#if !isMobileExpanded}
+                        <button type="button" class="btn btn-sm btn-ghost w-full text-gray-500 bg-base-200/50 rounded-xl font-medium" on:click={() => isMobileExpanded = true}>
+                            <i class="bi bi-folder2-open"></i> Show {children.length} Trays
+                        </button>
+                    {/if}
+                </div>
+                <!-- Dense Grid for Children -->
+                <div class="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 {isMobileExpanded ? 'grid' : 'hidden sm:grid'}">
                     {#each visibleChildren as child (child.id)}
                         <svelte:self container={child} {allContainers} depth={depth + 1} on:delete on:move />
                     {/each}
                 </div>
+                {#if !showAllChildren && children.length > 12 && isMobileExpanded}
+                    <button class="btn btn-sm btn-ghost w-full text-gray-500 hover:text-primary mt-2 rounded-xl sm:hidden" on:click={() => showAllChildren = true}>
+                        Show all {children.length}
+                    </button>
+                {/if}
                 {#if !showAllChildren && children.length > 12}
-                    <button class="btn btn-sm btn-ghost w-full text-gray-500 hover:text-primary mt-2 rounded-xl" on:click={() => showAllChildren = true}>
+                    <button class="btn btn-sm btn-ghost w-full text-gray-500 hover:text-primary mt-2 rounded-xl hidden sm:block" on:click={() => showAllChildren = true}>
                         Show all {children.length} trays
                     </button>
                 {/if}
@@ -83,10 +99,12 @@
                     </span>
                 </div>
             </a>
-            <div class="flex items-center shrink-0 gap-0.5">
-                <button type="button" class="btn btn-ghost btn-square btn-sm h-8 w-8 min-h-0 text-gray-400 hover:text-primary" on:click={() => dispatch('move', container)} aria-label="Move"><i class="bi bi-arrows-move"></i></button>
-                <button type="button" class="btn btn-ghost btn-square btn-sm h-8 w-8 min-h-0 text-gray-400 hover:text-error" on:click={() => dispatch('delete', container)} aria-label="Delete"><i class="bi bi-trash"></i></button>
-            </div>
+            {#if $page.data.role !== 'VIEWER'}
+                <div class="flex items-center shrink-0 gap-0.5">
+                    <button type="button" class="btn btn-ghost btn-square btn-sm h-8 w-8 min-h-0 text-gray-400 hover:text-primary" on:click={() => dispatch('move', container)} aria-label="Move"><i class="bi bi-arrows-move"></i></button>
+                    <button type="button" class="btn btn-ghost btn-square btn-sm h-8 w-8 min-h-0 text-gray-400 hover:text-error" on:click={() => dispatch('delete', container)} aria-label="Delete"><i class="bi bi-trash"></i></button>
+                </div>
+            {/if}
         </div>
 
         {#if expanded && children.length > 0}

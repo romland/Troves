@@ -6,6 +6,7 @@ import sharp from 'sharp';
 import { MediaIngest } from '$lib/server/services/MediaIngest';
 
 export const load = (async ({ locals, params }) => {
+    if (locals.role === 'VIEWER') redirect(302, '/');
     console.log(params);
     const post = await db.container.findFirst({
         select : {

@@ -59,31 +59,38 @@ export const actions = {
 
         if (!name || name.trim() === '') return fail(400, { error: true, message: "Inventory name required." });
 
-        let allowNewCategories = true, allowAutoTaxonomy = false, extractExif = true;
-        let deepScanCollections = false, bgRemovalEnabled = true, bgRemovalModel = 'bria-rmbg';
-        let bgRemovalPreCrop = false, enablePaddleOCR = false, duplicateStrategy = 'PROMPT';
-        let archiveSingleScans = false, trackQuantity = true, showExif = false;
-        let showColors = false, showOcr = true, enableNotebook = true;
-        let enableDocuments = true, enableFuzzySearch = true;
-        let containerMode = 'scan', defaultView = 'grid';
+        const { getArchetypeSettings } = await import('$lib/shared/constants');
 
-        switch (archetype) {
-            case 'media': deepScanCollections = true; bgRemovalEnabled = false; enablePaddleOCR = true; defaultView = 'list'; break;
-            case 'apparel': allowAutoTaxonomy = true; deepScanCollections = true; showColors = true; bgRemovalPreCrop = true; break;
-            case 'hardware': allowAutoTaxonomy = true; enablePaddleOCR = true; duplicateStrategy = 'AUTO_BUMP'; containerMode = 'select'; defaultView = 'list'; break;
-            case 'consumables': deepScanCollections = true; bgRemovalEnabled = false; duplicateStrategy = 'AUTO_BUMP'; enableNotebook = false; enableDocuments = false; break;
-            case 'collectibles': allowAutoTaxonomy = true; deepScanCollections = true; trackQuantity = false; showColors = true; break;
-            case 'natural': allowAutoTaxonomy = true; bgRemovalPreCrop = true; trackQuantity = false; showExif = true; break;
-        }
+        let settings: any = {
+            allowNewCategories: true,
+            allowAutoTaxonomy: false,
+            extractExif: true,
+            deepScanCollections: false,
+            bgRemovalEnabled: true,
+            bgRemovalModel: 'bria-rmbg',
+            bgRemovalPreCrop: false,
+            enablePaddleOCR: false,
+            duplicateStrategy: 'PROMPT',
+            archiveSingleScans: false,
+            trackQuantity: true,
+            showExif: false,
+            showColors: false,
+            showOcr: true,
+            enableNotebook: true,
+            enableDocuments: true,
+            enableFuzzySearch: true,
+            containerMode: 'scan',
+            defaultView: 'grid'
+        };
+
+        const overrides = getArchetypeSettings(archetype);
+        Object.assign(settings, overrides);
 
         const inventory = await db.inventory.create({
             data: {
                 name: name.trim(), description: contentsHint.trim(), classes: "[]", archetype,
-                allowNewCategories, allowAutoTaxonomy, extractExif, deepScanCollections,
-                bgRemovalEnabled, bgRemovalModel, bgRemovalPreCrop, enablePaddleOCR,
-                duplicateStrategy, archiveSingleScans, trackQuantity, showExif,
-                showColors, showOcr, enableNotebook, enableDocuments, enableFuzzySearch,
-                containerMode, defaultView, users: { create: { userId: locals.user.id, role: "OWNER" } }
+                ...settings,
+                users: { create: { userId: locals.user.id, role: "OWNER" } }
             }
         });
 
