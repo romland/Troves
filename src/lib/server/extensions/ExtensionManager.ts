@@ -10,9 +10,9 @@ import { getActiveSchema } from '$lib/server/ontology';
 import { evaluateTextIdentity } from '$lib/server/matcher';
 
 export type EventName = 'onContainerCreated' | 'onItemAdded' | 'onItemUpdated' | 'onItemProcessed' | 'onPrintLabelRequested';
-export type EventHandler = (payload: any) => Promise<void>;
+export type EventHandler = (payload: any) => Promise<any>;
 export type HookOptions = { maxRetries?: number; retryDelayMs?: number; rateLimitRpm?: number };
-export type ItemActionDef = { id: string; label: string; icon?: string; urlTemplate?: string } & HookOptions;
+export type ItemActionDef = { id: string; label: string; icon?: string; urlTemplate?: string; mode?: 'queue' | 'resolve' } & HookOptions;
 
 type HookRegistration = { pluginName: string; handler: EventHandler; options?: HookOptions };
 
@@ -76,7 +76,7 @@ class ExtensionManager {
 		const whitelist = JSON.parse(vault?.enabledPlugins || '[]');
 		return Array.from(this.itemActions.values())
 		.filter(action => whitelist.includes(action.pluginName))
-		.map(({ id, label, icon, urlTemplate }) => ({ id, label, icon, urlTemplate }));
+        .map(({ id, label, icon, urlTemplate, mode }) => ({ id, label, icon, urlTemplate, mode }));
 	}
 	
 	/**
@@ -99,7 +99,7 @@ class ExtensionManager {
      * Prevents Troves from getting IP-banned by external APIs during mass-scan/bulk-import 
      * events where dozens of items might trigger the same plugin simultaneously.
      */
-	private async executeWithRetryAndLimits(pluginName: string, config: HookOptions, fn: () => Promise<void>) {
+    private async executeWithRetryAndLimits(pluginName: string, config: HookOptions, fn: () => Promise<any>) {
 		const maxRetries = config.maxRetries || 1;
 		const retryDelayMs = config.retryDelayMs || 2000;
 		const rateLimitRpm = config.rateLimitRpm || 0;
@@ -141,6 +141,36 @@ class ExtensionManager {
 	}
 	
 	/**
+     * Executes a plugin action synchronously and returns a resolved URL for redirection.
+     * Used by the Magic Redirect proxy for plugins running in { mode: 'resolve' }.
+     */
+    async resolveItemAction(actionId: string, payload: any): Promise<string | null> {
+        const action = this.itemActions.get(actionId);
+        if (!action || !action.handler || action.mode !== 'resolve') {
+            sysLog.warn(`[ExtensionManager] Action ${actionId} is not a valid resolver.`);
+            return null;
+        }
+
+        const prefix = `[Plugin:${action.pluginName}]`;
+        sysLog.debug(`${prefix} Resolving dynamic URL for '${action.label}'...`);
+        const startTime = Date.now();
+        
+        try {
+            let url: string | null = null;
+            await this.executeWithRetryAndLimits(action.pluginName, action, async () => {
+                url = await action.handler!(payload);
+            });
+            
+            const duration = Date.now() - startTime;
+            sysLog.info(`${prefix} Resolved URL for '${action.label}' successfully in ${duration}ms.`);
+            return url;
+        } catch (err) {
+            sysLog.error(`${prefix} Error resolving action '${action.label}':`, err);
+            return null;
+        }
+    }
+
+    /**
 	 * Triggers all registered extensions for an event.
 	 * Guaranteed to execute asynchronously in the background I/O queue 
 	 * to prevent blocking the user's save workflow.

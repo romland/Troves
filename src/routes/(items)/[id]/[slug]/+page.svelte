@@ -217,7 +217,12 @@ $: if (data.duplicateItemDetails?.debugTrace) {
                         <li class="divider my-0 h-[1px] bg-base-200"></li>
                         {#each data.pluginActions as action}
                             <li>
-                                {#if action.urlTemplate}
+                                {#if action.mode === 'resolve'}
+                                    <a href="/api/ext/{action.id}/{data.item?.id}" target="_blank" rel="noopener noreferrer" class="font-medium text-base-content hover:text-primary flex items-start gap-2.5">
+                                        {#if action.icon}<i class="bi {action.icon} text-lg leading-none opacity-70 mt-0.5 shrink-0"></i>{/if}
+                                        <span class="leading-tight whitespace-normal text-left">{action.label}</span>
+                                    </a>
+                                {:else if action.urlTemplate}
                                     <a href="{action.urlTemplate.replace('{{title}}', encodeURIComponent(data.item?.title || ''))}" target="_blank" rel="noopener noreferrer" class="font-medium text-base-content hover:text-primary flex items-start gap-2.5">
                                         {#if action.icon}<i class="bi {action.icon} text-lg leading-none opacity-70 mt-0.5 shrink-0"></i>{/if}
                                         <span class="leading-tight whitespace-normal text-left">{action.label}</span>
