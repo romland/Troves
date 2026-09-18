@@ -30,10 +30,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		
 		const activeSchema = await getActiveSchema(locals.activeInventoryId, null, true);
 
-        const parsed = await apiQueue.add(
-            () => analyzeBulkCollection(localDiskPath, mimeType, activeSchema, hint, { targetType: 'global', targetId: 0 }),
-            { targetType: 'global', targetId: 0, description: 'Matching physical items against Trove' }
-        );
+        const parsed = await analyzeBulkCollection(localDiskPath, mimeType, activeSchema, hint, { targetType: 'global', targetId: 0, description: 'Matching physical items against Trove' });
 
         const detected = parsed.items || [];
         const totalVisibleCount = parsed.totalVisibleCount || detected.length;

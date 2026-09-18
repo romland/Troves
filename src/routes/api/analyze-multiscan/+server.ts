@@ -38,10 +38,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
         const activeSchema = await getActiveSchema(locals.activeInventoryId, null, true);
 		const hint = data.get('hint') as string;
 
-        const aiResponse = await apiQueue.add(
-            () => analyzeBulkCollection(localPath, mimeType, activeSchema, hint, { targetType: 'global', targetId: 0 }),
-            { targetType: 'global', targetId: 0, description: 'Analyzing Multi-Scan items with Vision Model' }
-        );
+        const visionResponse = await analyzeBulkCollection(localPath, mimeType, activeSchema, hint, { targetType: 'global', targetId: 0, description: 'Analyzing Multi-Scan items with Vision Model' });
 
         const dbItems = await db.item.findMany({
             where: { inventoryId: locals.activeInventoryId },
@@ -52,7 +49,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
         const defaultStrategy = vault?.duplicateStrategy || 'PROMPT';
         const archetype = vault?.archetype || 'generic';
 
-        const { annotatedScannedItems } = findBestMatchesForBatch(aiResponse.items, dbItems, undefined, archetype);
+        const { annotatedScannedItems } = findBestMatchesForBatch(visionResponse.items, dbItems, undefined, archetype);
         
         console.log(`[MATCH-DEBUG] analyze-multi-scan API: annotatedScannedItems length: ${annotatedScannedItems.length}`);
 
@@ -65,7 +62,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
             console.log(`[MATCH-DEBUG] Returning to UI -> Item: "${item.title}" | isDuplicate: ${item.isDuplicate}`);
         }
 
-        return json({ success: true, draftPath: webPath, noteId: note.id, totalVisibleCount: aiResponse.totalVisibleCount, collectionType: aiResponse.collectionType, items: annotatedScannedItems });
+        return json({ success: true, draftPath: webPath, noteId: note.id, totalVisibleCount: visionResponse.totalVisibleCount, collectionType: visionResponse.collectionType, items: annotatedScannedItems });
     } catch (e) {
         console.error("Multi-Scan analysis error:", e);
         const err = e as any;

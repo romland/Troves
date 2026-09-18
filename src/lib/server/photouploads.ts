@@ -129,10 +129,7 @@ export async function enrichPhotoData(localPath: string, webPath: string, type: 
                 const allowNew = inv?.allowNewCategories ?? true;
                 const activeSchema = await getActiveSchema(inventoryId, tempPhoto.categoryId);      
 
-                const analysis = await apiQueue.add(
-                    () => analyzePhoto(currentLocalPath, existingCategories, allowNew, activeSchema, tracking?.targetId as number | undefined),
-                    tracking ? { ...tracking, description: 'Classifying image via ML' } : undefined
-                );
+                const analysis = await analyzePhoto(currentLocalPath, existingCategories, allowNew, activeSchema, tracking?.targetId as number | undefined);
                 
                 if (analysis.searchSynonyms && tempPhoto.itemId) {
                     const { getTagIds } = await import('$lib/server/services');
@@ -387,7 +384,7 @@ export async function processItemPhotosBackground(item: any, isNew: boolean = fa
                                 await logActivity(item.id, 'Analysis', `Attempting to auto-generate missing Item title...`);
                                 const currentLocalPath = `data${enriched.orgPath || photo.orgPath}`;
                                 const { guessProductDetails } = await import('$lib/server/vision-classification');
-                                const details = await apiQueue.add(() => guessProductDetails(currentLocalPath, "", item.id));
+                        const details = await guessProductDetails(currentLocalPath, "", item.id);
                                 aiTitle = details?.title;
                                 aiDesc = details?.description;
                             }

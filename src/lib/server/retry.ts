@@ -39,7 +39,7 @@ export async function withRetry<T>(
                 console.log(`[Quota] Holding back ${taskName} (${service}) for ${Math.ceil(waitTime/1000)}s to respect limits.`);
                 await logActivity(targetItemId, 'Quota Wait', `Holding back ${taskName} for ${Math.ceil(waitTime/1000)}s to respect ${service} limits.`, 'warning');
                 if (context?.taskId) taskManager.update(String(context.taskId), `Waiting ${Math.ceil(waitTime/1000)}s for API quota...`);
-                systemHealth.setDegraded(`AI quota limits reached. Pausing queue for ${Math.ceil(waitTime/1000)}s...`, waitTime);
+                systemHealth.setDegraded(`LLM quota limits reached. Pausing queue for ${Math.ceil(waitTime/1000)}s...`, waitTime);
                 await new Promise(r => setTimeout(r, waitTime));
                 systemHealth.clearDegraded();
             }
