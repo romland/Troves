@@ -1,10 +1,21 @@
 <script lang="ts">
     import type { PageServerData } from './$types';
     import pageTitle from '$lib/stores';
+    import Modal from "$lib/components/Modal.svelte";
 
     export let data: PageServerData;
 
     pageTitle.set("System Logs");
+
+    let payloadModal: Modal;
+    let payloadModalTitle = "";
+    let payloadModalContent = "";
+    function openPayloadModal(log: any) {
+        payloadModalTitle = log.action;
+        payloadModalContent = log.payload;
+        payloadModal.showModal();
+    }
+
 </script>
 
 <div class="max-w-4xl mx-auto pb-12 animate-fade-in">
@@ -44,7 +55,12 @@
                                 </span>
                             </td>
                             <td class="font-semibold text-xs whitespace-nowrap">{log.action}</td>
-							<td class="text-xs max-w-[150px] sm:max-w-xs truncate" title={log.message}>{log.message}</td>
+							<td class="text-xs max-w-[150px] sm:max-w-xs truncate" title={log.message}>
+                                {log.message}
+                                {#if log.payload}
+                                    <button type="button" class="btn btn-xs btn-outline btn-ghost ml-2 py-0 h-5 min-h-0 text-[10px]" on:click={() => openPayloadModal(log)}>View Details</button>
+                                {/if}                                
+                            </td>
 							<td class="text-right hidden sm:table-cell">
                                 {#if log.item}
                                     <a href="/{log.item.id}/{log.item.slug}" class="text-xs text-primary hover:underline flex items-center justify-end gap-1">
@@ -61,3 +77,9 @@
         </div>
     </div>
 </div>
+
+<Modal bind:this={payloadModal} title={payloadModalTitle} titleClass="font-bold text-lg leading-tight" boxClass="p-0 overflow-hidden sm:rounded-[2.5rem] w-11/12 max-w-5xl flex flex-col max-h-[90vh]">
+    <div class="p-4 overflow-y-auto bg-base-200/50">
+        <pre class="text-[10px] font-mono whitespace-pre-wrap break-words">{payloadModalContent}</pre>
+    </div>
+</Modal>

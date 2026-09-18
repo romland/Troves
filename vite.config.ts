@@ -21,6 +21,7 @@ export default defineConfig(({ command }) => ({
                 '**/.git/**',
                 '**/node_modules/**',
                 '**/data/images/**',
+                '**/data/plugins/**',
                 '**/services/**',
                 '**/dev-dist/**',
                 '**/dist/**',
