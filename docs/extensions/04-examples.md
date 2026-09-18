@@ -1261,8 +1261,6 @@ export default function register({ on, registerItemAction, sysLog, logActivity, 
 
 **Suggested Filename:** `data/plugins/fetch-mouser-specsheet.js`
 
-**The Goal:** Query the Mouser API for an item.
-
 ```javascript
 /**
  * ============================================================================
