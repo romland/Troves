@@ -25,8 +25,39 @@
     {#each documents as doc, i}
         {@const info = getFileInfo(doc)}
         {@const cleanPath = (doc.path || '').toLowerCase().split('#')[0]}
-        <div class="collapse collapse-arrow bg-base-200 border border-base-300 overflow-hidden">
-            <input type="radio" name="my-accordion-2" checked={i===0} />
+        {@const isExternalLink = doc.type === 'link' || (doc.path && doc.path.startsWith('http'))}
+        {@const linkHref = isExternalLink ? doc.path : null}
+        {@const isAppUri = linkHref && !linkHref.startsWith('http')}
+        {@const hasContent = doc.summary || (doc.extracts && doc.extracts.length > 30)}
+
+        {#if isExternalLink && !hasContent}
+            <div class="bg-base-300 border border-base-300 rounded-2xl flex items-center justify-between p-2 pr-3">
+                <div class="flex items-center gap-3 overflow-hidden">
+                    <div class="w-8 h-8 rounded bg-base-200 flex items-center justify-center shrink-0 border border-base-300/50 shadow-sm">
+                        <i class="bi {info.icon} {info.color} text-lg"></i>
+                    </div>
+                    <a href={linkHref} target={isAppUri ? undefined : "_blank"} rel={isAppUri ? undefined : "noopener noreferrer"} class="truncate font-semibold text-base-content hover:text-primary hover:underline">
+                        {doc.title} <i class="bi bi-box-arrow-up-right text-[10px] ml-1 opacity-50"></i>
+                    </a>
+                </div>
+                <div class="flex items-center gap-2 shrink-0 ml-2">
+                    <div class="hidden sm:flex items-center gap-1.5 bg-base-200/50 px-2 py-0.5 rounded border border-base-300 shadow-sm text-base-content/70">
+                        <span class="text-[9px] uppercase font-bold tracking-wider">{info.label}</span>
+                    </div>
+                    <form id="move-doc-form-{doc.id}" action="?/moveDocument" method="POST" class="hidden" use:enhance={() => { return async ({ update }) => { await update(); notify('success', 'Link moved.'); }; }}>
+                        <input type="hidden" name="docId" value={doc.id}>
+                        <input type="hidden" name="targetItemId" value="">
+                    </form>
+                    <button type="button" class="btn btn-xs btn-ghost hover:bg-base-200 rounded-lg text-base-content/70" title="Move" on:click={() => { movingDocId = doc.id; itemSelector.showModal(); }}><i class="bi bi-box-arrow-right"></i></button>
+                    <form method="POST" action="?/deleteDocument" use:enhance={() => { return async ({ update }) => { await update(); notify('success', 'Link removed.'); }; }} class="m-0 p-0 flex">
+                        <input type="hidden" name="docId" value={doc.id}>
+                        <button type="button" class="btn btn-xs btn-ghost hover:bg-error/20 text-error rounded-lg" title="Delete" on:click={async (e) => { const form = e.currentTarget.closest('form'); const res = await confirmModal.ask('Remove Link?', `Remove "${doc.title}"?`, 'Remove', 'Cancel', true); if (res) form.requestSubmit(); }}><i class="bi bi-trash3"></i></button>
+                    </form>
+                </div>
+            </div>
+        {:else}
+            <div class="collapse collapse-arrow bg-base-200 border border-base-300 overflow-hidden">
+                <input type="radio" name="my-accordion-2" checked={i===0} />
 			<div class="collapse-title font-semibold bg-base-300 flex items-center gap-3 overflow-hidden pr-12">
                 {#if doc.thumbPath}
                     <div class="relative w-8 h-8 shrink-0">
@@ -86,7 +117,7 @@
                                 <i class="bi bi-hdd-network"></i> Local Cache
                             </button>
                         {:else}
-                            <a href="{doc.path || doc.source}" target="_blank" class="truncate flex-1 min-w-0 block text-primary hover:underline font-medium" title="{doc.source}">
+                            <a href="{doc.path || doc.source}" target={((doc.path || doc.source) && !(doc.path || doc.source).startsWith('http')) ? undefined : "_blank"} rel={((doc.path || doc.source) && !(doc.path || doc.source).startsWith('http')) ? undefined : "noopener noreferrer"} class="truncate flex-1 min-w-0 block text-primary hover:underline font-medium" title="{doc.source}">
                                 {doc.source}
                             </a>
                         {/if}
@@ -117,6 +148,7 @@
                 </div>
             </div>
         </div>
+        {/if}
     {/each}
 </div>
 

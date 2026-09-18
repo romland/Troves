@@ -14,7 +14,7 @@
 <dialog bind:this={dialogNode} class="modal {position === 'top' ? 'modal-top sm:modal-middle' : (position === 'bottom' ? 'modal-bottom sm:modal-middle' : 'modal-middle')} {blur ? 'backdrop-blur-sm' : ''}" on:close>
     <div class="modal-box {boxClass}">
         {#if title}
-            <h3 class="{titleClass} mb-4">{@html title}</h3>
+            <h3 class="{titleClass} pl-5 mb-4">{@html title}</h3>
         {/if}
         <slot />
     </div>

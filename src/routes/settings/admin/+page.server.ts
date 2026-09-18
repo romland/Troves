@@ -17,6 +17,17 @@ export const load = (async ({ locals }) => {
         select: { id: true, username: true, name: true, email: true, isAdmin: true, canCreateInventories: true } 
     });
 
+    const docsDir = path.resolve(process.cwd(), 'docs/extensions');
+    let extensionDocs = '';
+    try {
+        if (fs.existsSync(docsDir)) {
+            const docFiles = fs.readdirSync(docsDir).filter(f => f.endsWith('.md')).sort();
+            for (const file of docFiles) {
+                extensionDocs += `\n\n--- ${file} ---\n` + fs.readFileSync(path.join(docsDir, file), 'utf-8');
+            }
+        }
+    } catch (e) { console.error("Failed to read extension docs", e); }
+
     const pluginDir = path.resolve(process.cwd(), 'data/plugins');
     let rawFiles: string[] = [];
     try { if (fs.existsSync(pluginDir)) rawFiles = fs.readdirSync(pluginDir).filter(f => f.endsWith('.js') || f.endsWith('.mjs')); } catch(e){}
@@ -35,7 +46,7 @@ export const load = (async ({ locals }) => {
         };
     });
 
-    return { allUsers, diagnostics: await getSystemDiagnostics(), plugins };
+    return { allUsers, diagnostics: await getSystemDiagnostics(), plugins, extensionDocs };
 }) satisfies PageServerLoad;
 
 export const actions = {

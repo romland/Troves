@@ -82,6 +82,7 @@ export function getFileInfo(doc: any) {
     if (isEpub(path)) return { icon: 'bi-book', color: 'text-secondary', label: 'EPUB' };
     if (isVideo(path)) return { icon: 'bi-filetype-mp4', color: 'text-info', label: 'VIDEO' };
     if (isImage(path)) return { icon: 'bi-image', color: 'text-success', label: 'IMAGE' };
+    if (doc.type === 'link') return { icon: 'bi-link-45deg', color: 'text-info', label: 'LINK' };
     if (isHtml(path) || source.startsWith('http')) return { icon: 'bi-globe', color: 'text-primary', label: 'WEB' };
     if (doc.type === 'note') return { icon: 'bi-sticky', color: 'text-warning', label: 'NOTE' };
     
