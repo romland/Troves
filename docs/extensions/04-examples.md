@@ -891,3 +891,341 @@ export default function register({ on, registerItemAction, sysLog, logActivity, 
     });
 }
 ```
+
+## 6. Fetch Metadata & Update Entity (Spotify API)
+
+**Suggested Filename:** `data/plugins/fetch-spotify-info.js`
+
+**The Goal:** Query the Spotify API for an item, update its title and description, add attributes, and fetch the cover art and add a song list.
+
+**How it works:**
+- It leverages the built-in `rateLimitRpm` to strictly stay under typical 60 requests/min free limits.
+- It uses `maxRetries` to automatically recover from temporary API timeouts in the background queue.
+- It reads from and writes directly to the Troves database using the injected `db` Prisma client.
+
+**The Prompt:**  
+> Think along with me here... I am thinking of scanning in my childhood coin collection ... what kind of plugins would I need for that to get meta info or something? I am willing to register for services, but not too keen on paying for them....
+
+```javascript
+/*
+ * ============================================================================
+ * TROVES PLUGIN: NUMISTA COIN METADATA
+ * ============================================================================
+ * 
+ * Automatically fetches and enriches coin metadata from the Numista catalog.
+ * 
+ * REQUIRED SETUP:
+ * You must add the following key to your Troves `.env` file:
+ * 
+ * NUMISTA_API_KEY="your_numista_api_key_here"
+ * 
+ * How to get one (Free):
+ * 1. Go to https://en.numista.com/api/ and request access to the Numista API.
+ * 2. Once your key is granted, add it to your `.env` file.
+ * 3. Restart your Troves Docker container.
+ * ============================================================================
+ */
+export default function register({ on, registerItemAction, sysLog, logActivity, fetch, db, env }) {
+    
+    // Standard English names. We rely on Numista's text engine to parse these naturally.
+    const demonymMap = {
+        'swedish': 'Sweden', 'norwegian': 'Norway', 'danish': 'Denmark',
+        'british': 'United Kingdom', 'english': 'United Kingdom', 'uk': 'United Kingdom',
+        'french': 'France', 'german': 'Germany', 'canadian': 'Canada',
+        'australian': 'Australia', 'american': 'United States', 'us': 'United States',
+        'swiss': 'Switzerland', 'dutch': 'Netherlands', 'belgian': 'Belgium',
+        'spanish': 'Spain', 'italian': 'Italy', 'russian': 'Russia',
+        'mexican': 'Mexico', 'brazilian': 'Brazil', 'japanese': 'Japan',
+        'chinese': 'China', 'indian': 'India', 'south african': 'South Africa'
+    };
+
+    function getFuzzyAttribute(attributes, keywords) {
+        if (!attributes) return null;
+        const match = attributes.find(a => {
+            const keyLower = (a.key || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+            return keywords.some(kw => keyLower.includes(kw));
+        });
+        return match ? match.value : null;
+    }
+
+    function extractExpectedCountry(title, fuzzyCountryVal) {
+        let textToSearch = title.toLowerCase();
+        if (fuzzyCountryVal) textToSearch += ` ${fuzzyCountryVal.toLowerCase()}`;
+
+        for (const [demonym, countryName] of Object.entries(demonymMap)) {
+            if (new RegExp(`\\b${demonym}\\b`).test(textToSearch) || new RegExp(`\\b${countryName.toLowerCase()}\\b`).test(textToSearch)) {
+                return countryName;
+            }
+        }
+        return fuzzyCountryVal;
+    }
+
+    async function searchAndScoreCandidates(item, apiKey) {
+        const safeTitle = item.title.trim();
+        
+        const fuzzyCountry = getFuzzyAttribute(item.attributes, ['country', 'issuer', 'nation', 'origin']);
+        const fuzzyDenom = getFuzzyAttribute(item.attributes, ['denomination', 'value', 'face']);
+        const fuzzyYearStr = getFuzzyAttribute(item.attributes, ['year', 'date', 'mint']);
+        const fuzzyYear = fuzzyYearStr ? parseInt(fuzzyYearStr.match(/\d{4}/)?.[0], 10) : null;
+
+        const expectedCountry = extractExpectedCountry(safeTitle, fuzzyCountry);
+        
+        // 1. Build raw combined string (Inject the expected country into the text directly)
+        let searchTerms = [safeTitle];
+        if (fuzzyDenom) searchTerms.push(fuzzyDenom);
+        if (fuzzyYear) searchTerms.push(String(fuzzyYear));
+        if (expectedCountry) searchTerms.push(expectedCountry);
+        let rawQueryStr = searchTerms.join(' ');
+        
+        // 2. Global Sanitization
+        const fillerWords = /\b(coin|matte|proof|circulated|uncirculated|token|obverse|reverse|front|back|mint|round|metallic|copper|nickel|silver|gold|bronze|brass|zinc|steel|finish|surface)\b/gi;
+        let cleanQueryStr = rawQueryStr.replace(fillerWords, '').replace(/\s+/g, ' ').trim();
+        
+        // Replace demonyms with actual country names so the text search finds it easily
+        for (const [demonym, countryName] of Object.entries(demonymMap)) {
+            if (new RegExp(`\\b${demonym}\\b`, 'i').test(cleanQueryStr)) {
+                cleanQueryStr = cleanQueryStr.replace(new RegExp(`\\b${demonym}\\b`, 'gi'), countryName);
+            }
+        }
+        
+        // Deduplicate identical words (e.g. "Sweden 2 Kronor 1966 Sweden" -> "Sweden 2 Kronor 1966")
+        let query = [...new Set(cleanQueryStr.split(' ').filter(Boolean))].join(' ').trim();
+
+        // Note: Using count=20 instead of limit=20 to adhere to API spec, and relying on pure text search.
+        let searchUrl = `https://api.numista.com/v3/types?q=${encodeURIComponent(query)}&count=20`;
+        sysLog.info(`[Numista] Query Pass 1: ${searchUrl}`);
+
+        let searchRes = await fetch(searchUrl, { headers: { 'Numista-API-Key': apiKey, 'Accept': 'application/json' } });
+        if (!searchRes.ok) throw new Error(`Search API failed: ${searchRes.status}`);
+        
+        let searchData = await searchRes.json();
+        let types = searchData.types || [];
+
+        // 3. Fallback Minimal Pass
+        if (types.length === 0 && fuzzyDenom) {
+            sysLog.info(`[Numista] Pass 1 returned 0 results. Attempting minimal fallback.`);
+            
+            let minimalBase = `${expectedCountry || ''} ${fuzzyDenom} ${fuzzyYear || ''}`.replace(fillerWords, '').replace(/\s+/g, ' ').trim();
+            for (const [demonym, countryName] of Object.entries(demonymMap)) {
+                if (new RegExp(`\\b${demonym}\\b`, 'i').test(minimalBase)) {
+                    minimalBase = minimalBase.replace(new RegExp(`\\b${demonym}\\b`, 'gi'), countryName);
+                }
+            }
+            let minimalQuery = [...new Set(minimalBase.split(' ').filter(Boolean))].join(' ').trim();
+            
+            searchUrl = `https://api.numista.com/v3/types?q=${encodeURIComponent(minimalQuery)}&count=20`;
+            sysLog.info(`[Numista] Query Pass 2 (Minimal): ${searchUrl}`);
+            
+            searchRes = await fetch(searchUrl, { headers: { 'Numista-API-Key': apiKey, 'Accept': 'application/json' } });
+            if (searchRes.ok) {
+                searchData = await searchRes.json();
+                types = searchData.types || [];
+                if (types.length > 0) query = minimalQuery; 
+            }
+        }
+
+        if (types.length === 0) {
+            return { query, types: [], bestMatch: null, rejectedLog: [] };
+        }
+
+        // 4. Strict Local Validation
+        const titleAndDenom = `${safeTitle} ${fuzzyDenom || ''}`;
+        const requiredTitleNumbers = titleAndDenom.match(/\b\d+(?:\.\d+)?\b/g) || [];
+        const filteredRequiredNumbers = requiredTitleNumbers.filter(n => parseInt(n) !== fuzzyYear);
+
+        const getWords = (str) => (str || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').split(' ').filter(w => w.length > 2);
+        const origWords = getWords(query);
+        
+        let highestScore = -1;
+        let bestMatch = null;
+        let rejectedLog = [];
+
+        for (const coin of types) {
+            let score = 0;
+            const coinTitle = (coin.title || '').toLowerCase();
+            
+            // RULE A: Strict Country/Issuer Lock (Drop Norwegian coins instantly)
+            if (expectedCountry && coin.issuer?.name) {
+                const apiIssuer = coin.issuer.name.toLowerCase();
+                const expected = expectedCountry.toLowerCase();
+                if (!apiIssuer.includes(expected) && !expected.includes(apiIssuer)) {
+                    rejectedLog.push(`Rejected "${coin.title}" (Issuer is ${coin.issuer.name}, expected ${expectedCountry})`);
+                    continue; // Skip immediately
+                }
+            }
+            
+            // RULE B: Strict Denomination Number Match
+            let missingCriticalNumber = false;
+            for (const num of filteredRequiredNumbers) {
+                if (!new RegExp(`\\b${num}\\b`).test(coinTitle)) {
+                    missingCriticalNumber = true;
+                    rejectedLog.push(`Rejected "${coin.title}" (Missing exact number: ${num})`);
+                    break;
+                }
+            }
+            if (missingCriticalNumber) continue;
+
+            // RULE C: Strict Year Boundary Match
+            if (fuzzyYear) {
+                if (coin.min_year && fuzzyYear < coin.min_year) {
+                    rejectedLog.push(`Rejected "${coin.title}" (Coin from ${fuzzyYear}, minted > ${coin.min_year})`);
+                    continue;
+                }
+                if (coin.max_year && fuzzyYear > coin.max_year) {
+                    rejectedLog.push(`Rejected "${coin.title}" (Coin from ${fuzzyYear}, minted < ${coin.max_year})`);
+                    continue;
+                }
+            }
+
+            // Calculate Lexical Overlap Score for surviving candidates
+            const coinWords = getWords(coinTitle);
+            for (const word of origWords) {
+                if (coinWords.includes(word)) score++;
+            }
+
+            // Tie-breaker: Prefer shorter titles (less bloat)
+            score -= Math.abs(coinTitle.length - query.length) * 0.01;
+
+            if (score > highestScore) {
+                highestScore = score;
+                bestMatch = coin;
+            }
+        }
+
+        return { query, types, bestMatch, rejectedLog };
+    }
+
+    async function applyCoinDetails(item, coinId, apiKey) {
+        const fullUrl = `https://api.numista.com/v3/types/${coinId}`;
+        const fullRes = await fetch(fullUrl, { headers: { 'Numista-API-Key': apiKey, 'Accept': 'application/json' } });
+        if (!fullRes.ok) throw new Error(`Full Type Fetch Failed: ${fullRes.status}`);
+        
+        const coinData = await fullRes.json();
+        const updates = {};
+        
+        if (coinData.title && coinData.title !== item.title) updates.title = coinData.title;
+        if (coinData.comments && (!item.description || item.description.trim() === '' || item.description.length < 50)) {
+            updates.description = coinData.comments.replace(/<[^>]*>?/gm, ''); 
+        }
+
+        if (Object.keys(updates).length > 0) {
+            await db.item.update({ where: { id: item.id }, data: updates });
+        }
+
+        const attrMap = {
+            'Issuer': coinData.issuer?.name,
+            'Years Minted': coinData.min_year ? (coinData.min_year === coinData.max_year ? String(coinData.min_year) : `${coinData.min_year}-${coinData.max_year}`) : null,
+            'Face Value': coinData.value?.text,
+            'Composition': coinData.composition?.text,
+            'Weight': coinData.weight ? `${coinData.weight}g` : null,
+            'Diameter': coinData.size ? `${coinData.size}mm` : null,
+            'Thickness': coinData.thickness ? `${coinData.thickness}mm` : null,
+            'Shape': coinData.shape,
+            'Numista Link': coinData.url,
+            'Ruler': Array.isArray(coinData.ruler) ? coinData.ruler.map(r => r.name).join(', ') : null,
+            'Mints': Array.isArray(coinData.mints) ? coinData.mints.map(m => m.name).join(', ') : null,
+            'References': Array.isArray(coinData.references) ? coinData.references.map(r => `${r.catalogue?.code || ''} ${r.number}`).join(', ') : null,
+            'Engravers': Array.isArray(coinData.engravers) ? coinData.engravers.join(', ') : null,
+            'Tags': Array.isArray(coinData.tags) ? coinData.tags.join(', ') : null,
+            'Technique': coinData.technique?.text,
+            'Edge': coinData.edge?.description,
+            'Obverse': coinData.obverse?.description || coinData.description,
+            'Obverse Lettering': coinData.obverse?.lettering || coinData.lettering,
+            'Reverse': coinData.reverse?.description,
+            'Reverse Lettering': coinData.reverse?.lettering
+        };
+
+        let attributesAddedCount = 0;
+        for (const [key, value] of Object.entries(attrMap)) {
+            if (!value) continue;
+            const exists = await db.kVP.findFirst({ where: { itemId: item.id, key } });
+            if (!exists) {
+                await db.kVP.create({ data: { itemId: item.id, key, value, isAutoGenerated: true } });
+                attributesAddedCount++;
+            } else if (!exists.value && value) {
+                await db.kVP.update({ where: { id: exists.id }, data: { value } });
+                attributesAddedCount++;
+            }
+        }
+
+        if (coinData.url) {
+            const existingLink = await db.document.findFirst({ where: { itemId: item.id, path: coinData.url } });
+            if (!existingLink) {
+                await db.document.create({
+                    data: {
+                        type: 'link', title: `Numista Catalog: ${coinData.title || item.title}`, source: 'Numista',
+                        path: coinData.url, extracts: `View community details and pictures.`, itemId: item.id
+                    }
+                });
+            }
+        }
+
+        if (logActivity) {
+            await logActivity(item.id, 'Numista Sync Success', `Successfully enriched "${coinData.title}" and attached ${attributesAddedCount} attributes.`, 'success');
+        }
+    }
+
+    async function lookupAndEnrichCoin(baseItem, dryRun = false) {
+        const item = await db.item.findUnique({
+            where: { id: baseItem.id },
+            include: { attributes: true }
+        });
+
+        if (!item || !item.title) return;
+        const apiKey = env.NUMISTA_API_KEY;
+        if (!apiKey) return;
+
+        try {
+            const manualIdAttr = getFuzzyAttribute(item.attributes, ['numistaid']);
+            const targetId = manualIdAttr ? manualIdAttr.replace(/\D/g, '') : null;
+
+            if (targetId && !dryRun) {
+                sysLog.info(`[Numista] Found explicit ID override: ${targetId}`);
+                await applyCoinDetails(item, targetId, apiKey);
+                return;
+            }
+
+            const { query, types, bestMatch, rejectedLog } = await searchAndScoreCandidates(item, apiKey);
+
+            if (types.length === 0) {
+                if (logActivity) await logActivity(item.id, 'Numista Results', `No matches found using: [ ${query} ]`, 'warning');
+                return;
+            }
+
+            if (dryRun) {
+                const candidates = types.slice(0, 5).map((t, idx) => `${idx + 1}. ID: ${t.id} - ${t.title} (${t.issuer?.name || 'Unknown'})`).join('\n');
+                if (logActivity) await logActivity(item.id, 'Numista Candidates (Dry Run)', `Top Results for: [ ${query} ]\nTo force a match, add a custom attribute named "Numista ID".\n\n${candidates}`, 'info');
+                return;
+            }
+
+            if (!bestMatch) {
+                sysLog.warn(`[Numista] Found ${types.length} results, all rejected by strict validation.`);
+                if (logActivity) await logActivity(item.id, 'Numista Sync Aborted', `Results rejected to prevent overwriting data.\n\n` + rejectedLog.slice(0, 8).join('\n'), 'warning');
+                return;
+            }
+
+            sysLog.info(`[Numista] Best match selected: ID ${bestMatch.id}`);
+            await applyCoinDetails(item, bestMatch.id, apiKey);
+
+        } catch (error) {
+            sysLog.error(`[Numista] Unhandled error:`, error);
+            if (logActivity) await logActivity(baseItem.id, 'Numista Failed', error.message, 'error');
+            throw error; 
+        }
+    }
+
+    on('onItemProcessed', async (payload) => {
+        if (payload.intent?.isNew) await lookupAndEnrichCoin(payload.entity, false);
+    }, { maxRetries: 3, retryDelayMs: 4000, rateLimitRpm: 45 });
+
+    registerItemAction({ 
+        id: 'fetch-numista-coin', label: 'Fetch Coin Info from Numista', icon: 'bi-coin',
+        maxRetries: 2, retryDelayMs: 3000, rateLimitRpm: 45
+    }, async (payload) => await lookupAndEnrichCoin(payload.entity, false));
+
+    registerItemAction({ 
+        id: 'fetch-numista-candidates', label: 'Find Numista Candidates (Dry Run)', icon: 'bi-search',
+        maxRetries: 1, retryDelayMs: 2000, rateLimitRpm: 45
+    }, async (payload) => await lookupAndEnrichCoin(payload.entity, true));
+}
+```
