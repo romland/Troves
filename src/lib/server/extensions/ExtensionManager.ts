@@ -54,8 +54,8 @@ class ExtensionManager {
 	}
 	
 	/**
-	* Returns a list of all successfully loaded plugin filenames.
-	*/
+	 * Returns a list of all successfully loaded plugin filenames.
+	 */
 	getLoadedPlugins(): string[] {
 		return Array.from(this.loadedPluginNames);
 	}
@@ -69,8 +69,8 @@ class ExtensionManager {
     }
 
 	/**
-	* Returns UI actions registered by currently enabled plugins for a specific Trove.
-	*/
+	 * Returns UI actions registered by currently enabled plugins for a specific Trove.
+	 */
 	async getEnabledItemActions(inventoryId: number): Promise<ItemActionDef[]> {
 		const vault = await db.inventory.findUnique({ where: { id: inventoryId }, select: { enabledPlugins: true } });
 		const whitelist = JSON.parse(vault?.enabledPlugins || '[]');
@@ -80,9 +80,9 @@ class ExtensionManager {
 	}
 	
 	/**
-	* Checks if there is at least one active, whitelisted plugin listening to a specific event.
-	* Useful for conditionally hiding UI elements (like Print buttons) when no handler exists.
-	*/
+	 * Checks if there is at least one active, whitelisted plugin listening to a specific event.
+	 * Useful for conditionally hiding UI elements (like Print buttons) when no handler exists.
+	 */
 	async hasActiveListeners(event: EventName, inventoryId: number): Promise<boolean> {
 		const hooks = this.listeners.get(event) || [];
 		if (hooks.length === 0) return false;
@@ -141,10 +141,10 @@ class ExtensionManager {
 	}
 	
 	/**
-	* Triggers all registered extensions for an event.
-	* Guaranteed to execute asynchronously in the background I/O queue 
-	* to prevent blocking the user's save workflow.
-	*/
+	 * Triggers all registered extensions for an event.
+	 * Guaranteed to execute asynchronously in the background I/O queue 
+	 * to prevent blocking the user's save workflow.
+	 */
 	trigger(event: EventName, payload: any) {
 		const hooks = this.listeners.get(event) || [];
 		if (hooks.length === 0) return;
@@ -197,8 +197,8 @@ class ExtensionManager {
 	}
 	
 	/**
-	* Triggers a specific UI action registered by a plugin.
-	*/
+	 * Triggers a specific UI action registered by a plugin.
+	 */
 	triggerItemAction(actionId: string, payload: any) {
 		const action = this.itemActions.get(actionId);
 		if (!action) {
