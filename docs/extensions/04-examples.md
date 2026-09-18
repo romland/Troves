@@ -190,6 +190,10 @@ You might need Google Books API key for this!
 Google allows *some* unauthenticated requests to the Books API for browsers.
 But essentially, it seems very low. It requires an API key to track your usage.
 
+But I swear, the absolutely hardest part about this and anything Google is to
+navigate their effing Cloud panel. It's funny how they can make you feel so 
+goddamn stupid.
+
 # How to get a free Google Books API Key
 It takes about 60 seconds and doesn't require a credit card:
 1. Go to: https://console.cloud.google.com/apis/library/books.googleapis.com
