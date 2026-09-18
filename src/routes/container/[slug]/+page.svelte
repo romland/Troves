@@ -22,6 +22,7 @@
     import ActionCard from "$lib/components/ActionCard.svelte";
     import ConfirmModal from "$lib/components/ConfirmModal.svelte";
     import ContentUnavailable from "$lib/components/ContentUnavailable.svelte";
+    import { page } from "$app/stores";
 
     export let data: PageServerData;
 

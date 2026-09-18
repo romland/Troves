@@ -17,7 +17,7 @@ import { getActiveSchema } from '$lib/server/ontology';
 import { getAuthError } from '$lib/server/security';
 
 export const load = (async ({ locals, params }) => {
-    if (locals.role === 'VIEWER') error(403, 'Forbidden. Viewer access only.');
+    if (locals.role === 'VIEWER') throw error(403, 'Forbidden. Viewer access only.');
     const parsedId = Number(params.id);
     if (isNaN(parsedId)) error(404, 'Not found');
 
