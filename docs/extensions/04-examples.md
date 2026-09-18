@@ -906,6 +906,10 @@ export default function register({ on, registerItemAction, sysLog, logActivity, 
 **The Prompt:**  
 > Think along with me here... I am thinking of scanning in my childhood coin collection ... what kind of plugins would I need for that to get meta info or something? I am willing to register for services, but not too keen on paying for them....
 
+**Note of warning:**
+This extension really is not great. I don't know enough about coins to make it great either. But it
+is a decent start for an expert, I think!
+
 ```javascript
 /*
  * ============================================================================
@@ -927,7 +931,6 @@ export default function register({ on, registerItemAction, sysLog, logActivity, 
  */
 export default function register({ on, registerItemAction, sysLog, logActivity, fetch, db, env }) {
     
-    // Standard English names. We rely on Numista's text engine to parse these naturally.
     const demonymMap = {
         'swedish': 'Sweden', 'norwegian': 'Norway', 'danish': 'Denmark',
         'british': 'United Kingdom', 'english': 'United Kingdom', 'uk': 'United Kingdom',
@@ -961,8 +964,14 @@ export default function register({ on, registerItemAction, sysLog, logActivity, 
     }
 
     async function searchAndScoreCandidates(item, apiKey) {
+        // --- CAPTURE INITIAL STATE FOR DEBUG LOGGING ---
+        const debug_InitialItemState = {
+            title: item.title,
+            description: item.description,
+            attributes: item.attributes ? item.attributes.map(a => `${a.key}: ${a.value}`) : []
+        };
+
         const safeTitle = item.title.trim();
-        
         const fuzzyCountry = getFuzzyAttribute(item.attributes, ['country', 'issuer', 'nation', 'origin']);
         const fuzzyDenom = getFuzzyAttribute(item.attributes, ['denomination', 'value', 'face']);
         const fuzzyYearStr = getFuzzyAttribute(item.attributes, ['year', 'date', 'mint']);
@@ -970,28 +979,21 @@ export default function register({ on, registerItemAction, sysLog, logActivity, 
 
         const expectedCountry = extractExpectedCountry(safeTitle, fuzzyCountry);
         
-        // 1. Build raw combined string (Inject the expected country into the text directly)
         let searchTerms = [safeTitle];
         if (fuzzyDenom) searchTerms.push(fuzzyDenom);
         if (fuzzyYear) searchTerms.push(String(fuzzyYear));
         if (expectedCountry) searchTerms.push(expectedCountry);
-        let rawQueryStr = searchTerms.join(' ');
         
-        // 2. Global Sanitization
-        const fillerWords = /\b(coin|matte|proof|circulated|uncirculated|token|obverse|reverse|front|back|mint|round|metallic|copper|nickel|silver|gold|bronze|brass|zinc|steel|finish|surface)\b/gi;
-        let cleanQueryStr = rawQueryStr.replace(fillerWords, '').replace(/\s+/g, ' ').trim();
+        const fillerWords = /\b(coin|matte|proof|circulated|uncirculated|obverse|reverse|front|back|mint|round|metallic|copper|nickel|silver|gold|bronze|brass|zinc|steel|finish|surface)\b/gi;
+        let cleanQueryStr = searchTerms.join(' ').replace(fillerWords, '').replace(/\s+/g, ' ').trim();
         
-        // Replace demonyms with actual country names so the text search finds it easily
         for (const [demonym, countryName] of Object.entries(demonymMap)) {
             if (new RegExp(`\\b${demonym}\\b`, 'i').test(cleanQueryStr)) {
                 cleanQueryStr = cleanQueryStr.replace(new RegExp(`\\b${demonym}\\b`, 'gi'), countryName);
             }
         }
         
-        // Deduplicate identical words (e.g. "Sweden 2 Kronor 1966 Sweden" -> "Sweden 2 Kronor 1966")
         let query = [...new Set(cleanQueryStr.split(' ').filter(Boolean))].join(' ').trim();
-
-        // Note: Using count=20 instead of limit=20 to adhere to API spec, and relying on pure text search.
         let searchUrl = `https://api.numista.com/v3/types?q=${encodeURIComponent(query)}&count=20`;
         sysLog.info(`[Numista] Query Pass 1: ${searchUrl}`);
 
@@ -1001,10 +1003,15 @@ export default function register({ on, registerItemAction, sysLog, logActivity, 
         let searchData = await searchRes.json();
         let types = searchData.types || [];
 
-        // 3. Fallback Minimal Pass
+        if (logActivity) {
+            await logActivity(
+                item.id, 'Numista Query Pass 1', `Searched Numista API for: "${query}"`, 'info',
+                JSON.stringify({ debug_InitialItemState, searchUrl, query, resultCount: types.length, rawApiResponse: searchData }, null, 2)
+            );
+        }
+
+        // Minimal Fallback Pass
         if (types.length === 0 && fuzzyDenom) {
-            sysLog.info(`[Numista] Pass 1 returned 0 results. Attempting minimal fallback.`);
-            
             let minimalBase = `${expectedCountry || ''} ${fuzzyDenom} ${fuzzyYear || ''}`.replace(fillerWords, '').replace(/\s+/g, ' ').trim();
             for (const [demonym, countryName] of Object.entries(demonymMap)) {
                 if (new RegExp(`\\b${demonym}\\b`, 'i').test(minimalBase)) {
@@ -1021,17 +1028,24 @@ export default function register({ on, registerItemAction, sysLog, logActivity, 
                 searchData = await searchRes.json();
                 types = searchData.types || [];
                 if (types.length > 0) query = minimalQuery; 
+                
+                if (logActivity) {
+                    await logActivity(
+                        item.id, 'Numista Query Pass 2 (Fallback)', `Searched Numista API for: "${minimalQuery}"`, 'info',
+                        JSON.stringify({ debug_InitialItemState, searchUrl, query: minimalQuery, resultCount: types.length, rawApiResponse: searchData }, null, 2)
+                    );
+                }
             }
         }
 
         if (types.length === 0) {
-            return { query, types: [], bestMatch: null, rejectedLog: [] };
+            return { query, types: [], bestMatch: null, rejectedLog: [], debug_InitialItemState };
         }
 
-        // 4. Strict Local Validation
-        const titleAndDenom = `${safeTitle} ${fuzzyDenom || ''}`;
-        const requiredTitleNumbers = titleAndDenom.match(/\b\d+(?:\.\d+)?\b/g) || [];
-        const filteredRequiredNumbers = requiredTitleNumbers.filter(n => parseInt(n) !== fuzzyYear);
+        // --- LOCAL VALIDATION ---
+        const combinedOriginalText = `${safeTitle} ${fuzzyDenom || ''} ${fuzzyYearStr || ''}`.toLowerCase();
+        const requiredTitleNumbers = combinedOriginalText.match(/\b\d+(?:\.\d+)?\b/g) || [];
+        const filteredRequiredNumbers = [...new Set(requiredTitleNumbers.filter(n => parseInt(n) !== fuzzyYear))];
 
         const getWords = (str) => (str || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').split(' ').filter(w => w.length > 2);
         const origWords = getWords(query);
@@ -1044,28 +1058,43 @@ export default function register({ on, registerItemAction, sysLog, logActivity, 
             let score = 0;
             const coinTitle = (coin.title || '').toLowerCase();
             
-            // RULE A: Strict Country/Issuer Lock (Drop Norwegian coins instantly)
+            // RULE A: Country Lock
             if (expectedCountry && coin.issuer?.name) {
                 const apiIssuer = coin.issuer.name.toLowerCase();
                 const expected = expectedCountry.toLowerCase();
                 if (!apiIssuer.includes(expected) && !expected.includes(apiIssuer)) {
-                    rejectedLog.push(`Rejected "${coin.title}" (Issuer is ${coin.issuer.name}, expected ${expectedCountry})`);
-                    continue; // Skip immediately
+                    rejectedLog.push(`Rejected "${coin.title}" (Issuer mismatch: ${coin.issuer.name} vs ${expectedCountry})`);
+                    continue; 
                 }
             }
             
-            // RULE B: Strict Denomination Number Match
+            // RULE B: Strict Forward Number Match (Your numbers must exist in Candidate)
             let missingCriticalNumber = false;
             for (const num of filteredRequiredNumbers) {
                 if (!new RegExp(`\\b${num}\\b`).test(coinTitle)) {
                     missingCriticalNumber = true;
-                    rejectedLog.push(`Rejected "${coin.title}" (Missing exact number: ${num})`);
+                    rejectedLog.push(`Rejected "${coin.title}" (Missing your number: ${num})`);
                     break;
                 }
             }
             if (missingCriticalNumber) continue;
 
-            // RULE C: Strict Year Boundary Match
+            // RULE C: Anti-Hallucination Reverse Number Match (Candidate numbers must exist in Your data)
+            const candidateNumbers = coinTitle.match(/\b\d+(?:\.\d+)?\b/g) || [];
+            let hallucinatesDenomination = false;
+            for (const cNum of candidateNumbers) {
+                if (!new RegExp(`\\b${cNum}\\b`).test(combinedOriginalText)) {
+                    // Ignore years in candidate titles as false positives (e.g., 4 digit numbers starting with 1 or 2)
+                    if (/^(1|2)\d{3}$/.test(cNum)) continue; 
+                    
+                    hallucinatesDenomination = true;
+                    rejectedLog.push(`Rejected "${coin.title}" (Candidate has unknown number: '${cNum}')`);
+                    break;
+                }
+            }
+            if (hallucinatesDenomination) continue;
+
+            // RULE D: Strict Year Boundary
             if (fuzzyYear) {
                 if (coin.min_year && fuzzyYear < coin.min_year) {
                     rejectedLog.push(`Rejected "${coin.title}" (Coin from ${fuzzyYear}, minted > ${coin.min_year})`);
@@ -1077,13 +1106,12 @@ export default function register({ on, registerItemAction, sysLog, logActivity, 
                 }
             }
 
-            // Calculate Lexical Overlap Score for surviving candidates
+            // Lexical Overlap Score
             const coinWords = getWords(coinTitle);
             for (const word of origWords) {
                 if (coinWords.includes(word)) score++;
             }
 
-            // Tie-breaker: Prefer shorter titles (less bloat)
             score -= Math.abs(coinTitle.length - query.length) * 0.01;
 
             if (score > highestScore) {
@@ -1092,10 +1120,10 @@ export default function register({ on, registerItemAction, sysLog, logActivity, 
             }
         }
 
-        return { query, types, bestMatch, rejectedLog };
+        return { query, types, bestMatch, rejectedLog, debug_InitialItemState };
     }
 
-    async function applyCoinDetails(item, coinId, apiKey) {
+    async function applyCoinDetails(item, coinId, apiKey, debug_InitialItemState = null) {
         const fullUrl = `https://api.numista.com/v3/types/${coinId}`;
         const fullRes = await fetch(fullUrl, { headers: { 'Numista-API-Key': apiKey, 'Accept': 'application/json' } });
         if (!fullRes.ok) throw new Error(`Full Type Fetch Failed: ${fullRes.status}`);
@@ -1161,7 +1189,10 @@ export default function register({ on, registerItemAction, sysLog, logActivity, 
         }
 
         if (logActivity) {
-            await logActivity(item.id, 'Numista Sync Success', `Successfully enriched "${coinData.title}" and attached ${attributesAddedCount} attributes.`, 'success');
+            await logActivity(
+                item.id, 'Numista Sync Success', `Successfully enriched "${coinData.title}" and attached ${attributesAddedCount} attributes.`, 'success',
+                JSON.stringify({ debug_InitialItemState, mappedAttributes: attrMap, rawApiResponse: coinData }, null, 2)
+            );
         }
     }
 
@@ -1181,35 +1212,45 @@ export default function register({ on, registerItemAction, sysLog, logActivity, 
 
             if (targetId && !dryRun) {
                 sysLog.info(`[Numista] Found explicit ID override: ${targetId}`);
-                await applyCoinDetails(item, targetId, apiKey);
+                await applyCoinDetails(item, targetId, apiKey, { manualOverride: true, title: item.title });
                 return;
             }
 
-            const { query, types, bestMatch, rejectedLog } = await searchAndScoreCandidates(item, apiKey);
+            const { query, types, bestMatch, rejectedLog, debug_InitialItemState } = await searchAndScoreCandidates(item, apiKey);
 
             if (types.length === 0) {
-                if (logActivity) await logActivity(item.id, 'Numista Results', `No matches found using: [ ${query} ]`, 'warning');
+                if (logActivity) await logActivity(item.id, 'Numista Results', `No matches found using: [ ${query} ]`, 'warning', JSON.stringify({ debug_InitialItemState, query, error: "Zero results from API" }, null, 2));
                 return;
             }
 
             if (dryRun) {
                 const candidates = types.slice(0, 5).map((t, idx) => `${idx + 1}. ID: ${t.id} - ${t.title} (${t.issuer?.name || 'Unknown'})`).join('\n');
-                if (logActivity) await logActivity(item.id, 'Numista Candidates (Dry Run)', `Top Results for: [ ${query} ]\nTo force a match, add a custom attribute named "Numista ID".\n\n${candidates}`, 'info');
+                if (logActivity) {
+                    await logActivity(
+                        item.id, 'Numista Candidates (Dry Run)', `Top Results for: [ ${query} ]\nTo force a match, add a custom attribute named "Numista ID".\n\n${candidates}`, 'info',
+                        JSON.stringify({ debug_InitialItemState, query, rejectedLog, rawCandidates: types }, null, 2)
+                    );
+                }
                 return;
             }
 
             if (!bestMatch) {
                 sysLog.warn(`[Numista] Found ${types.length} results, all rejected by strict validation.`);
-                if (logActivity) await logActivity(item.id, 'Numista Sync Aborted', `Results rejected to prevent overwriting data.\n\n` + rejectedLog.slice(0, 8).join('\n'), 'warning');
+                if (logActivity) {
+                    await logActivity(
+                        item.id, 'Numista Sync Aborted', `Results rejected to prevent overwriting data.\n\n` + rejectedLog.slice(0, 10).join('\n'), 'warning',
+                        JSON.stringify({ debug_InitialItemState, query, totalResultsFound: types.length, rejectedLog, rawCandidates: types }, null, 2)
+                    );
+                }
                 return;
             }
 
             sysLog.info(`[Numista] Best match selected: ID ${bestMatch.id}`);
-            await applyCoinDetails(item, bestMatch.id, apiKey);
+            await applyCoinDetails(item, bestMatch.id, apiKey, debug_InitialItemState);
 
         } catch (error) {
             sysLog.error(`[Numista] Unhandled error:`, error);
-            if (logActivity) await logActivity(baseItem.id, 'Numista Failed', error.message, 'error');
+            if (logActivity) await logActivity(baseItem.id, 'Numista Failed', error.message, 'error', JSON.stringify({ error: error.message, stack: error.stack }, null, 2));
             throw error; 
         }
     }
@@ -1228,4 +1269,5 @@ export default function register({ on, registerItemAction, sysLog, logActivity, 
         maxRetries: 1, retryDelayMs: 2000, rateLimitRpm: 45
     }, async (payload) => await lookupAndEnrichCoin(payload.entity, true));
 }
+
 ```
