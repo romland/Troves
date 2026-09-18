@@ -299,7 +299,15 @@ class ExtensionManager {
                         },
                         compareTitles(scannedTitle: string, dbTitle: string, scanDesc: string = '', dbDesc: string = '', category: string = '') {
                             return evaluateTextIdentity(scannedTitle, scanDesc, dbTitle, dbDesc, category);
-                        }
+                        },
+                        getFuzzyAttribute(item: any, keywords: string[]) {
+                            if (!item.attributes) return null;
+                            const match = item.attributes.find((a: any) => {
+                                const keyLower = (a.key || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+                                return keywords.some(kw => keyLower.includes(kw.toLowerCase().replace(/[^a-z0-9]/g, '')));
+                            });
+                            return match ? match.value : null;
+                        }						
                     };
 
                     // Shadow Copy Technique: Node's ES Module loader aggressively caches based on the 
