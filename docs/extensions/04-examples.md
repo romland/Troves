@@ -165,13 +165,6 @@ export default function register({ registerItemAction }) {
     });
 }
 ```
-
---- a/docs/extensions/04-examples.md
-++ b/docs/extensions/04-examples.md
-@@ -134,3 +134,84 @@
-     });
- }
-
 ## 5. Fetch Metadata & Update Entity (Google Books API)
 
 **Suggested Filename:** `data/plugins/google-books.js`
@@ -892,16 +885,9 @@ export default function register({ on, registerItemAction, sysLog, logActivity, 
 }
 ```
 
-## 6. Fetch Metadata & Update Entity (Spotify API)
+## 7. Fetch Metadata on coins from Numista
 
-**Suggested Filename:** `data/plugins/fetch-spotify-info.js`
-
-**The Goal:** Query the Spotify API for an item, update its title and description, add attributes, and fetch the cover art and add a song list.
-
-**How it works:**
-- It leverages the built-in `rateLimitRpm` to strictly stay under typical 60 requests/min free limits.
-- It uses `maxRetries` to automatically recover from temporary API timeouts in the background queue.
-- It reads from and writes directly to the Troves database using the injected `db` Prisma client.
+**Suggested Filename:** `data/plugins/fetch-numista-info.js`
 
 **The Prompt:**  
 > Think along with me here... I am thinking of scanning in my childhood coin collection ... what kind of plugins would I need for that to get meta info or something? I am willing to register for services, but not too keen on paying for them....
@@ -1271,7 +1257,7 @@ export default function register({ on, registerItemAction, sysLog, logActivity, 
 }
 ```
 
-## 6. Fetch Metadata & Update Entity (Spotify API)
+## 8. Fetch Mouser Meta data and spec sheets
 
 **Suggested Filename:** `data/plugins/fetch-mouser-specsheet.js`
 
