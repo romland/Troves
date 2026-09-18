@@ -1,6 +1,6 @@
 # Writing Troves Plugins
 
-Troves supports a zero-config, drop-in plugin architecture. To add a new integration, simply place a `.js` file into the `data/plugins/` directory. Troves will automatically load it when the server starts.
+Troves supports a zero-config, drop-in plugin architecture. To add a new integration, simply place a `.js` file into the `data/plugins/` directory. Troves will load it when the server starts, or you can instantly apply changes by clicking **Hot Reload Plugins** in the **Settings > Admin** dashboard. You can also create and edit plugins directly from the browser there!
 
 ## The Plugin Toolkit
 Plugins must `export default function`. Troves securely injects a toolkit object containing everything the plugin needs to operate, so you never have to worry about internal module resolution or SvelteKit SSR rules.
@@ -53,4 +53,4 @@ export default function register({ on, sysLog, fetch, env }) {
 
 ## Distributing Plugins
 
-Because plugins are self-contained, single files, you can share them easily via GitHub Gists. Users just download the `.js` file, put it in `data/plugins/`, configure their `.env` variables, and restart the Troves Docker container.
+Because plugins are self-contained, single files, you can share them easily via GitHub Gists. Users just download the `.js` file and drop it in `data/plugins/` (or paste it directly into the Admin UI). If the plugin requires new `.env` variables, they must restart the Troves Docker container. If not, they can just hit "Hot Reload Plugins" to activate it instantly.

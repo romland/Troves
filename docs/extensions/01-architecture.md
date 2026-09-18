@@ -1,4 +1,6 @@
-# Troves Extension Engine Architecture
+# Troves Extension Engine
+
+AKA modding is fun. You get to feature creep and add bloat without consequences!
 
 The Extension Engine abstracts external integrations (API calls, scrapers, physical hardware) away from the core business logic using an Event-Action paradigm.
 

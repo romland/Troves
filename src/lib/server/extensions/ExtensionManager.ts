@@ -52,6 +52,14 @@ class ExtensionManager {
 		return Array.from(this.loadedPluginNames);
 	}
 	
+    getPluginDetails() {
+        return Array.from(this.loadedPluginNames).map(name => ({
+            name,
+            hooks: this.pluginSubscriptions.get(name) || [],
+            actions: this.pluginRegisteredActions.get(name) || []
+        }));
+    }
+
 	/**
 	* Returns UI actions registered by currently enabled plugins for a specific Trove.
 	*/
@@ -214,6 +222,17 @@ class ExtensionManager {
 		}, { targetType: 'system', targetId: 0, description });
 	}
 	
+    async reloadPlugins() {
+        sysLog.info('[ExtensionManager] Hot-reloading all plugins...');
+        this.listeners.clear();
+        this.itemActions.clear();
+        this.pluginSubscriptions.clear();
+        this.pluginRegisteredActions.clear();
+        this.loadedPluginNames.clear();
+        this.isLoaded = false;
+        await this.loadPlugins();
+    }
+
 	async loadPlugins() {
 		if (this.isLoaded) return;
 		this.isLoaded = true;
@@ -228,7 +247,7 @@ class ExtensionManager {
 			if (file.endsWith('.js') || file.endsWith('.mjs')) {
 				try {
 					const pluginPath = path.join(pluginDir, file);
-					const fileUrl = 'file://' + pluginPath; 
+                    const fileUrl = 'file://' + pluginPath + '?t=' + Date.now(); 
 					const module = await import(/* @vite-ignore */ fileUrl);
 					
 					if (typeof module.default === 'function') {

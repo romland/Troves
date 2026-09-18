@@ -205,9 +205,8 @@ It takes about 60 seconds and doesn't require a credit card:
 3. Finally, open your Troves `.env` file and add:
     GOOGLE_BOOKS_API_KEY="AIzaSyYourGeneratedKeyHere..."
 
-Restart Troves (or Docker container (`docker compose restart app`)), and the plugin 
-will automatically pick up the key, attach it to the request, and successfully pull 
-your book data.
+Because you added a new \`.env\` key, you must restart Troves (\`docker compose restart app\`). 
+If you are only editing the plugin code itself, you can just use the "Hot Reload Plugins" button in the Admin interface!
 */
 import fs from 'fs';
 import path from 'path';

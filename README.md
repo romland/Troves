@@ -109,15 +109,15 @@ about the visuals ... But, let's get the ball rolling in 2026, the first screens
 - ...and more
 
 ### Extensions & Plugins
-Troves supports a drop-in plugin architecture. If you want to automatically ping a webhook, print physical labels to a custom thermal printer, or look up items from an external API whenever you scan something, you can just drop a `.js` file into the `data/plugins/` directory. Troves handles the asynchronous routing, offline queuing, and secure environment variable injection natively. Check out the [Extensions Documentation](docs/extensions/01-architecture.md) to write your own.
+Troves supports a drop-in plugin architecture. If you want to automatically ping a webhook, print physical labels to a custom thermal printer, or look up items from an external API whenever you scan something, you can just drop a `.js` file into the `data/plugins/` directory (or write it directly in the **Admin** dashboard). Troves handles the asynchronous routing, offline queuing, and secure environment variable injection natively, and supports **hot-reloading** plugins without server restarts. Check out the [Extensions Documentation](docs/extensions/01-architecture.md) to write your own.
 
 ### Scanning collections
 `Tip: count the items before scanning. Gives you an idea if you had a good enough picture`
 
 *Side note: It did not take me more than an hour or two to scan 16 cardboard boxes full of books. The unpacking and packing the books back into the box was the time-consuming part.*
 
-
 __this is so cringe -- I the human should rewrite this -- now here as reminder__ 
+
 ### Bulk Import & The Comparison Lens (Set Operations) *[ALPHA/TESTING]*
 
 The **Entity-Attribute-Value (EAV) Taxonomy** automatically tailors schemas based on your troves' archetype. It intuitively knows that a t-shirt needs a "Garment Style" and "Fabric", while a drill requires a "Form Factor" and "Power Delivery". It enforces strict vocabulary to eliminate search friction.
