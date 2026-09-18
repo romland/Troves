@@ -568,6 +568,10 @@ export default function register({ on, registerItemAction, sysLog, logActivity, 
 - It uses `maxRetries` to automatically recover from temporary API timeouts in the background queue.
 - It reads from and writes directly to the Troves database using the injected `db` Prisma client.
 
+**The Prompt:**  
+This extension was created with this user request:  
+> I want to fetch more info about my CD collection, i don't mind registering for a service, but i am not too keen on paying for it. I suppose I want to both manually and automatically update CD info... I have a spotify account if that helps. If possible grab songs from the album and create a document/link to each song that i can click to open in spotify (not web player please)
+
 ```javascript
 /**
  * ============================================================================
