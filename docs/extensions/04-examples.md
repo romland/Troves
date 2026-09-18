@@ -24,7 +24,7 @@ This section contains real-world examples of plugins to demonstrate how to lever
  * 
  * ...but is other than that completely stand-alone. Just dump it in Troves' data/plugins/
  */
-export default function register({ on, sysLog, fetch, env }) {
+export default function register({ on, registerItemAction, sysLog, logActivity, fetch, env, itemOps }) {
     async function printContainerLabel(entity, size) {
         const apiUrl = env.EXT_PRINTER_URL;
         const token = env.EXT_PRINTER_API_KEY;
@@ -208,7 +208,7 @@ If you are only editing the plugin code itself, you can just use the "Hot Reload
 import fs from 'fs';
 import path from 'path';
 
-export default function register({ on, registerItemAction, sysLog, logActivity, fetch, db, env }) {
+export default function register({ on, registerItemAction, sysLog, logActivity, fetch, env, itemOps }) {
     async function lookupAndEnrichBook(baseItem) {
         // Fetch the fully hydrated item to ensure we have all attributes
         const item = await db.item.findUnique({
@@ -649,7 +649,7 @@ This extension was created with this user request:
 import fs from 'fs';
 import path from 'path';
 
-export default function register({ on, registerItemAction, sysLog, logActivity, fetch, db, env }) {
+export default function register({ on, registerItemAction, sysLog, logActivity, fetch, env, itemOps }) {
     
     async function getSpotifyToken() {
         const clientId = env.SPOTIFY_CLIENT_ID;
@@ -915,7 +915,7 @@ is a decent start for an expert, I think!
  * 3. Restart your Troves Docker container.
  * ============================================================================
  */
-export default function register({ on, registerItemAction, sysLog, logActivity, fetch, db, env }) {
+export default function register({ on, registerItemAction, sysLog, logActivity, fetch, env, itemOps }) {
     
     const demonymMap = {
         'swedish': 'Sweden', 'norwegian': 'Norway', 'danish': 'Denmark',
