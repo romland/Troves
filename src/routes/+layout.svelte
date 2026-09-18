@@ -441,6 +441,7 @@
             <a href="/" class="btn btn-ghost normal-case text-xl flex items-center gap-3 px-2 hover:bg-base-200 transition-colors rounded-xl">
                 <Logo size="sm" />
                 <span class="font-bold tracking-tight">Troves</span>
+                <span class="text-[9px]">BETA</span>
             </a>
             
             {#if $page.data.inventories && $page.data.inventories.length > 0}
