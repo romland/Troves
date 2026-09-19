@@ -179,30 +179,29 @@ class ExtensionManager {
 		const hooks = this.listeners.get(event) || [];
 		if (hooks.length === 0) return;
 		
-		sysLog.info(`[ExtensionManager] Event '${event}' fired. Queuing ${hooks.length} plugin hook(s).`);
-		
-		for (const hook of hooks) {
-			const prefix = `[Plugin:${hook.pluginName}]`;
-			
-			// Extract entity name if available for UI display (e.g., "romland-label-studio.js ➔ onContainerCreated for Box 001")
-			const entityName = payload?.entity?.name ? ` for ${payload.entity.name}` : '';
-			const description = `${hook.pluginName} ➔ ${event}${entityName}`;
-			
-			ioQueue.add(async () => {
-				// The Bouncer: Drop the hook if the plugin is not whitelisted for this Trove
-                // Checked at runtime rather than load-time so enabling/disabling is instantly applied per-Trove
-				const inventoryId = payload?.context?.inventoryId;
-				if (inventoryId) {
-					try {
-						const vault = await db.inventory.findUnique({ where: { id: inventoryId }, select: { enabledPlugins: true } });
-						const whitelist = JSON.parse(vault?.enabledPlugins || '[]');
-						if (!whitelist.includes(hook.pluginName)) {
-							sysLog.debug(`[ExtensionManager] Skipping ${hook.pluginName} for '${event}' (Not enabled for Trove ID ${inventoryId})`);
-							return;
-						}
-					} catch (err) {}
-				}
-				
+        (async () => {
+            let whitelist: string[] | null = null;
+            const inventoryId = payload?.context?.inventoryId;
+            if (inventoryId) {
+                try {
+                    const vault = await db.inventory.findUnique({ where: { id: inventoryId }, select: { enabledPlugins: true } });
+                    whitelist = JSON.parse(vault?.enabledPlugins || '[]');
+                } catch (err) {}
+            }
+
+            const activeHooks = whitelist ? hooks.filter(hook => whitelist.includes(hook.pluginName)) : hooks;
+            if (activeHooks.length === 0) return;
+
+            sysLog.info(`[ExtensionManager] Event '${event}' fired. Queuing ${activeHooks.length} plugin hook(s).`);
+            
+            for (const hook of activeHooks) {
+                const prefix = `[Plugin:${hook.pluginName}]`;
+                
+                // Extract entity name if available for UI display
+                const entityName = payload?.entity?.name ? ` for ${payload.entity.name}` : (payload?.entity?.title ? ` for ${payload.entity.title}` : '');
+                const description = `${hook.pluginName} ➔ ${event}${entityName}`;
+                
+                ioQueue.add(async () => {
 				try {
 					sysLog.debug(`${prefix} Starting execution for '${event}'...`);
 					const startTime = Date.now();
@@ -222,8 +221,9 @@ class ExtensionManager {
 				} catch (err) {
 					sysLog.error(`${prefix} Error executing '${event}':`, err);
 				}
-			}, { targetType: 'plugin', targetId: hook.pluginName, description });
-		}
+                }, { targetType: 'plugin', targetId: hook.pluginName, description });
+            }
+        })();
 	}
 	
 	/**

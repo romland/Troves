@@ -22,7 +22,7 @@ export class TaskQueue {
         return new Promise<T>((resolve, reject) => {
             let taskId: string | undefined;
             if (tracking) {
-                taskId = taskManager.start(tracking.targetType, tracking.targetId, tracking.description);
+                taskId = taskManager.queue(tracking.targetType, tracking.targetId, tracking.description);
             }
             this.queue.push({ task, resolve, reject, taskId, desc: tracking?.description });
             console.log(`[Queue: ${this.name}] Added task. (Running: ${this.running}/${this.concurrency}, Queued: ${this.queue.length})`);
@@ -38,6 +38,7 @@ export class TaskQueue {
         const job = this.queue.shift();
         
         if (job) {
+            if (job.taskId) taskManager.start(job.taskId);
             const startTime = performance.now();
             try {
                 console.log(`[Queue: ${this.name}] ▶️ Started: ${job.desc || 'task'}. (Running: ${this.running}/${this.concurrency}, Queued: ${this.queue.length})`);

@@ -5,21 +5,46 @@
     import { cubicOut } from 'svelte/easing';
     import { goto } from '$app/navigation';
     import { page } from '$app/stores';
+    import { onDestroy } from 'svelte';
     import pageTitle from '$lib/stores';
     import ImageLightbox from "$lib/components/ImageLightbox.svelte";
     import Badge from "$lib/components/Badge.svelte";
     import { notify } from "$lib/client/notifications";
+    import { getContext } from 'svelte';
+    import type { Writable } from 'svelte/store';
 
     export let data: PageServerData;
+
+    const globalTasksStore = getContext<Writable<any[]>>('globalTasksStore');
+    const completedTasksStore = getContext<Writable<any[]>>('completedTasksStore');
+
+    $: activeTasks = $globalTasksStore && $globalTasksStore.length > 0 ? $globalTasksStore : data.activeTasks;
+    $: completedTasks = $completedTasksStore && $completedTasksStore.length > 0 ? $completedTasksStore : data.completedTasks;
 
     pageTitle.set("Mission Control");
 
     let activeTab: 'queues' | 'llms' = 'queues';
     let lightbox: ImageLightbox;
+    let now = Date.now();
+    let activeTimer: ReturnType<typeof setInterval> | null = null;
 
-    function getDuration(start: number, end?: number) {
-        const duration = (end || Date.now()) - start;
-        return (duration / 1000).toFixed(1) + 's';
+    $: if (activeTasks.length > 0) {
+        if (!activeTimer) {
+            now = Date.now();
+            activeTimer = setInterval(() => { now = Date.now(); }, 1000);
+        }
+    } else {
+        if (activeTimer) {
+            clearInterval(activeTimer);
+            activeTimer = null;
+        }
+    }
+
+    onDestroy(() => { if (activeTimer) clearInterval(activeTimer); });
+
+    function getDuration(start: number, end?: number, referenceTime?: number) {
+        const duration = (end || referenceTime || Date.now()) - start;
+        return Math.max(0, duration / 1000).toFixed(1) + 's';
     }
 
     const timeframes = [
@@ -51,8 +76,8 @@
             <div class="absolute -right-4 -top-4 w-24 h-24 bg-primary/10 rounded-full blur-2xl"></div>
             <div class="text-sm font-semibold uppercase tracking-wider text-gray-500 relative z-10 w-full">Active Tasks</div>
             <div class="text-5xl font-bold tracking-tight text-base-content flex items-center gap-3">
-                {data.activeTasks.length}
-                {#if data.activeTasks.length > 0}
+                {activeTasks.length}
+                {#if activeTasks.length > 0}
                     <span class="relative flex h-4 w-4">
                       <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
                       <span class="relative inline-flex rounded-full h-4 w-4 bg-primary"></span>
@@ -94,14 +119,22 @@
                 <i class="bi bi-cpu text-primary"></i> Processing Now
             </h2>
             <div class="flex flex-col gap-2">
-                {#each data.activeTasks as task (task.id)}
+                {#each activeTasks as task (task.id)}
                     <div 
                         animate:flip={{ duration: 300, easing: cubicOut }}
                         transition:slide={{ duration: 200 }}
                         class="bg-base-100/80 backdrop-blur-xl border border-base-200 shadow-sm rounded-2xl p-4 flex items-center justify-between gap-4"
                     >
                         <div class="flex items-center gap-4 min-w-0">
-                            <span class="loading loading-ring text-primary loading-md shrink-0"></span>
+                            {#if task.status === 'queued'}
+                                <span class="loading loading-dots text-warning loading-md shrink-0" title="Queued"></span>
+                            {:else}
+                                {#if task.status === 'queued'}
+                                    <span class="loading loading-dots text-warning loading-md shrink-0" title="Queued"></span>
+                                {:else}
+                                    <span class="loading loading-ring text-primary loading-md shrink-0" title="Running"></span>
+                                {/if}
+                            {/if}
                             <div class="min-w-0 flex flex-col">
                                 <span class="font-bold text-base-content truncate">{task.description}</span>
                                 <span class="text-xs text-gray-500 uppercase tracking-wider font-semibold flex items-center gap-1 mt-0.5">
@@ -111,8 +144,21 @@
                                 </span>
                             </div>
                         </div>
-                        <div class="text-xs font-mono text-gray-400 shrink-0 bg-base-200 px-2 py-1 rounded-lg">
-                            {getDuration(task.startTime)}
+
+                        <div class="text-right shrink-0 flex flex-col justify-center">
+                            <div class="text-[10px] text-gray-400 font-medium mb-1">
+                                {new Date(task.queuedAt).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                            </div>
+                            <div class="bg-base-200 px-2.5 py-1.5 rounded-lg flex flex-col items-end border border-base-200/50 shadow-inner">
+                                {#if task.status === 'queued'}
+                                    <div class="text-xs font-mono text-warning font-bold">Wait: {getDuration(task.queuedAt, undefined, now)}</div>
+                                {:else}
+                                    {#if task.startedAt && task.startedAt > task.queuedAt}
+                                        <div class="text-[10px] font-mono text-gray-500 mb-0.5">Wait: {getDuration(task.queuedAt, task.startedAt)}</div>
+                                    {/if}
+                                    <div class="text-xs font-mono text-primary font-bold">Run: {getDuration(task.startedAt || task.queuedAt, undefined, now)}</div>
+                                {/if}
+                            </div>
                         </div>
                     </div>
                 {:else}
@@ -126,13 +172,13 @@
         </div>
 
         <!-- Recently Completed -->
-        {#if data.completedTasks.length > 0}
+        {#if completedTasks.length > 0}
             <div class="mt-4">
                 <h2 class="text-lg font-bold mb-3 flex items-center gap-2 text-gray-500">
                     <i class="bi bi-check-all"></i> Recently Finished
                 </h2>
                 <div class="flex flex-col gap-2">
-                    {#each data.completedTasks as task (task.id)}
+                    {#each completedTasks as task (task.id)}
                         <div 
                             animate:flip={{ duration: 300, easing: cubicOut }}
                             transition:slide={{ duration: 200 }}
@@ -149,8 +195,19 @@
                                     </span>
                                 </div>
                             </div>
-                            <div class="text-[10px] font-mono text-gray-400 shrink-0">
-                                {getDuration(task.startTime, task.endTime)}
+                            <div class="text-right shrink-0 flex flex-col justify-center items-end">
+                                <div class="text-[10px] text-gray-400 font-medium mb-1 flex flex-col items-end leading-tight">
+                                    <span>Q: {new Date(task.queuedAt).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+                                    {#if task.startedAt}
+                                        <span>S: {new Date(task.startedAt).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+                                    {/if}
+                                </div>
+                                <div class="bg-base-200/50 px-2.5 py-1 rounded-lg flex flex-col items-end border border-base-200 shadow-sm">
+                                    {#if task.startedAt && task.startedAt > task.queuedAt}
+                                        <div class="text-[10px] font-mono text-gray-500 mb-0.5">Wait: {getDuration(task.queuedAt, task.startedAt)}</div>
+                                    {/if}
+                                    <div class="text-[11px] font-mono text-base-content/80 font-semibold">Run: {getDuration(task.startedAt || task.queuedAt, task.endTime)}</div>
+                                </div>
                             </div>
                         </div>
                     {/each}

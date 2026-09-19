@@ -24,7 +24,7 @@ export function GET({ locals }) {
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'health', ...systemHealth.getStatus() })}\n\n`));
 
             // Broadcast active tasks instantly on connection
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'tasks', tasks: taskManager.getAllTasks() })}\n\n`));
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'tasks', tasks: taskManager.getAllTasks(), completedTasks: taskManager.getCompletedTasks() })}\n\n`));
 
             listener = () => {
                 const now = Date.now();
@@ -58,7 +58,7 @@ export function GET({ locals }) {
 
             taskListener = () => {
                 try {
-                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'tasks', tasks: taskManager.getAllTasks() })}\n\n`));
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'tasks', tasks: taskManager.getAllTasks(), completedTasks: taskManager.getCompletedTasks() })}\n\n`));
                 } catch (e) {}
             };
 

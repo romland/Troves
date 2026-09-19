@@ -250,9 +250,7 @@ export async function processDraftPhotoBackground(webPath: string, type: string,
 
 export async function processItemPhotosBackground(item: any, isNew: boolean = false) {
     // Queue this entire item's processing to prevent DB/Network starvation during bulk imports
-    const taskId = taskManager.start('item', item.id, 'Queued for processing...');
     return ioQueue.add(async () => {
-        taskManager.update(taskId, 'Analyzing photos');
         try {
             let itemNeedsTitleUpdate = item.title === "New Item" || item.title === "";
             for (const photo of item.photos) {
@@ -497,10 +495,11 @@ export async function processItemPhotosBackground(item: any, isNew: boolean = fa
                 });
             }
 
-        } finally {
-            taskManager.end(taskId);
+        } catch (e) {
+            console.error("Background processing failed:", e);
+            throw e;
         }
-        });
+    }, { targetType: 'item', targetId: item.id, description: `Analyzing photos for ${item.title || 'Item'}` });
 }
 
 async function processQRcodeThenDownload(webFilePath: string, photo: Photo, item: Item) {

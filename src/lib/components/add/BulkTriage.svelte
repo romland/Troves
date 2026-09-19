@@ -67,7 +67,7 @@
         if (!collectionHint && $page.data.inventories) {
             const vault = $page.data.inventories.find((i: any) => i.id ===$page.data.activeInventoryId);
             if (vault) {
-                collectionHint = `${vault.name} ${vault.description || ''}`.trim().substring(0, 100);
+                collectionHint = `${vault.description || ''}`.trim().substring(0, 100);
             }
         }
     });

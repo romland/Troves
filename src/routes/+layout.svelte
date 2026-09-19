@@ -39,7 +39,9 @@
     import { writable } from 'svelte/store';
     import { setContext } from 'svelte';
     const globalTasksStore = writable([]);
+    const completedTasksStore = writable([]);
     setContext('globalTasksStore', globalTasksStore);
+    setContext('completedTasksStore', completedTasksStore);
     
     let mounted = false;    
     let confirmModal: ConfirmModal;
@@ -102,6 +104,7 @@
                         }
                         if (payload.type === 'tasks') {
                             globalTasksStore.set(payload.tasks);
+                            if (payload.completedTasks) completedTasksStore.set(payload.completedTasks);
                         }
                     } catch (e) {}
                 }

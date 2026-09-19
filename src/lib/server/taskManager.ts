@@ -1,5 +1,3 @@
-import { EventEmitter } from 'events';
-
 /**
  * ============================================================================
  * CENTRALIZED TASK MANAGER (THE "WHAT IS THE SERVER DOING" TRACKER)
@@ -38,7 +36,21 @@ import { EventEmitter } from 'events';
  * ============================================================================
  */
 
-export const taskEvents = new EventEmitter();
+import { EventEmitter } from 'events';
+
+// ============================================================================
+// VITE HMR WORKAROUND: PERSISTENT SINGLETONS
+// ============================================================================
+// In development mode, Vite's Hot Module Replacement (HMR) clears the module cache
+// on every file save. This causes standard exported instances (like new EventEmitter())
+// to be recreated, leading to ghost tasks, duplicated event listeners, and memory leaks.
+// By attaching these singletons to the Node.js `globalThis` object, we ensure they
+// survive HMR reloads. This is safe in production, but can be removed if leaving Vite.
+// ============================================================================
+const g = globalThis as any;
+export const taskEvents = g.__taskEvents || new EventEmitter();
+if (!g.__taskEvents) g.__taskEvents = taskEvents;
+
 
 export type TaskTargetType = 'item' | 'note' | 'global' | 'plugin';
 
@@ -56,9 +68,10 @@ export interface Task {
     targetId: number;
     targetType: TaskTargetType;
     description: string;
-    startTime: number;
+    queuedAt: number;
+    startedAt?: number;
     endTime?: number;
-    status: 'running' | 'completed';
+    status: 'queued' | 'running' | 'completed';
 }
 
 class TaskManager {
@@ -66,9 +79,26 @@ class TaskManager {
     private completedTasks: Task[] = [];
     private MAX_COMPLETED = 50;
 
-    start(targetType: TaskTargetType, targetId: number, description: string): string {
+    queue(targetType: TaskTargetType, targetId: number, description: string): string {
         const id = Math.random().toString(36).substring(2, 15);
-        this.tasks.set(id, { id, targetId, targetType, description, startTime: Date.now(), status: 'running' });
+        this.tasks.set(id, { id, targetId, targetType, description, queuedAt: Date.now(), status: 'queued' });
+        taskEvents.emit('update');
+        return id;
+    }
+
+    start(id: string) {
+        const task = this.tasks.get(id);
+        if (task) {
+            task.status = 'running';
+            task.startedAt = Date.now();
+            taskEvents.emit('update');
+        }
+    }
+
+    startDirect(targetType: TaskTargetType, targetId: number, description: string): string {
+        const id = Math.random().toString(36).substring(2, 15);
+        const now = Date.now();
+        this.tasks.set(id, { id, targetId, targetType, description, queuedAt: now, startedAt: now, status: 'running' });
         taskEvents.emit('update');
         return id;
     }
@@ -108,4 +138,5 @@ class TaskManager {
     }    
 }
 
-export const taskManager = new TaskManager();
+export const taskManager: TaskManager = g.__taskManager || new TaskManager();
+if (!g.__taskManager) g.__taskManager = taskManager;

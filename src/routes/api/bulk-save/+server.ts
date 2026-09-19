@@ -29,7 +29,6 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
     // Fire and forget background worker
     ioQueue.add(async () => {
-        const taskId = taskManager.start('global', 0, `Saving ${items.length} items from trove...`);
         try {
             // Pre-process tags
             const tagIds = tagcsv ? await getTagIds(tagcsv, inventoryId) : [];
@@ -133,10 +132,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
             }
         } catch (e) {
             console.error("Bulk processing failed:", e);
-        } finally {
-            taskManager.end(taskId);
         }
-    });
+    }, { targetType: 'global', targetId: 0, description: `Saving ${items.length} items from trove...` });
 
     return json({ success: true });
 };

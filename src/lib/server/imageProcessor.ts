@@ -152,7 +152,7 @@ export async function generatePhotoDerivatives(photo: Partial<Photo>, imgUrl: st
             
         } catch (err) { console.error("Background/Crop pipeline failed:", err); }
         return updates;
-    }, tracking ? { ...tracking, description: 'Processing image & colors' } : undefined);
+    }, tracking ? { ...tracking, description: `Processing image: ${photo.orgPath?.split('/').pop() || 'unknown'}` } : undefined);
 }
 
 export async function extractBoundingBox(
