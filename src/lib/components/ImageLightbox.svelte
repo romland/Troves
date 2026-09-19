@@ -21,9 +21,9 @@
 
     // Pan & Zoom State
     // Tuned for an Apple-like physical, responsive feel (critically damped)
-    let scaleVal = spring(1, { stiffness: 0.25, damping: 0.85 });
-    let translateX = spring(0, { stiffness: 0.25, damping: 0.85 });
-    let translateY = spring(0, { stiffness: 0.25, damping: 0.85 });
+    let scaleVal = spring(1, { stiffness: 0.25, damping: 0.95 });
+    let translateX = spring(0, { stiffness: 0.25, damping: 0.95 });
+    let translateY = spring(0, { stiffness: 0.25, damping: 0.95 });
 
     // Apple-style rubber banding (overscroll resistance)
     function rubberBand(offset: number, dimension: number, constant = 0.55) {
@@ -220,13 +220,18 @@
 		// Calculate velocity for gliding (pixels per millisecond)
 		const now = performance.now();
 		const dt = now - lastDragTime;
-		if (dt > 0) {
-			velocityX = (clientX - lastDragX) / dt;
-			velocityY = (clientY - lastDragY) / dt;
+        
+        // Apple uses a ~10-15ms sample window with a low-pass filter to prevent erratic flick math
+        if (dt > 10) {
+            const instVx = (clientX - lastDragX) / dt;
+            const instVy = (clientY - lastDragY) / dt;
+            velocityX = (velocityX * 0.2) + (instVx * 0.8);
+            velocityY = (velocityY * 0.2) + (instVy * 0.8);
+
+            lastDragX = clientX;
+            lastDragY = clientY;
+            lastDragTime = now;
 		}
-		lastDragX = clientX;
-		lastDragY = clientY;
-		lastDragTime = now;
 
 		let rawX = clientX - startX;
 		let rawY = clientY - startY;
@@ -289,9 +294,14 @@
 
         // Momentum Glide: Apply exponential decay projection
 		if (performance.now() - lastDragTime < 50) {
-            const momentumMultiplier = 180; // Friction coefficient
-			targetTx += velocityX * momentumMultiplier;
-			targetTy += velocityY * momentumMultiplier;
+            const momentumMultiplier = 100; // Tuned down from 180 for a tighter, less slippery throw
+            
+            // Cap the max physical throw velocity to prevent getting completely lost
+            const throwX = Math.max(-2000, Math.min(2000, velocityX * momentumMultiplier));
+            const throwY = Math.max(-2000, Math.min(2000, velocityY * momentumMultiplier));
+
+            targetTx += throwX;
+            targetTy += throwY;
 		}
 
 		// Clamp the projected target to the boundaries. 
