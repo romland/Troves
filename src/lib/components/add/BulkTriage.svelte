@@ -63,6 +63,15 @@
 
     pageTitle.set("Multi-Scan");
 
+    onMount(() => {
+        if (!collectionHint && $page.data.inventories) {
+            const vault = $page.data.inventories.find((i: any) => i.id ===$page.data.activeInventoryId);
+            if (vault) {
+                collectionHint = `${vault.name} ${vault.description || ''}`.trim().substring(0, 100);
+            }
+        }
+    });
+
     async function handleFileSelect(e: Event) {
         const file = (e.target as HTMLInputElement).files?.[0];
         if (!file) return;
@@ -195,6 +204,22 @@
     }
 
     async function saveCollection() {
+        const vault = $page.data.inventories?.find((i: any) => i.id === $page.data.activeInventoryId);
+        
+        if (vault?.deepScanCollections && activeItems.length >= 20) {
+            if (typeof sessionStorage !== 'undefined' && !sessionStorage.getItem('troves_deepscan_confirmed')) {
+                const proceed = await confirmModal.ask(
+                    'Large Deep Scan', 
+                    `You are saving ${activeItems.length} items with Deep Scan enabled. This will queue individual AI tasks for every item to extract fine details, which takes time and consumes API quota. Proceed?`, 
+                    'Save & Analyze', 
+                    'Cancel'
+                );
+                if (!proceed) return;
+                
+                sessionStorage.setItem('troves_deepscan_confirmed', 'true');
+            }
+        }
+
         if (selectedContainers.length === 0) {
 			const res = await confirmModal.ask('No Location', "You haven't selected a location. Save these items without a location?", 'Save Anyway', 'Cancel');
 			if (!res) {
