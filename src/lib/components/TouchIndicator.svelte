@@ -62,16 +62,16 @@
 					if (dx !== 0 || dy !== 0) {
 						// Speed = distance moved between this frame and the last frame
 						const velocity = Math.hypot(dx, dy);
-            
-            // 1. Prevent micro-jitter: Only update angle if moving intentionally
-            if (velocity > 1.5) {
-              const rawAngle = Math.atan2(dy, dx) * (180 / Math.PI);
-              // 2. Unwind CSS rotation: Prevent 360-degree backflips crossing the left axis
-              let diff = rawAngle - (touch.angle % 360);
-              if (diff > 180) diff -= 360;
-              if (diff < -180) diff += 360;
-              touch.angle += diff;
-            }
+						
+						// 1. Prevent micro-jitter: Only update angle if moving intentionally
+						if (velocity > 1.5) {
+							const rawAngle = Math.atan2(dy, dx) * (180 / Math.PI);
+							// 2. Unwind CSS rotation: Prevent 360-degree backflips crossing the left axis
+							let diff = rawAngle - (touch.angle % 360);
+							if (diff > 180) diff -= 360;
+							if (diff < -180) diff += 360;
+							touch.angle += diff;
+						}
 						
 						// Squash & Stretch Math: Max stretch of 2.2x, Max squish of 0.4x (High Velocity)
 						touch.stretchX = 1 + Math.min(velocity / 8, 1.2); 
@@ -167,21 +167,21 @@
 </script>
 
 {#if enabled}
-  {#each touches as touch (touch.id)}
-    <div
-      class="demo-touch-indicator"
-      class:pressing={touch.pressing}
-      class:swiping={touch.swiping}
-      class:fading={touch.fading}
-      style="
-        left: {touch.x}px; 
-        top: {touch.y}px;
-        --angle: {touch.angle}deg;
-        --stretch-x: {touch.stretchX};
-        --stretch-y: {touch.stretchY};
-      "
-    ></div>
-  {/each}
+	{#each touches as touch (touch.id)}
+		<div
+			class="demo-touch-indicator"
+			class:pressing={touch.pressing}
+			class:swiping={touch.swiping}
+			class:fading={touch.fading}
+			style="
+				left: {touch.x}px; 
+				top: {touch.y}px;
+				--angle: {touch.angle}deg;
+				--stretch-x: {touch.stretchX};
+				--stretch-y: {touch.stretchY};
+			"
+		></div>
+	{/each}
 {/if}
 
 <style>
