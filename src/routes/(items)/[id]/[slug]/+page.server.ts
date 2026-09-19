@@ -331,6 +331,13 @@ export const actions = {
         const { rollbackToSnapshot } = await import('$lib/server/itemHistory');
         await rollbackToSnapshot(snapshotId);
         
+        const { ioQueue } = await import('$lib/server/queue/index');
+        const { runDuplicateSweep, healDuplicateStatuses } = await import('$lib/server/matcher');
+        ioQueue.add(async () => {
+            await runDuplicateSweep(Number(params.id), locals.activeInventoryId);
+            await healDuplicateStatuses(locals.activeInventoryId);
+        }, { targetType: 'item', targetId: Number(params.id), description: 'Re-evaluating duplicates after rollback' }).catch(console.error);
+
         return { success: true };
     },
 

@@ -449,7 +449,7 @@
 							</a>
 						{/if}
                         {#if item.hasDuplicate}
-                            <div class="absolute top-3 right-3 w-3 h-3 bg-error rounded-full border-2 border-base-100 shadow-sm z-10" title="Potential duplicate detected"></div>
+                            <div class="absolute top-3 right-3 w-3 h-3 bg-error rounded-full border-2 border-base-100 shadow-sm z-30" title="Potential duplicate detected"></div>
                         {/if}
                         <div class="relative w-full h-full flex items-center justify-center rounded-lg overflow-hidden">
                             {#if cols.length > 0}

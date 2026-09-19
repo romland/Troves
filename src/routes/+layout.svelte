@@ -234,6 +234,7 @@
     let quickNoteTimer: any;
     let quickNoteFired = false;
     let quickNoteReady = false;
+    let preventClick = false;
     
     function quickNoteTouchStart(e: Event) {
         clearTimeout(quickNoteTimer);
@@ -254,11 +255,12 @@
         clearTimeout(quickNoteTimer);
         if (quickNoteFired) {
             e.preventDefault(); // stops the href from firing if long press was triggered
+            preventClick = true;
+            setTimeout(() => preventClick = false, 300);
             quickNoteReady = false;
             quickNoteFired = false;
             quickNoteModal.showModal();
-            const ta = quickNoteModal.querySelector('textarea');
-            if (ta) setTimeout(() => ta.focus(), 50);
+            setTimeout(() => document.getElementById('quickNoteTextarea')?.focus(), 50);
             // Keep the flag true for a split second to swallow the subsequent click event and gracefully hand off the UI
         } else {
             quickNoteReady = false;
@@ -547,7 +549,7 @@
     {#if $page.data.inventories?.find(i => i.id === $page.data.activeInventoryId)?.enableNotebook !== false}
         <a class="transition-all duration-200 flex flex-col items-center justify-center gap-1 select-none relative {$page.url.pathname.startsWith('/timeline') ? 'active' : ''} {quickNoteReady ? 'text-primary drop-shadow-md' : ''}" href="/timeline"
             style="-webkit-touch-callout: none; touch-action: none;"
-            on:click={(e) => { if (quickNoteFired) e.preventDefault(); }}
+            on:click={(e) => { if (preventClick || quickNoteFired) e.preventDefault(); }}
             on:pointerdown={quickNoteTouchStart}
             on:pointerup={quickNoteTouchEnd}
             on:pointercancel={quickNoteTouchEnd}
@@ -583,7 +585,7 @@
         {#if $page.url.pathname !== '/timeline' && $page.url.pathname !== '/'}
             <input type="hidden" name="url" value={$page.url.href} />
         {/if}
-        <textarea name="content" placeholder="Jot something down..." class="textarea textarea-bordered w-full resize-none h-32 rounded-xl mb-4"></textarea>
+        <textarea id="quickNoteTextarea" name="content" placeholder="Jot something down..." class="textarea textarea-bordered w-full resize-none h-32 rounded-xl mb-4"></textarea>
         <div class="modal-action mt-0 flex gap-2">
             <button type="button" class="btn btn-ghost flex-1 rounded-xl" on:click={() => quickNoteModal.close()}>Cancel</button>
             <button type="submit" class="btn btn-primary flex-1 rounded-xl shadow-md">Save Note</button>
