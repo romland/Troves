@@ -29,7 +29,7 @@
 import fs from 'fs';
 import path from 'path';
 
-export default function register({ registerItemAction, sysLog, logActivity, fetch, env, itemOps, db }) {
+export default function register({ on, registerItemAction, sysLog, logActivity, fetch, db, env, itemOps }) {
     registerItemAction({ 
         id: 'sync-woocommerce', 
         label: 'Sync to WooCommerce', 

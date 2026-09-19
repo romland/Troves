@@ -2,6 +2,10 @@
 
 Troves supports a zero-config, drop-in plugin architecture. To add a new integration, simply place a `.js` file into the `data/plugins/` directory. Troves will load it when the server starts, or you can instantly apply changes by clicking **Hot Reload Plugins** in the **Settings > Admin** dashboard. You can also create and edit plugins directly from the browser there!
 
+> **⚠️ SECURITY WARNING:**
+> Plugins execute in the core Node.js server context. They have unrestricted access to the `.env` variables, the database, and the local filesystem. **Only install plugins from sources you completely trust.** Installing a malicious plugin is equivalent to handing over the root keys to your server.
+> If you use an LLM to write a plugin, carefully verify that it does not expose environment variables to unverified third-party endpoints.
+
 ## The Plugin Toolkit
 Plugins must `export default function`. Troves securely injects a toolkit object containing everything the plugin needs to operate, so you never have to worry about internal module resolution or SvelteKit SSR rules.
 
@@ -18,6 +22,8 @@ Plugins must `export default function`. Troves securely injects a toolkit object
   - `itemOps.getSchema(inventoryId, categoryId)`: Returns the active EAV taxonomy rules.
   - `itemOps.compareTitles(scannedTitle, dbTitle)`: Evaluates text identity (hardware-aware, numbers strict) and returns an object `{ isMatch: boolean, titleSim: number, isSpecClash: boolean }`. Use this to verify an API result matches your item before saving.
   - `itemOps.getFuzzyAttribute(item, ['country', 'issuer', 'origin'])`: Searches the item's dynamic attributes and returns the value of the first key that semantically matches your provided keywords, ignoring formatting.
+  - `itemOps.processPhoto(photoId, { removeBackground?: boolean, extractColors?: boolean })`: Queues a background job to run heavy ML processing (RemBG and ColorThief) on a specific photo without blocking the plugin.
+  - `itemOps.fetchAndStoreWebpage(url, itemId)`: Queues a background job to safely download, parse, summarize, and archive a webpage or document (PDF/EPUB) as a link on the item.
 
 ## Monitoring & Telemetry
 You don't need to manually configure logging or queue tracking. Troves handles this automatically for every plugin hook:

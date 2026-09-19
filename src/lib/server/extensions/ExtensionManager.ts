@@ -337,7 +337,51 @@ class ExtensionManager {
                                 return keywords.some(kw => keyLower.includes(kw.toLowerCase().replace(/[^a-z0-9]/g, '')));
                             });
                             return match ? match.value : null;
-                        }						
+                        },
+                        async processPhoto(photoId: number, options: { removeBackground?: boolean, extractColors?: boolean }) {
+                            const photo = await db.photo.findUnique({ where: { id: photoId } });
+                            if (!photo || !photo.orgPath) return false;
+                            const { generatePhotoDerivatives } = await import('$lib/server/imageProcessor');
+                            ioQueue.add(async () => {
+                                try {
+                                    const tracking = { targetType: 'item' as const, targetId: photo.itemId! };
+                                    const updates = await generatePhotoDerivatives(
+                                        photo, 
+                                        photo.orgPath!, 
+                                        options.extractColors ?? true, 
+                                        tracking, 
+                                        null, 
+                                        options.removeBackground ?? true
+                                    );
+                                    if (Object.keys(updates).length > 0) {
+                                        await db.photo.update({ where: { id: photoId }, data: updates });
+                                    }
+                                } catch(e) {
+                                    sysLog.error(`[itemOps] processPhoto failed for photo ${photoId}`, e);
+                                }
+                            }, { targetType: 'item', targetId: photo.itemId!, description: `Processing photo ${photoId}` });
+                            return true;
+                        },
+                        async fetchAndStoreWebpage(url: string, itemId: number) {
+                            const { downloadAndStoreDocuments } = await import('$lib/server/urldownloader');
+                            const { uploadsDiskFolder, uploadsWebFolder, uploadsRemoteSite } = await import('$lib/server/constants');
+                            return ioQueue.add(async () => {
+                                try {
+                                    await downloadAndStoreDocuments(
+                                        { itemId }, 
+                                        uploadsRemoteSite, 
+                                        { urls: url }, 
+                                        uploadsDiskFolder, 
+                                        uploadsWebFolder, 
+                                        '', 
+                                        0
+                                    );
+                                } catch (err) {
+                                    sysLog.error(`[itemOps] Failed to fetch and store webpage ${url}:`, err);
+                                    throw err;
+                                }
+                            }, { targetType: 'item', targetId: itemId, description: `Scraping webpage: ${url}` });
+                        }
                     };
 
                     // Shadow Copy Technique: Node's ES Module loader aggressively caches based on the 

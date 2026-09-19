@@ -1,8 +1,8 @@
 /**
  * Troves Plugin generated for: "Vinted market pricing and similar item lookup based on dynamic taxonomy"
  */
-export default function register({ on, registerItemAction, sysLog, logActivity, fetch, itemOps, db }) {
-    
+export default function register({ on, registerItemAction, sysLog, logActivity, fetch, db, env, itemOps }) {
+
     // Parses the ML model's stringified JSON (e.g. [{"color":"purple","pct":0.85}]) 
     // and returns just the dominant color name.
     const extractDominantColor = (rawColorStr) => {

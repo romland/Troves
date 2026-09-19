@@ -592,6 +592,23 @@
 
                         {#if allowCategoryEdit && photo?.type === 'product' && photo?.id}
                             <div class="border-b border-white/10 pb-1 mb-1">
+                                <div class="relative w-full mb-1">
+                                    <button class="btn btn-ghost btn-sm text-white hover:bg-white/20 justify-start h-10 px-3 font-medium rounded-xl w-full" on:click={async () => {
+                                        showMenu = false;
+                                        notify('info', 'Refining image...');
+                                        try {
+                                            const res = await fetch('/api/photo-refine', {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({ photoId: photo.id, removeBackground: true, extractColors: true })
+                                            });
+                                            if (res.ok) notify('success', 'Queued image processing');
+                                            else notify('error', 'Failed to refine image');
+                                        } catch (e) { notify('error', 'Network error'); }
+                                    }}>
+                                        <i class="bi bi-magic text-lg w-5 opacity-70"></i> Refine Image
+                                    </button>
+                                </div>
                                 <div class="relative w-full">
                                     <i class="bi bi-tag text-lg w-5 opacity-70 absolute left-3 top-2 pointer-events-none text-white"></i>
                                     <select class="select select-sm bg-transparent text-white hover:bg-white/20 border-none font-medium text-sm h-10 min-h-0 pl-10 pr-8 w-full rounded-xl outline-none cursor-pointer appearance-none" 

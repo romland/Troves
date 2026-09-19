@@ -3,7 +3,7 @@
  * 
  * ...ugh, you need to have an Ebay account for this.
  */
-export default function register({ registerItemAction, sysLog, logActivity }) {
+export default function register({ on, registerItemAction, sysLog, logActivity, fetch, db, env, itemOps }) {
     
     registerItemAction(
         { 

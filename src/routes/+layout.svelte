@@ -2,7 +2,7 @@
     import type { SubmitFunction } from "./$types";
     import { enhance } from "$app/forms";
     import { page, navigating } from "$app/stores";
-    import { onNavigate, beforeNavigate, invalidateAll } from '$app/navigation';
+    import { onNavigate, beforeNavigate, afterNavigate, invalidateAll } from '$app/navigation';
     import { browser } from '$app/environment';
     import Search from "$lib/components/search.svelte";
     import ReloadPrompt from "$lib/components/ReloadPrompt.svelte";
@@ -388,6 +388,11 @@
         lastScrollY = scrollY;
     }
     
+    afterNavigate(() => {
+        hideNav = false;
+        lastScrollY = scrollY;
+    });
+
     $: if ($navigating) {
         clearTimeout(navTimer);
         clearTimeout(slowNavTimer);

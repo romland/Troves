@@ -11,9 +11,6 @@
  * - Fully logs API requests and errors to the Troves Activity Monitor.
  * ============================================================================
  * 
- * This extension has never been tested as when I was about to do it, I realized
- * I had to _APPLY_ for an API key. Did not feel like that.
- * 
  * REQUIRED SETUP:
  * Register and check out
  *   https://boardgamegeek.com/using_the_xml_api and 
@@ -26,8 +23,7 @@ import fs from 'fs';
 import path from 'path';
 import * as cheerio from 'cheerio';
 
-export default function register({ on, registerItemAction, sysLog, logActivity, fetch, env, itemOps, db }) {
-
+export default function register({ on, registerItemAction, sysLog, logActivity, fetch, db, env, itemOps }) {
     async function lookupAndEnrichBoardGame(payload) {
         const item = payload.entity;
 
