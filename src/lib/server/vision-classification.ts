@@ -289,8 +289,9 @@ CRITICAL EXTRACTION RULES:
 8. THE SCALE & MATERIAL FALLACY: A photo has no absolute scale. DO NOT guess sizes, dimensions, or invisible materials unless explicitly printed in visible text. Output null instead of guessing.
 	
 For each item:
-- title: The actual name of the work itself (e.g., Book Title, Album Name, Movie Title, Product Name). NEVER put the author or artist here. If unreadable, use a placeholder (e.g., 'Unknown').
-- subtitle: The creator (e.g., Author, Band/Artist, Maker, Brand) physically printed on the item. NEVER put the main work title here. If there is no printed maker or author (e.g., on a generic tool), you MUST output null.
+- title: Identify this product. Return a concise 'title' for it. For media/books, use the printed title. If completely unidentifiable, use a placeholder (e.g., 'Unknown').
+- subtitle: Author, maker, brand, or secondary text physically printed on the item. Null if plain/blank.
+- description: A brief visual physical description.
 - category: A STRICTLY SINGULAR, specific retail-style sub-category (e.g. 't-shirt', 'mug', 'wrench'). NEVER use plural. NEVER use broad macro-categories like 'clothing', 'media', or 'electronics'.
 - rawText: Literally every word you can read on the item, space separated. Do not format it.
 - color_mix: Array of dominant colors with percentages. Map to base colors (e.g. Red, Blue, Black, Clear, Metallic). e.g. [{"color": "Black", "pct": 0.9}].
@@ -316,9 +317,9 @@ For each item:
 		promptText += `\n\nUSER HINT: The user noted this inventory is: "${hint.trim()}". Prioritize identifying the items within this context.`;
 	}
 	
-	const jsonSchema = { type: 'object', properties: { totalVisibleCount: { type: 'integer', description: 'The total number of items you counted' }, collectionType: { type: 'string' }, items: { type: 'array', items: { type: 'object', properties: { title: { type: 'string' }, subtitle: { type: 'string', nullable: true }, category: { type: 'string' }, rawText: { type: 'string', nullable: true }, color_mix: { type: 'array', items: { type: 'object', properties: { color: { type: 'string' }, pct: { type: 'number' } } } }, prominent_text_or_graphic: { type: 'string', nullable: true }, distinctive_blemishes_or_wear: { type: 'string', nullable: true }, physical_traits: { type: 'array', items: { type: 'string' } }, extractedAttributes: { type: 'object' }, box: { type: 'array', minItems: 4, maxItems: 4, items: { type: 'array', minItems: 2, maxItems: 2, items: { type: 'number' } }, description: 'Exactly 4 points [[x,y], [x,y], [x,y], [x,y]] normalized 0-1000' }, low_confidence: { type: 'boolean' } }, required: ['title', 'subtitle', 'category', 'color_mix', 'prominent_text_or_graphic', 'distinctive_blemishes_or_wear', 'physical_traits', 'extractedAttributes', 'box'] } } }, required: ['totalVisibleCount', 'items'] };
 
-	const rawText = await analyzeImage(promptText, mimeType, base64Data, true, jsonSchema, 'Bulk Collection Analysis', tracking, 'MULTISCAN');
+    const jsonSchema = { type: 'object', properties: { totalVisibleCount: { type: 'integer', description: 'The total number of items you counted' }, collectionType: { type: 'string' }, items: { type: 'array', items: { type: 'object', properties: { title: { type: 'string' }, subtitle: { type: 'string', nullable: true }, description: { type: 'string', nullable: true }, category: { type: 'string' }, rawText: { type: 'string', nullable: true }, color_mix: { type: 'array', items: { type: 'object', properties: { color: { type: 'string' }, pct: { type: 'number' } } } }, prominent_text_or_graphic: { type: 'string', nullable: true }, distinctive_blemishes_or_wear: { type: 'string', nullable: true }, physical_traits: { type: 'array', items: { type: 'string' } }, extractedAttributes: { type: 'object' }, box: { type: 'array', minItems: 4, maxItems: 4, items: { type: 'array', minItems: 2, maxItems: 2, items: { type: 'number' } }, description: 'Exactly 4 points [[x,y], [x,y], [x,y], [x,y]] normalized 0-1000' }, low_confidence: { type: 'boolean' } }, required: ['title', 'subtitle', 'category', 'color_mix', 'prominent_text_or_graphic', 'distinctive_blemishes_or_wear', 'physical_traits', 'extractedAttributes', 'box'] } } }, required: ['totalVisibleCount', 'items'] };
+    const rawText = await analyzeImage(promptText, mimeType, base64Data, true, jsonSchema, 'Bulk Collection Analysis', tracking, 'MULTISCAN');
 	const result = JSON.parse(rawText);
 	
 	if (result.items && Array.isArray(result.items)) {

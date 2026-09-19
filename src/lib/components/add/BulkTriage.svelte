@@ -67,7 +67,9 @@
         if (!collectionHint && $page.data.inventories) {
             const vault = $page.data.inventories.find((i: any) => i.id ===$page.data.activeInventoryId);
             if (vault) {
-                collectionHint = `${vault.description || ''}`.trim().substring(0, 100);
+                // collectionHint = `${vault.description || ''}`.trim().substring(0, 100);
+                // Yeah, turning off the hint for now ....
+                collectionHint = "";
             }
         }
     });
@@ -246,7 +248,7 @@
                 containers: selectedContainers,
                 globalCategory,
                 tagcsv: globalTags,
-                items: activeItems.map(item => ({ title: item.title, subtitle: item.subtitle, category: item.category, box: item.box, extractedAttributes: item.extractedAttributes, physical_traits: item.physical_traits, prominent_text_or_graphic: item.prominent_text_or_graphic, distinctive_blemishes_or_wear: item.distinctive_blemishes_or_wear, color_mix: item.color_mix, resolution: item.resolution, duplicateItemDetails: item.duplicateItemDetails }))
+                items: activeItems.map(item => ({ title: item.title, subtitle: item.subtitle, description: item.description, category: item.category, box: item.box, extractedAttributes: item.extractedAttributes, physical_traits: item.physical_traits, prominent_text_or_graphic: item.prominent_text_or_graphic, distinctive_blemishes_or_wear: item.distinctive_blemishes_or_wear, color_mix: item.color_mix, resolution: item.resolution, duplicateItemDetails: item.duplicateItemDetails }))
             })
         });
         

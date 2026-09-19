@@ -103,7 +103,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
                 const { createItemEntity } = await import('$lib/server/services');
                 const createdItem = await createItemEntity({
                     title: item.title,
-                    description: item.subtitle || "",
+                    description: item.description || item.subtitle || "",
                     amount: 1,
                     inventoryId,
                     userId,
