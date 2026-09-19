@@ -5,24 +5,30 @@
 		id: string;
 		x: number;
 		y: number;
+		targetX: number;
+		targetY: number;
 		startX: number;
 		startY: number;
-		prevX: number;
-		prevY: number;
 		angle: number;
 		stretchX: number;
 		stretchY: number;
 		pressing: boolean;
 		swiping: boolean;
 		fading: boolean;
-		moveTimeout?: ReturnType<typeof setTimeout>;
+	};
+	
+	type ClickParticle = {
+		id: string;
+		x: number;
+		y: number;
+		label: string;
 	};
 	
 	let touches = $state<Touch[]>([]);
-	
-	$effect(() => {
+	let particles = $state<ClickParticle[]>([]);$effect(() => {
 		if (!enabled) {
 			touches = [];
+			particles = [];
 			return;
 		}
 		
@@ -30,8 +36,8 @@
 			if (!touches.find(t => t.id === id)) {
 				touches.push({
 					id, x, y, 
+					targetX: x, targetY: y,
 					startX: x, startY: y,
-					prevX: x, prevY: y,
 					angle: 0, stretchX: 1, stretchY: 1,
 					pressing: true, swiping: false, fading: false
 				});
@@ -41,64 +47,14 @@
 		const handleMove = (id: string, x: number, y: number) => {
 			const touch = touches.find(t => t.id === id);
 			if (touch) {
-				touch.x = x;
-				touch.y = y;
-				
-				// Calculate total distance from where they first touched down
-				if (!touch.swiping) {
-					const totalDistance = Math.hypot(touch.x - touch.startX, touch.y - touch.startY);
-					if (totalDistance > 10) {
-						touch.swiping = true;
-						touch.pressing = false; 
-					}
-				}
-				
-				// If they are swiping, calculate the elasticity
-				if (touch.swiping) {
-					const dx = x - touch.prevX;
-					const dy = y - touch.prevY;
-					
-					// Only update angle/stretch if they actually moved coordinates
-					if (dx !== 0 || dy !== 0) {
-						// Speed = distance moved between this frame and the last frame
-						const velocity = Math.hypot(dx, dy);
-						
-						// 1. Prevent micro-jitter: Only update angle if moving intentionally
-						if (velocity > 1.5) {
-							const rawAngle = Math.atan2(dy, dx) * (180 / Math.PI);
-							// 2. Unwind CSS rotation: Prevent 360-degree backflips crossing the left axis
-							let diff = rawAngle - (touch.angle % 360);
-							if (diff > 180) diff -= 360;
-							if (diff < -180) diff += 360;
-							touch.angle += diff;
-						}
-						
-						// Squash & Stretch Math: Max stretch of 2.2x, Max squish of 0.4x (High Velocity)
-						touch.stretchX = 1 + Math.min(velocity / 8, 1.2); 
-						touch.stretchY = 1 - Math.min(velocity / 20, 0.6);
-						
-						// If they hold their finger still, snap back to a perfect circle
-						if (touch.moveTimeout) clearTimeout(touch.moveTimeout);
-						touch.moveTimeout = setTimeout(() => {
-							const t = touches.find(t => t.id === id);
-							if (t) {
-								t.stretchX = 1;
-								t.stretchY = 1;
-							}
-						}, 80); 
-					}
-				}
-				
-				touch.prevX = x;
-				touch.prevY = y;
+				touch.targetX = x;
+				touch.targetY = y;
 			}
 		};
 		
 		const handleEnd = (id: string) => {
 			const touch = touches.find(t => t.id === id);
 			if (touch && !touch.fading) {
-				if (touch.moveTimeout) clearTimeout(touch.moveTimeout);
-				
 				touch.pressing = false;
 				touch.swiping = false;
 				touch.fading = true;
@@ -108,6 +64,49 @@
 				}, 200);
 			}
 		};
+		
+		let rafId: number;
+		const tick = () => {
+			for (let i = 0; i < touches.length; i++) {
+				const touch = touches[i];
+				if (touch.fading) continue;
+				
+				const dx = touch.targetX - touch.x;
+				const dy = touch.targetY - touch.y;
+				
+				// Lerp towards target to create the "chase" effect
+				touch.x += dx * 0.35;
+				touch.y += dy * 0.35;
+				
+				const velocity = Math.hypot(dx * 0.35, dy * 0.35);
+				
+				if (!touch.swiping && Math.hypot(touch.x - touch.startX, touch.y - touch.startY) > 10) {
+					touch.swiping = true;
+					touch.pressing = false; 
+				}
+				
+				if (touch.swiping) {
+					// Update angle only if moving intentionally
+					if (velocity > 0.5) {
+						const targetAngle = Math.atan2(dy, dx) * (180 / Math.PI);
+						let diff = targetAngle - (touch.angle % 360);
+						if (diff > 180) diff -= 360;
+						if (diff < -180) diff += 360;
+						touch.angle += diff * 0.8; // Smooth angle tracking
+					}
+					
+					// Squash & Stretch Math: Adjusted for per-frame velocity
+					touch.stretchX = 1 + Math.min(velocity / 12, 1.2); 
+					touch.stretchY = Math.max(0.4, 1 - (velocity / 20));
+				} else {
+					// Spring back to a perfect circle smoothly when resting
+					touch.stretchX += (1 - touch.stretchX) * 0.4;
+					touch.stretchY += (1 - touch.stretchY) * 0.4;
+				}
+			}
+			rafId = requestAnimationFrame(tick);
+		};
+		rafId = requestAnimationFrame(tick);
 		
 		let isTouchDevice = false; 
 		const onTouchStart = (e: TouchEvent) => {
@@ -135,6 +134,14 @@
 			if (isTouchDevice) return;
 			isMouseDown = true;
 			handleStart('mouse', e.clientX, e.clientY);
+			
+			// Spawn the click particle
+			const id = `click-${Date.now()}-${Math.random()}`;
+			const label = e.button === 2 ? 'Right' : (e.button === 1 ? 'Middle' : 'Left');
+			particles.push({ id, x: e.clientX, y: e.clientY, label });
+			setTimeout(() => {
+				particles = particles.filter(p => p.id !== id);
+			}, 600);
 		};
 		const onMouseMove = (e: MouseEvent) => {
 			if (isMouseDown && !isTouchDevice) handleMove('mouse', e.clientX, e.clientY);
@@ -162,24 +169,33 @@
 			window.removeEventListener('mousedown', onMouseDown);
 			window.removeEventListener('mousemove', onMouseMove);
 			window.removeEventListener('mouseup', onMouseUp);
+			cancelAnimationFrame(rafId);
 		};
 	});
 </script>
 
 {#if enabled}
+	{#each particles as p (p.id)}
+		<div class="demo-click-particle" style="left: {p.x}px; top: {p.y}px;">
+		<span class="px-2 py-1 rounded-full bg-black/70 text-white backdrop-blur-md shadow-lg text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 border border-white/10">
+			<i class="bi {p.label === 'Right' ? 'bi-mouse3' : 'bi-mouse'}"></i> {p.label} Click
+		</span>
+		</div>
+	{/each}
+
 	{#each touches as touch (touch.id)}
 		<div
-			class="demo-touch-indicator"
-			class:pressing={touch.pressing}
-			class:swiping={touch.swiping}
-			class:fading={touch.fading}
-			style="
-				left: {touch.x}px; 
-				top: {touch.y}px;
-				--angle: {touch.angle}deg;
-				--stretch-x: {touch.stretchX};
-				--stretch-y: {touch.stretchY};
-			"
+		class="demo-touch-indicator"
+		class:pressing={touch.pressing}
+		class:swiping={touch.swiping}
+		class:fading={touch.fading}
+		style="
+			left: {touch.x}px; 
+			top: {touch.y}px;
+			--angle: {touch.angle}deg;
+			--stretch-x: {touch.stretchX};
+			--stretch-y: {touch.stretchY};
+		"
 		></div>
 	{/each}
 {/if}
@@ -203,6 +219,20 @@
 		border 0.15s;
 	}
 	
+	.demo-click-particle {
+		position: fixed;
+		pointer-events: none;
+		z-index: 2147483647;
+		transform: translate(-50%, -50%);
+		animation: float-up-fade 0.6s cubic-bezier(0.17, 0.67, 0.2, 1) forwards;
+	}
+	
+	@keyframes float-up-fade {
+		0% { opacity: 0; transform: translate(-50%, -5px) scale(0.8); }
+		20% { opacity: 1; transform: translate(-50%, -20px) scale(1.1); }
+		100% { opacity: 0; transform: translate(-50%, -50px) scale(0.9); }
+	}
+	
 	/* TAP STATE: Ignore angle, just shrink */
 	.pressing {
 		transform: translate(-50%, -50%) rotate(0deg) translateX(0px) scaleX(0.6) scaleY(0.6);
@@ -214,11 +244,11 @@
 	
 	/* SWIPE STATE: Apply the math variables */
 	.swiping {
-		/* Base scale is 1.1. We shift the X axis backwards based on the stretch so the cursor pulls the leading edge */
-		transform: translate(-50%, -50%) rotate(var(--angle)) translateX(calc(-60px * (var(--stretch-x) - 1))) scaleX(calc(1.1 * var(--stretch-x))) scaleY(calc(1.1 * var(--stretch-y)));
+		/* Base scale is 1.1. */
+		transform: translate(-50%, -50%) rotate(var(--angle)) scaleX(calc(1.1 * var(--stretch-x))) scaleY(calc(1.1 * var(--stretch-y)));
 		
-		/* We use a much faster transition here so the rotation tracks your finger instantly without "wobbling" */
-		transition: transform 0.05s linear, background 0.15s, border 0.15s;
+		/* CSS transforms disabled so the physics loop has full physical control */
+		transition: opacity 0.2s ease-out, background 0.15s, border 0.15s;
 		
 		background: rgba(255, 255, 255, 0.15);
 		border: 2px solid transparent;
