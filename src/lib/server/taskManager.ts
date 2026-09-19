@@ -14,7 +14,7 @@
  * (`/api/events/+server.ts`) listens to this and instantly tells the frontend 
  * to refresh via `invalidateAll()`. Because it's an in-memory map, if the Node 
  * process restarts, both the tasks and the frontend loading spinners clear 
- * automatically—no ghost loading states left trapped in the database.
+ * automatically, no ghost loading states left trapped in the database.
  * 
  * HOW IT STRETCHES ACROSS THE CODEBASE:
  * This manager is deeply wired into `TaskQueue.ts`. 

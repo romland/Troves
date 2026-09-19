@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { enhance } from "$app/forms";
 	import { createEventDispatcher } from "svelte";
-	import { ARCHETYPES } from "$lib/shared/constants";
 	import Modal from "$lib/components/Modal.svelte";
 	import FormInput from "$lib/components/FormInput.svelte";
+    import { page } from "$app/stores";
 	
 	const dispatch = createEventDispatcher();
 	let modal: Modal;
@@ -61,7 +61,7 @@
 			<div>
                 <div class="label pb-2"><span class="label-text font-semibold text-lg">Select Archetype</span></div>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-					{#each ARCHETYPES as type}
+                    {#each $page.data.archetypes as type}
 					<label class="cursor-pointer relative">
 						<input type="radio" name="archetype" value={type.id} bind:group={selectedArchetype} class="peer sr-only" />
 						<div class="card bg-base-100 border-2 transition-all duration-200 h-full p-4 peer-checked:border-primary peer-checked:shadow-[0_0_15px_rgba(var(--p),0.2)] peer-checked:bg-primary/5 border-base-200 hover:border-primary/50">

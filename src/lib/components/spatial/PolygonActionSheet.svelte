@@ -173,7 +173,7 @@
             <div class="flex flex-col gap-1.5">
                 <div class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Compartment Contents</div>
                 <p class="text-xs text-base-content/60 leading-relaxed">
-                    Map physical items directly into this slot. No need to create nested folder containers—just assign what lives here.
+                    Map physical items directly into this slot. No need to create nested folder containers, just assign what lives here.
                 </p>
             </div>
 

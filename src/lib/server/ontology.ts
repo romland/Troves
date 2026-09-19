@@ -67,13 +67,27 @@ export async function bootstrapInventorySchema(inventoryId: number, domainName: 
     console.log(`[Taxonomy Engine] 🚀 Starting schema generation for Trove ID ${inventoryId}: "${domainName}"`);
     
     const archetype = (inv as any)?.archetype || 'generic';
-    const { getArchetypePromptGuidance } = await import('$lib/shared/constants');
-    const archetypeGuidance = getArchetypePromptGuidance(archetype);
+    const { getArchetype } = await import('$lib/server/archetypes');
+    const archDef = getArchetype(archetype);
+    const archetypeGuidance = archDef?.promptGuidance || "";
 
     try {
-        // const prompt = `You are a Principal Data Architect designing a strict EAV taxonomy for an inventory tracking: "${domainName}".
-        // const prompt = `You are a Principal Data Architect designing a strict EAV taxonomy for an inventory tracking: "${domainName}".
-        // const prompt = `You are a Principal Data Architect designing a strict Entity-Attribute-Value (EAV) taxonomy for an inventory tracking: "${domainName}".
+        // If the archetype natively enforces taxonomy fields, inject them directly
+        if (archDef?.taxonomy && Array.isArray(archDef.taxonomy)) {
+            for (const f of archDef.taxonomy) {
+                const existing = await db.templateField.findFirst({ where: { inventoryId, categoryId: null, name: f.name } });
+                if (!existing) {
+                    await db.templateField.create({
+                        data: { name: f.name, uiLabel: f.uiLabel, type: f.type, options: f.options ? JSON.stringify(f.options) : null, matchWeight: f.matchWeight, extractionMethod: f.extractionMethod, inventoryId, categoryId: null }
+                    });
+                    console.log(`[Taxonomy Engine] 💾 Inserted Archetype-Specific Field [${f.name}]`);
+                }
+            }
+        }
+        
+        // Respect the archetype's settings: stop LLM generation if explicitly denied
+        if (!inv.allowAutoTaxonomy) return true;
+
         // The user describes this inventory as: "${inv.description || 'A general collection'}".
         const prompt = `You are a Principal Data Architect designing a strict Entity-Attribute-Value (EAV) taxonomy.
 The user was asked what this inventory contains, and they answered: "${domainName}".

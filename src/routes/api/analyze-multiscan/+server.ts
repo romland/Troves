@@ -38,16 +38,17 @@ export const POST: RequestHandler = async ({ request, locals }) => {
         const activeSchema = await getActiveSchema(locals.activeInventoryId, null, true);
 		const hint = data.get('hint') as string;
 
-        const visionResponse = await analyzeBulkCollection(localPath, mimeType, activeSchema, hint, { targetType: 'global', targetId: 0, description: 'Analyzing Multi-Scan items with Vision Model' });
+        const inventory = await db.inventory.findUnique({ where: { id: locals.activeInventoryId } });
+        const archetype = inventory?.archetype || 'generic';
+
+        const visionResponse = await analyzeBulkCollection(localPath, mimeType, activeSchema, hint, { targetType: 'global', targetId: 0, description: 'Analyzing Multi-Scan items with Vision Model' }, locals.activeInventoryId, archetype);
 
         const dbItems = await db.item.findMany({
             where: { inventoryId: locals.activeInventoryId },
             include: { attributes: true, locations: { include: { container: true } }, photos: { include: { category: true } }, tags: true }
         });
         const categories = await db.category.findMany({ where: { inventoryId: locals.activeInventoryId } });
-        const inventory = await db.inventory.findUnique({ where: { id: locals.activeInventoryId } });
         const defaultStrategy = inventory?.duplicateStrategy || 'PROMPT';
-        const archetype = inventory?.archetype || 'generic';
 
         const { annotatedScannedItems } = findBestMatchesForBatch(visionResponse.items, dbItems, undefined, archetype);
         

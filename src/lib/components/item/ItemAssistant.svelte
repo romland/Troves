@@ -2,7 +2,6 @@
     import { notify } from "$lib/client/notifications";
     import { invalidateAll } from '$app/navigation';
     import { page } from "$app/stores";
-    import { getArchetypeExampleQuestion } from "$lib/shared/constants";
     export let itemId: number;
     export let hasPhotos: boolean = false;
 
@@ -11,7 +10,7 @@
     let includePhotoContext = true;
 
     $: archetype = $page.data.inventories?.find((i: any) => i.id === $page.data.activeInventoryId)?.archetype || 'generic';
-    $: exampleQuestion = getArchetypeExampleQuestion(archetype);
+    $: exampleQuestion = $page.data.archetypes?.find((a: any) => a.id === archetype)?.askTrovesExample || "What kind of batteries does this take?";
 
     async function askAiQuestion() {
         if (!aiQuestion.trim() || !itemId) return;

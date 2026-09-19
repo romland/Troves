@@ -59,8 +59,6 @@ export const actions = {
 
         if (!name || name.trim() === '') return fail(400, { error: true, message: "Inventory name required." });
 
-        const { getArchetypeSettings } = await import('$lib/shared/constants');
-
         let settings: any = {
             allowNewCategories: true,
             allowAutoTaxonomy: false,
@@ -83,13 +81,17 @@ export const actions = {
             defaultView: 'grid'
         };
 
-        const overrides = getArchetypeSettings(archetype);
+        const { getArchetype } = await import('$lib/server/archetypes');
+        const archDef = getArchetype(archetype);
+        const overrides = archDef?.settings || {};
+        const enabledPlugins = archDef?.requiredPlugins || [];
         Object.assign(settings, overrides);
 
         const inventory = await db.inventory.create({
             data: {
                 name: name.trim(), description: contentsHint.trim(), classes: "[]", archetype,
                 ...settings,
+                enabledPlugins: JSON.stringify(enabledPlugins),
                 users: { create: { userId: locals.user.id, role: "OWNER" } }
             }
         });

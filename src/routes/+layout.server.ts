@@ -1,5 +1,6 @@
 import type { LayoutServerLoad } from "./$types";
 import { db } from '$lib/server/database';
+import { getAllArchetypes } from "$lib/server/archetypes";
 
 export const load = (async ({ locals, setHeaders }) => {
     try {
@@ -24,7 +25,8 @@ export const load = (async ({ locals, setHeaders }) => {
         activeSort: locals.activeSort || 'newest',
         activeViewMode: locals.activeViewMode || 'list',
         activeAddMode: locals.activeAddMode || 'single',
-        inventories 
+        inventories,
+        archetypes: getAllArchetypes()
     };
 
 }) satisfies LayoutServerLoad;

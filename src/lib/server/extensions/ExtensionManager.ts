@@ -14,7 +14,10 @@ export type EventHandler = (payload: any) => Promise<any>;
 export type HookOptions = { maxRetries?: number; retryDelayMs?: number; rateLimitRpm?: number };
 export type ItemActionDef = { id: string; label: string; icon?: string; urlTemplate?: string; mode?: 'queue' | 'resolve' } & HookOptions;
 
+export type ModifierName = 'beforeVisionClassification';
+
 type HookRegistration = { pluginName: string; handler: EventHandler; options?: HookOptions };
+type ModifierRegistration = { pluginName: string; handler: (value: any, context: any) => any | Promise<any> };
 
 /**
  * Central orchestrator for the plugin ecosystem.
@@ -24,10 +27,14 @@ class ExtensionManager {
     // Primary execution maps determining what code runs when an event fires
 	private listeners: Map<EventName, HookRegistration[]> = new Map();
 	private itemActions: Map<string, ItemActionDef & { pluginName: string, handler?: EventHandler }> = new Map();
+    private modifiers: Map<ModifierName, ModifierRegistration[]> = new Map();
+    private archetypes: Map<string, any> = new Map();
     
     // Reverse lookups used exclusively by the Admin UI to display plugin capabilities
 	private pluginSubscriptions: Map<string, string[]> = new Map();
 	private pluginRegisteredActions: Map<string, string[]> = new Map();
+    private pluginRegisteredModifiers: Map<string, string[]> = new Map();
+    private pluginRegisteredArchetypes: Map<string, string[]> = new Map();
 	private loadedPluginNames: Set<string> = new Set();	
 	private isLoaded = false;
 	private pluginRateLimits: Map<string, { requests: number, minuteResetTime: number }> = new Map();
@@ -53,6 +60,42 @@ class ExtensionManager {
 		sysLog.debug(`[ExtensionManager] Plugin ${pluginName} registered UI action: ${def.id}`);
 	}
 	
+    private registerArchetype(pluginName: string, def: any) {
+        this.archetypes.set(def.id, def);
+        
+        if (!this.pluginRegisteredArchetypes.has(pluginName)) this.pluginRegisteredArchetypes.set(pluginName, []);
+        this.pluginRegisteredArchetypes.get(pluginName)!.push(def.id);
+    }
+
+    private addModifier(pluginName: string, name: ModifierName, handler: (value: any, context: any) => any | Promise<any>) {
+        if (!this.modifiers.has(name)) this.modifiers.set(name, []);
+        this.modifiers.get(name)!.push({ pluginName, handler });
+        
+        if (!this.pluginRegisteredModifiers.has(pluginName)) this.pluginRegisteredModifiers.set(pluginName, []);
+        this.pluginRegisteredModifiers.get(pluginName)!.push(name);
+    }
+
+    getArchetype(id: string) {
+        return this.archetypes.get(id);
+    }
+
+    getArchetypes() {
+        return Array.from(this.archetypes.values());
+    }
+
+    async applyModifiers(name: ModifierName, value: any, context: any = {}): Promise<any> {
+        const mods = this.modifiers.get(name) || [];
+        let result = value;
+        for (const mod of mods) {
+            try {
+                result = await mod.handler(result, context);
+            } catch (err) {
+                sysLog.error(`[ExtensionManager] Modifier '${name}' in plugin ${mod.pluginName} failed:`, err);
+            }
+        }
+        return result;
+    }
+
 	/**
 	 * Returns a list of all successfully loaded plugin filenames.
 	 */
@@ -64,7 +107,9 @@ class ExtensionManager {
         return Array.from(this.loadedPluginNames).map(name => ({
             name,
             hooks: this.pluginSubscriptions.get(name) || [],
-            actions: this.pluginRegisteredActions.get(name) || []
+            actions: this.pluginRegisteredActions.get(name) || [],
+            modifiers: this.pluginRegisteredModifiers.get(name) || [],
+            archetypes: this.pluginRegisteredArchetypes.get(name) || []
         }));
     }
 
@@ -273,7 +318,11 @@ class ExtensionManager {
         this.itemActions.clear();
         this.pluginSubscriptions.clear();
         this.pluginRegisteredActions.clear();
+        this.pluginRegisteredModifiers.clear();
+        this.pluginRegisteredArchetypes.clear();
         this.loadedPluginNames.clear();
+        this.modifiers.clear();
+        this.archetypes.clear();
         this.isLoaded = false;
         await this.loadPlugins();
     }
@@ -403,6 +452,8 @@ class ExtensionManager {
 						module.default({
 							on: (eventName: EventName, handler: EventHandler, options?: HookOptions) => this.registerHook(file, eventName, handler, options),
 							registerItemAction: (def: ItemActionDef, handler?: EventHandler) => this.registerItemAction(file, def, handler),
+                            registerArchetype: (def: any) => this.registerArchetype(file, def),
+                            addModifier: (name: ModifierName, handler: any) => this.addModifier(file, name, handler),
 							sysLog,
 							logActivity,
 							fetch,
@@ -412,7 +463,9 @@ class ExtensionManager {
 						});
 						const subs = this.pluginSubscriptions.get(file) || [];
 						const actions = this.pluginRegisteredActions.get(file) || [];
-						sysLog.info(`[ExtensionManager] Loaded plugin: ${file} ➔ Hooks: [${subs.length ? subs.join(', ') : 'none'}] | UI Actions: [${actions.length ? actions.join(', ') : 'none'}]`);
+                        const mods = this.pluginRegisteredModifiers.get(file) || [];
+                        const archs = this.pluginRegisteredArchetypes.get(file) || [];
+                        sysLog.info(`[ExtensionManager] Loaded plugin: ${file} ➔ Hooks: [${subs.length ? subs.join(', ') : 'none'}] | UI Actions: [${actions.length ? actions.join(', ') : 'none'}] | Modifiers: [${mods.length ? mods.join(', ') : 'none'}] | Archetypes: [${archs.length ? archs.join(', ') : 'none'}]`);
 					} else {
 						sysLog.warn(`[ExtensionManager] Plugin ${file} must export a default function.`);
 					}

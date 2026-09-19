@@ -40,7 +40,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
             const existingCategories = await getExistingCategoryNames(locals.activeInventoryId);
             activeSchema = await getActiveSchema(locals.activeInventoryId, null, true);
 
-            const analyzePromise = apiQueue.add(() => analyzePhoto(localPath, existingCategories, allowNew, activeSchema), { targetType: 'global', targetId: 0, description: 'Extracting physical traits and title' });
+            const analyzePromise = apiQueue.add(() => analyzePhoto(localPath, existingCategories, allowNew, activeSchema, undefined, locals.activeInventoryId, archetype), { targetType: 'global', targetId: 0, description: 'Extracting physical traits and title' });
 
             activeDrafts.set(hash, { promise: analyzePromise, draftPath: webPath });
             setTimeout(() => activeDrafts.delete(hash), 5 * 60 * 1000); // 5 min TTL

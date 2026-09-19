@@ -40,9 +40,8 @@ export const load = (async ({ locals }) => {
         return {
             name: file,
             isLoaded: !!loaded,
-            hooks: loaded?.hooks || [],
-            actions: loaded?.actions || [],
-            content
+            content,
+            ...loaded
         };
     });
 
