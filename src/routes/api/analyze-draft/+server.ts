@@ -34,9 +34,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
         let duplicateItemDetails = null;
         let activeSchema: any[] = [];
         try {
-            const vault = await db.inventory.findUnique({ where: { id: locals.activeInventoryId }, select: { allowNewCategories: true, archetype: true } });
-            const allowNew = vault?.allowNewCategories ?? true;
-            const archetype = vault?.archetype || 'generic';
+            const inventory = await db.inventory.findUnique({ where: { id: locals.activeInventoryId }, select: { allowNewCategories: true, archetype: true } });
+            const allowNew = inventory?.allowNewCategories ?? true;
+            const archetype = inventory?.archetype || 'generic';
             const existingCategories = await getExistingCategoryNames(locals.activeInventoryId);
             activeSchema = await getActiveSchema(locals.activeInventoryId, null, true);
 

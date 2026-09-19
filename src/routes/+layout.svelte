@@ -401,8 +401,8 @@
         showNavProgress = false;
     }
     
-    $: activeVaultName = $page.data.inventories?.find(i => i.id === $page.data.activeInventoryId)?.name || '';
-    $: vaultStr = activeVaultName ? ' | ' + (activeVaultName.length > 25 ? activeVaultName.substring(0, 25).trim() + '...' : activeVaultName) : '';
+    $: activeInvName = $page.data.inventories?.find(i => i.id === $page.data.activeInventoryId)?.name || '';
+    $: inventoryStr = activeInvName ? ' | ' + (activeInvName.length > 25 ? activeInvName.substring(0, 25).trim() + '...' : activeInvName) : '';
 </script>
 
 <svelte:window bind:scrollY on:scroll={handleScroll} />
@@ -410,7 +410,7 @@
 <svelte:head> 
     {#if mounted && webManifest}{@html webManifest}{/if}
 
-    <title>{$pageTitle}{vaultStr} | Troves</title>
+    <title>{$pageTitle}{inventoryStr} | Troves</title>
     <meta name="theme-color" content={themeColor || "#1d232a"} />
 </svelte:head>
 
@@ -458,7 +458,7 @@
                             .map(inv => ({ value: inv.id, label: inv.name }))
                     }
                     value={$page.data.activeInventoryId}
-                    formAction="/?/switchVault"
+                    formAction="/?/switchInventory"
                     name="inventoryId"
                     reload={false}
                     on:submit={() => mobileMenuModal.close()}
@@ -630,7 +630,7 @@
                             chevronClass="bi-chevron-expand text-sm opacity-50"
                             options={$page.data.inventories.slice().sort((a,b) => a.name.localeCompare(b.name)).map(inv => ({ value: inv.id, label: inv.name }))}
                             value={$page.data.activeInventoryId}
-                            formAction="/?/switchVault"
+                            formAction="/?/switchInventory"
                             name="inventoryId"
                             reload={false}
                             on:submit={() => mobileMenuModal.close()}

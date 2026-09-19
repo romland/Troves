@@ -87,8 +87,8 @@ export async function POST({ request, locals }) {
         const newContainer = formData.get('newContainer') as string;
         const spatialMapStr = formData.get('spatialMap') as string;
 
-        const itemBelongsToVault = await db.item.findFirst({ where: { id: moveItemId, inventoryId: locals.activeInventoryId } });
-        if (!itemBelongsToVault) return json({ error: 'Item not found in current trove' }, { status: 404 });
+        const itemBelongsToInv = await db.item.findFirst({ where: { id: moveItemId, inventoryId: locals.activeInventoryId } });
+        if (!itemBelongsToInv) return json({ error: 'Item not found in current trove' }, { status: 404 });
 
         const exists = await db.container.findUnique({ where: { inventoryId_name: { inventoryId: locals.activeInventoryId, name: newContainer } }});
         
@@ -135,8 +135,8 @@ export async function POST({ request, locals }) {
         noteId = note.id;
     }
 
-    const vault = await db.inventory.findUnique({ where: { id: locals.activeInventoryId }});
-    if (vault?.archiveSingleScans && !noteId && draftPath) {
+    const inventory = await db.inventory.findUnique({ where: { id: locals.activeInventoryId }});
+    if (inventory?.archiveSingleScans && !noteId && draftPath) {
         const note = await db.timelineNote.create({
             data: { content: `Quick Scan Capture`, category: 'archive', inventoryId: locals.activeInventoryId, authorId: locals.user.id, photos: { create: [{ type: 'product', orgPath: draftPath }] } }
         });

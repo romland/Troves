@@ -146,12 +146,12 @@ export const actions = {
         const confirmName = data.get('confirmName') as string;
         if (!id) return fail(400, { error: true, message: "Invalid ID." });
 
-        const vault = await db.inventory.findUnique({ where: { id } });
-        if (!vault) return fail(404, { error: true, message: "Inventory not found." });
-        if (vault.name !== confirmName) return fail(400, { error: true, message: "Confirmation name did not match." });
+        const inventory = await db.inventory.findUnique({ where: { id } });
+        if (!inventory) return fail(404, { error: true, message: "Inventory not found." });
+        if (inventory.name !== confirmName) return fail(400, { error: true, message: "Confirmation name did not match." });
 
         await db.inventory.delete({ where: { id } });
-        return { success: true, message: `Inventory '${vault.name}' and all its contents completely deleted.` };
+        return { success: true, message: `Inventory '${inventory.name}' and all its contents completely deleted.` };
     },
 
     toggleAutoCategories: async ({ request, locals }) => {

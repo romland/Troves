@@ -160,8 +160,8 @@ on:processingComplete={(ev) => {
         <div class="w-20 h-20 bg-primary/10 text-primary rounded-full flex items-center justify-center mb-6 shadow-sm">
             <span class="loading loading-ring loading-lg"></span>
         </div>
-        <h2 class="text-2xl font-bold mb-3 tracking-tight">Initializing Vault...</h2>
-        <p class="text-gray-500 mb-8">Troves is currently analyzing your vault's archetype and building a custom taxonomy schema. This usually takes 10ish seconds.</p>
+        <h2 class="text-2xl font-bold mb-3 tracking-tight">Initializing Trove...</h2>
+        <p class="text-gray-500 mb-8">Troves is currently analyzing your trove's archetype and building a custom taxonomy schema. This usually takes 10ish seconds.</p>
         <button type="button" class="btn btn-outline" on:click={() => window.location.reload()}>
             <i class="bi bi-arrow-clockwise"></i> Refresh Status
         </button>

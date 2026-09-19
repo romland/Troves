@@ -616,8 +616,8 @@ export async function runDuplicateSweep(itemId: number, inventoryId: number) {
     });
 
     const idfMap = computeIdfMap(allItems);
-    const vault = await db.inventory.findUnique({ where: { id: inventoryId }, select: { archetype: true } });
-    const archetype = vault?.archetype || 'generic';
+    const inv = await db.inventory.findUnique({ where: { id: inventoryId }, select: { archetype: true } });
+    const archetype = inv?.archetype || 'generic';
 
     const scanCtx = buildScanContextFromDbItem(item, archetype);
     const bestMatch = findBestMatch(scanCtx, allItems, idfMap);
@@ -644,8 +644,8 @@ export async function healDuplicateStatuses(inventoryId: number) {
         include: { attributes: true, locations: { include: { container: true } }, photos: { include: { category: true } } }
     });
     const idfMap = computeIdfMap(allItems);
-    const vault = await db.inventory.findUnique({ where: { id: inventoryId }, select: { archetype: true } });
-    const archetype = vault?.archetype || 'generic';
+    const inventory = await db.inventory.findUnique({ where: { id: inventoryId }, select: { archetype: true } });
+    const archetype = inventory?.archetype || 'generic';
 
     for (const item of flaggedItems) {
         const scanCtx = buildScanContextFromDbItem(item, archetype);
@@ -659,7 +659,7 @@ export async function healDuplicateStatuses(inventoryId: number) {
 
 export async function retroactiveDuplicateSweep(inventoryId: number) {
     const { db } = await import('$lib/server/database');
-    console.log(`[Sweep] Starting retroactive duplicate sweep for Vault ${inventoryId}`);
+    console.log(`[Sweep] Starting retroactive duplicate sweep for Trove ${inventoryId}`);
 
     // Reset all currently FLAGGED back to NONE so we start fresh. Leave DISMISSED alone.
     await db.item.updateMany({
@@ -673,8 +673,8 @@ export async function retroactiveDuplicateSweep(inventoryId: number) {
     });
 
     const idfMap = computeIdfMap(allItems);
-    const vault = await db.inventory.findUnique({ where: { id: inventoryId }, select: { archetype: true } });
-    const archetype = vault?.archetype || 'generic';
+    const inventory = await db.inventory.findUnique({ where: { id: inventoryId }, select: { archetype: true } });
+    const archetype = inventory?.archetype || 'generic';
 
     let flaggedCount = 0;
     for (const item of allItems) {

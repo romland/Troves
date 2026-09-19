@@ -68,7 +68,7 @@
 
     // 2. REACTIVE CACHE RESET FOR URL CHANGES
     $: if (href !== currentHref || $page.data.activeInventoryId !== currentInvId) {
-        console.log(`[DEBUG-SCROLL] 🛑 reactive check for changed href or vault: ${href}`);
+        console.log(`[DEBUG-SCROLL] 🛑 reactive check for changed href or inventory: ${href}`);
         currentHref = href;
         currentInvId = $page.data.activeInventoryId;
         cacheKey = `nav-cache-${currentInvId}-${href}`;

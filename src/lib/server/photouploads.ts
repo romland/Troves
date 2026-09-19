@@ -62,8 +62,8 @@ export async function enrichPhotoData(localPath: string, webPath: string, type: 
     let bgRemovalModel = 'bria-rmbg';
     let enablePaddleOCR = true;
     try {
-        const vault = await db.inventory.findUnique({ where: { id: inventoryId }, select: { extractExif: true, bgRemovalEnabled: true, bgRemovalPreCrop: true, enablePaddleOCR: true, bgRemovalModel: true }});
-        if (vault?.extractExif) {
+        const invtentory = await db.inventory.findUnique({ where: { id: inventoryId }, select: { extractExif: true, bgRemovalEnabled: true, bgRemovalPreCrop: true, enablePaddleOCR: true, bgRemovalModel: true }});
+        if (invtentory?.extractExif) {
             const metadata = await sharp(localPath).metadata();
             if (metadata.exif) {
                 const exifReader = (await import('exif-reader')).default;
@@ -82,10 +82,10 @@ export async function enrichPhotoData(localPath: string, webPath: string, type: 
                 });
             }
         }
-        bgRemovalEnabled = bgRemovalOverride !== undefined ? bgRemovalOverride : (vault?.bgRemovalEnabled ?? true);
-        bgRemovalPreCrop = vault?.bgRemovalPreCrop ?? false;
-        bgRemovalModel = vault?.bgRemovalModel ?? 'bria-rmbg';
-        enablePaddleOCR = vault?.enablePaddleOCR ?? true;
+        bgRemovalEnabled = bgRemovalOverride !== undefined ? bgRemovalOverride : (invtentory?.bgRemovalEnabled ?? true);
+        bgRemovalPreCrop = invtentory?.bgRemovalPreCrop ?? false;
+        bgRemovalModel = invtentory?.bgRemovalModel ?? 'bria-rmbg';
+        enablePaddleOCR = invtentory?.enablePaddleOCR ?? true;
     } catch(e) { console.error("[Background Task] EXIF extraction failed:", e); }
     
     let finalOrgPath = webPath;

@@ -65,9 +65,9 @@
 
     onMount(() => {
         if (!collectionHint && $page.data.inventories) {
-            const vault = $page.data.inventories.find((i: any) => i.id ===$page.data.activeInventoryId);
-            if (vault) {
-                // collectionHint = `${vault.description || ''}`.trim().substring(0, 100);
+            const inventory = $page.data.inventories.find((i: any) => i.id ===$page.data.activeInventoryId);
+            if (inventory) {
+                // collectionHint = `${inventory.description || ''}`.trim().substring(0, 100);
                 // Yeah, turning off the hint for now ....
                 collectionHint = "";
             }
@@ -206,9 +206,9 @@
     }
 
     async function saveCollection() {
-        const vault = $page.data.inventories?.find((i: any) => i.id === $page.data.activeInventoryId);
+        const inventory = $page.data.inventories?.find((i: any) => i.id === $page.data.activeInventoryId);
         
-        if (vault?.deepScanCollections && activeItems.length >= 20) {
+        if (inventory?.deepScanCollections && activeItems.length >= 20) {
             if (typeof sessionStorage !== 'undefined' && !sessionStorage.getItem('troves_deepscan_confirmed')) {
                 const proceed = await confirmModal.ask(
                     'Large Deep Scan', 

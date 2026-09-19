@@ -146,10 +146,10 @@ export async function bootstrapCategorySchema(categoryId: number, categoryName: 
             
             CONTEXT (THE ZOOM LEVEL):
             The overarching inventory archetype is: "${(inv as any)?.archetype || 'generic'}".
-            Existing categories in this vault: [${existingCatNames}].
+            Existing categories in this inventory: [${existingCatNames}].
             
             CRITICAL RULES:
-            1. RELATIVE RESOLUTION (MACRO vs MICRO): Gauge the "Zoom Level" of this vault. 
+            1. RELATIVE RESOLUTION (MACRO vs MICRO): Gauge the "Zoom Level" of this inventory. 
                 - High Variance (MACRO): If existing categories are vastly different (e.g., 'shirts', 'hardware', 'books'), DO NOT generate micro-attributes like 'fastening_mechanism'. Stick to macro identifiers.
                 - Low Variance (MICRO): If existing categories are highly clustered (e.g., 'sneakers', 'boots', 'loafers'), you are operating at MICRO resolution. You MUST generate specific micro-attributes (e.g., 'sole_pattern', 'heel_height') because every item is structurally similar.
             2. Categorize EVERY attribute with an extractionMethod:

@@ -72,8 +72,8 @@ class ExtensionManager {
 	 * Returns UI actions registered by currently enabled plugins for a specific Trove.
 	 */
 	async getEnabledItemActions(inventoryId: number): Promise<ItemActionDef[]> {
-		const vault = await db.inventory.findUnique({ where: { id: inventoryId }, select: { enabledPlugins: true } });
-		const whitelist = JSON.parse(vault?.enabledPlugins || '[]');
+		const inventory = await db.inventory.findUnique({ where: { id: inventoryId }, select: { enabledPlugins: true } });
+		const whitelist = JSON.parse(inventory?.enabledPlugins || '[]');
 		return Array.from(this.itemActions.values())
 			.filter(action => whitelist.includes(action.pluginName))
 			.map(({ id, label, icon, urlTemplate, mode }) => ({ id, label, icon, urlTemplate, mode }));
@@ -87,8 +87,8 @@ class ExtensionManager {
 		const hooks = this.listeners.get(event) || [];
 		if (hooks.length === 0) return false;
 		
-		const vault = await db.inventory.findUnique({ where: { id: inventoryId }, select: { enabledPlugins: true } });
-		const whitelist = JSON.parse(vault?.enabledPlugins || '[]');
+		const inventory = await db.inventory.findUnique({ where: { id: inventoryId }, select: { enabledPlugins: true } });
+		const whitelist = JSON.parse(inventory?.enabledPlugins || '[]');
 		
 		// Return true if at least one hook belongs to an enabled plugin
 		return hooks.some(hook => whitelist.includes(hook.pluginName));
@@ -184,8 +184,8 @@ class ExtensionManager {
             const inventoryId = payload?.context?.inventoryId;
             if (inventoryId) {
                 try {
-                    const vault = await db.inventory.findUnique({ where: { id: inventoryId }, select: { enabledPlugins: true } });
-                    whitelist = JSON.parse(vault?.enabledPlugins || '[]');
+                    const inventory = await db.inventory.findUnique({ where: { id: inventoryId }, select: { enabledPlugins: true } });
+                    whitelist = JSON.parse(inventory?.enabledPlugins || '[]');
                 } catch (err) {}
             }
 

@@ -47,8 +47,8 @@ export const actions = {
 		}
 		
 		let timelineNoteId = null;
-		const vault = await db.inventory.findUnique({ where: { id: targetInventoryId }, select: { archiveSingleScans: true } });
-		if (vault?.archiveSingleScans && photos.length > 0) {
+		const inventory = await db.inventory.findUnique({ where: { id: targetInventoryId }, select: { archiveSingleScans: true } });
+		if (inventory?.archiveSingleScans && photos.length > 0) {
 			const prodPhoto = photos.find((p: any) => p.type === 'product') || photos[0];
 			if (prodPhoto && prodPhoto.orgPath) {
 				const note = await db.timelineNote.create({
@@ -104,12 +104,12 @@ export const actions = {
 
 export const load = (async ({ locals, params }) => {
     if (locals.role === 'VIEWER') redirect(302, '/');
-	const vault = await db.inventory.findUnique({
+	const inventory = await db.inventory.findUnique({
 		where: { id: locals.activeInventoryId },
 		include: { templateFields: true }
 	});
 	
-	if (vault?.allowAutoTaxonomy && vault.templateFields.length === 0) {
+	if (inventory?.allowAutoTaxonomy && inventory.templateFields.length === 0) {
 		return { isBootstrapping: true, containers: [], categories: [], tags: [] };
 	}
 	

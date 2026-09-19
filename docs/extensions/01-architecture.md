@@ -9,7 +9,7 @@ The Extension Engine abstracts external integrations (API calls, scrapers, physi
 2. **Live Telemetry & Activity Tracking:** Every plugin hook execution is automatically wrapped with start/finish telemetry and piped directly into the Troves **System Activity** panel and server logs (`[Plugin:filename]`).
 3. **Stateless Secrets:** Extensions must read tokens and API keys strictly from the server's `.env` runtime context. Credentials are never written to the SQLite database.
 4. **Inversion of Control (Drop-In):** The core Troves codebase knows nothing about specific printers or external APIs. It simply broadcasts events. Independent `.js` files dropped into `data/plugins/` decide if they want to listen and act.
-5. **The Bouncer (Per-Trove Whitelisting):** Plugins are toggled securely per-Trove. The core engine drops triggers if the plugin isn't explicitly enabled for the active vault, preventing API spam across unrelated items.
+5. **The Bouncer (Per-Trove Whitelisting):** Plugins are toggled securely per-Trove. The core engine drops triggers if the plugin isn't explicitly enabled for the active inventory, preventing API spam across unrelated items.
 
 ## Execution Paradigms
 Extensions interact with Troves in two distinct ways:

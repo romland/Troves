@@ -45,9 +45,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
             include: { attributes: true, locations: { include: { container: true } }, photos: { include: { category: true } }, tags: true }
         });
         const categories = await db.category.findMany({ where: { inventoryId: locals.activeInventoryId } });
-        const vault = await db.inventory.findUnique({ where: { id: locals.activeInventoryId } });
-        const defaultStrategy = vault?.duplicateStrategy || 'PROMPT';
-        const archetype = vault?.archetype || 'generic';
+        const inventory = await db.inventory.findUnique({ where: { id: locals.activeInventoryId } });
+        const defaultStrategy = inventory?.duplicateStrategy || 'PROMPT';
+        const archetype = inventory?.archetype || 'generic';
 
         const { annotatedScannedItems } = findBestMatchesForBatch(visionResponse.items, dbItems, undefined, archetype);
         

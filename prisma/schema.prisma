@@ -31,7 +31,7 @@ model User {
   items         Item[]
   timelineNotes TimelineNote[]
 
-  // Security: Which vaults this user can open
+  // Security: Which inventories this user can open
   inventoryAccess UserInventoryAccess[]
   sessions        Session[]
 
@@ -67,7 +67,7 @@ model UserInventoryAccess {
 }
 
 // ==========================================
-// 2. THE VAULT (THE INVENTORY)
+// 2. THE INVENTORY
 // ==========================================
 // Everything below this point MUST trace back to an Inventory.
 
@@ -79,7 +79,7 @@ model Inventory {
   archetype           String  @default("generic") // "media", "apparel", "hardware", "consumables", "collectibles", "natural", "generic"
   allowNewCategories  Boolean @default(true) // Whether LLM is allowed to invent new sub-categories
   allowAutoTaxonomy   Boolean @default(false) // Whether LLM is allowed to auto-generate taxonomy/EAV rules
-  extractExif         Boolean @default(true) // Whether to extract EXIF data from uploaded photos in this vault
+  extractExif         Boolean @default(true) // Whether to extract EXIF data from uploaded photos in this inventory
   deepScanCollections Boolean @default(false) // Whether to run individual LLM/vision analysis on items imported via multi-scan
   bgRemovalEnabled    Boolean @default(true) // Whether to run background removal
   bgRemovalModel      String  @default("bria-rmbg") // Which model to use: "bria-rmbg", "u2net", etc
@@ -131,7 +131,7 @@ model Category {
 
   photos      Photo[]
 
-  // Security: Category names are only unique *inside* their specific vault
+  // Security: Category names are only unique *inside* their specific inventory
   @@unique([inventoryId, name])
   @@unique([inventoryId, slug])
   
@@ -156,7 +156,7 @@ model Container {
 
   items       ItemsInContainer[]
 
-  // Security: Container names are only unique *inside* their specific vault
+  // Security: Container names are only unique *inside* their specific inventory
   @@unique([inventoryId, name])
   
   createdAt DateTime @default(now())
@@ -173,7 +173,7 @@ model Tag {
 
   items       Item[]
 
-  // Security: Tag slugs are only unique *inside* their specific vault
+  // Security: Tag slugs are only unique *inside* their specific inventory
   @@unique([inventoryId, name])
   @@unique([inventoryId, slug])
 }

@@ -41,8 +41,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
             include: { locations: { include: { container: true } }, tags: true, attributes: true, photos: { include: { category: true } } }
         });
 
-        const vault = await db.inventory.findUnique({ where: { id: locals.activeInventoryId }, select: { archetype: true } });
-        const archetype = vault?.archetype || 'generic';
+        const inventory = await db.inventory.findUnique({ where: { id: locals.activeInventoryId }, select: { archetype: true } });
+        const archetype = inventory?.archetype || 'generic';
 
         const { inCollection, newToYou, idUsage } = findBestMatchesForBatch(detected, dbItems, undefined, archetype);
 

@@ -53,12 +53,12 @@ export const actions = {
         
         return { success: true, theme };
     },
-    switchVault: async ({ request, cookies }) => {
+    switchInventory: async ({ request, cookies }) => {
         const data = await request.formData();
-        const newVaultId = data.get('inventoryId')?.toString();
+        const newInventoryId = data.get('inventoryId')?.toString();
         
-        if (newVaultId) {
-            cookies.set('activeInventoryId', newVaultId, { path: '/', maxAge: 60 * 60 * 24 * 365 });
+        if (newInventoryId) {
+            cookies.set('activeInventoryId', newInventoryId, { path: '/', maxAge: 60 * 60 * 24 * 365 });
         }
         redirect(303, '/');
     }

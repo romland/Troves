@@ -253,8 +253,8 @@
         }
     }
 
-	$: activeVaultName = $page.data.inventories?.find(i => i.id === $page.data.activeInventoryId)?.name;
-	$: searchPlaceholder = activeVaultName ? `Search in ${activeVaultName}` : "Search";
+	$: activeInventoryName = $page.data.inventories?.find(i => i.id === $page.data.activeInventoryId)?.name;
+	$: searchPlaceholder = activeInventoryName ? `Search in ${activeInventoryName}` : "Search";
 </script>
 
 <form method="GET" action="/search" class="w-full sm:w-auto relative" on:submit|preventDefault={() => {
