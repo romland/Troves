@@ -380,7 +380,7 @@ class ExtensionManager {
                                     sysLog.error(`[itemOps] Failed to fetch and store webpage ${url}:`, err);
                                     throw err;
                                 }
-                            }, { targetType: 'item', targetId: itemId, description: `Scraping webpage: ${url}` });
+                            }, { targetType: 'item', targetId: itemId, description: `Archiving webpage: ${url}` });
                         }
                     };
 

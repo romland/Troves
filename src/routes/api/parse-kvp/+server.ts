@@ -17,6 +17,18 @@ export const POST: RequestHandler = async ({ request, locals }) => {
             return json({ success: false, error: 'Text too short' });
         }
 
+        const trimmed = text.trim();
+        // Guardrail: Prevent the LLM from triggering on simple, single-line pastes 
+        // (like a URL, a single word, or a short sentence) that lack obvious data structures.
+        if (!trimmed.includes('\n')) {
+            const isJson = trimmed.startsWith('{') || trimmed.startsWith('[');
+            const hasMultiplePairs = /[:=].*[,|;\t].*[:=]/.test(trimmed);
+            
+            if (!isJson && !hasMultiplePairs && trimmed.length < 150) {
+                return json({ success: false, error: 'Text lacks structured data markers to justify LLM parsing' });
+            }
+        }
+
         const result = await apiQueue.add(
             () => extractKVPsFromText(text),
             { targetType: 'global', targetId: 0, description: 'Extracting table data via LLM' }

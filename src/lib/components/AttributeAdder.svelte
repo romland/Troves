@@ -150,7 +150,7 @@
                 if (parsed.rows) {
                     rows = parsed.rows;
                 }
-            } else if (pastedText.length > 20) {
+            } else if (pastedText.trim().includes('\n') && pastedText.length > 20) {
                 // If local parsers fail, fallback to Gemini LLM for messy PDF/grid data
                 isParsingLLM = true;
                 ev.stopPropagation();
