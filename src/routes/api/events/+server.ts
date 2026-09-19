@@ -1,4 +1,4 @@
-import { dbEvents } from '$lib/server/database';
+import { dbEvents, db } from '$lib/server/database';
 import { taskEvents } from '$lib/server/taskManager';
 import { systemHealth } from '$lib/server/systemHealth';
 import { taskManager } from '$lib/server/taskManager';
@@ -13,7 +13,7 @@ export function GET({ locals }) {
     let lastFireTime = 0;
 
     const stream = new ReadableStream({
-        start(controller) {
+        async start(controller) {
             // Streams in SvelteKit must be byte arrays, not plain strings
             const encoder = new TextEncoder();
             
@@ -23,8 +23,28 @@ export function GET({ locals }) {
             // Dispatch immediate health state on connect
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'health', ...systemHealth.getStatus() })}\n\n`));
 
-            // Broadcast active tasks instantly on connection
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'tasks', tasks: taskManager.getAllTasks(), completedTasks: taskManager.getCompletedTasks() })}\n\n`));
+            const sendTasks = async () => {
+                try {
+                    const allTasks = taskManager.getAllTasks();
+                    const allCompleted = taskManager.getCompletedTasks();
+
+                    const itemIds = Array.from(new Set([...allTasks, ...allCompleted].filter(t => t.targetType === 'item').map(t => t.targetId)));
+
+                    let allowedItemIds = new Set<number>();
+                    if (itemIds.length > 0 && locals.activeInventoryId) {
+                        const items = await db.item.findMany({
+                            where: { id: { in: itemIds }, inventoryId: locals.activeInventoryId },
+                            select: { id: true }
+                        });
+                        allowedItemIds = new Set(items.map(i => i.id));
+                    }
+
+                    const filterTasks = (tasks: any[]) => tasks.filter(t => t.targetType === 'item' ? allowedItemIds.has(t.targetId) : false);
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'tasks', tasks: filterTasks(allTasks), completedTasks: filterTasks(allCompleted) })}\n\n`));
+                } catch (e) {}
+            };
+
+            await sendTasks();
 
             listener = () => {
                 const now = Date.now();
@@ -57,9 +77,7 @@ export function GET({ locals }) {
             };
 
             taskListener = () => {
-                try {
-                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'tasks', tasks: taskManager.getAllTasks(), completedTasks: taskManager.getCompletedTasks() })}\n\n`));
-                } catch (e) {}
+                sendTasks();
             };
 
             // Listen for the Prisma extension triggers and active Task updates

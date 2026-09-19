@@ -189,7 +189,7 @@ export const actions = {
 		const kvps = Object.entries(attrs).filter(([k,v]) => v !== null && v !== '').map(([k,v]) => ({ key: k, value: String(v) }));
 		
 		const itemId = Number(params.id);
-        const existingItem = await db.item.findUnique({ where: { id: itemId, inventoryId: locals.activeInventoryId }, include: { attributes: true }});
+        const existingItem = await db.item.findFirst({ where: { id: itemId, inventoryId: locals.activeInventoryId }, include: { attributes: true }});
         if (!existingItem) return fail(404, { error: 'Item not found' });
 
 		let humanOverrides = 0;
@@ -414,7 +414,7 @@ export const actions = {
         const actionId = data.get('actionId') as string;
         const itemId = Number(params.id);
         
-        const item = await db.item.findUnique({ where: { id: itemId, inventoryId: locals.activeInventoryId }});
+        const item = await db.item.findFirst({ where: { id: itemId, inventoryId: locals.activeInventoryId }});
         if (!item) return fail(404, { error: 'Item not found' });
         
         extensionManager.triggerItemAction(actionId, {
