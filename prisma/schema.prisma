@@ -24,7 +24,7 @@ model User {
   name     String?
   avatar   String?
   isAdmin  Boolean @default(false) // Determines if user can create other local accounts
-  canCreateInventories Boolean @default(true) // Determines if user can create new Troves
+  canCreateInventories Boolean @default(false) // Determines if user can create new Troves
   preferences String? // JSON object storing keymaps and UI prefs
 
   // Auditing: Who created what
