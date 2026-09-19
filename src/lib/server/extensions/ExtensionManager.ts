@@ -75,8 +75,8 @@ class ExtensionManager {
 		const vault = await db.inventory.findUnique({ where: { id: inventoryId }, select: { enabledPlugins: true } });
 		const whitelist = JSON.parse(vault?.enabledPlugins || '[]');
 		return Array.from(this.itemActions.values())
-		.filter(action => whitelist.includes(action.pluginName))
-        .map(({ id, label, icon, urlTemplate, mode }) => ({ id, label, icon, urlTemplate, mode }));
+			.filter(action => whitelist.includes(action.pluginName))
+			.map(({ id, label, icon, urlTemplate, mode }) => ({ id, label, icon, urlTemplate, mode }));
 	}
 	
 	/**
