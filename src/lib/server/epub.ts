@@ -140,7 +140,6 @@ export async function processEpubCoverToItemPhoto(itemId: number, epubLocalPath:
     const { db } = await import('$lib/server/database');
     const { getSafeFilename } = await import('$lib/server/fsUtils');
     const { uploadsDiskFolder, uploadsWebFolder } = await import('$lib/server/constants');
-    const { generatePhotoDerivatives } = await import('$lib/server/imageProcessor');
     const { logActivity } = await import('$lib/server/logger');
 
     const coverBuffer = await extractEpubCoverBuffer(epubLocalPath);
@@ -154,7 +153,12 @@ export async function processEpubCoverToItemPhoto(itemId: number, epubLocalPath:
 
     await sharp(coverBuffer).resize({ width: 1200, withoutEnlargement: true }).webp({ quality: 85 }).toFile(diskPath);
 
-    const photo = await db.photo.create({ data: { itemId, type: 'product', isPrimary: !existingPrimary, orgPath: webPath, showOriginal: true } });
-    await generatePhotoDerivatives(photo, webPath, true, undefined, null, false);
+    await db.photo.create({ data: { itemId, type: 'product', isPrimary: !existingPrimary, orgPath: webPath, showOriginal: true } });
     await logActivity(itemId, 'EPUB Cover', 'Automatically extracted cover art from EPUB', 'success');
+
+    const { processItemPhotosBackground } = await import('$lib/server/photouploads');
+    const freshItem = await db.item.findUnique({ where: { id: itemId }, include: { photos: true } });
+    if (freshItem) {
+        processItemPhotosBackground(freshItem).catch(console.error);
+    }
 }
