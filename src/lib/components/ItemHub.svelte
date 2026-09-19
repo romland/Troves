@@ -96,10 +96,29 @@
             window.dispatchEvent(new CustomEvent('outbox-trigger'));
             
             setTimeout(async () => {
+                /* 
+                 * NATIVE-FEEL HISTORY ROUTING
+                 * 
+                 * In a native app, "Edit" is a state, not a destination. On the web, it's a URL.
+                 * If we just do a standard goto() after saving an edit, the history stack becomes:
+                 * List -> View -> Edit -> View. 
+                 * If the user swipes back from there, they get trapped in the stale Edit screen.
+                 * 
+                 * THE FIX:
+                 * 1. EDIT MODE: We trigger a native history.back(). This pops the Edit screen 
+                 *    off the stack. The SSE background sync instantly refreshes the View underneath.
+                 * 2. ADD MODE: We use `replaceState: true`. This overwrites the "Add" screen 
+                 *    in the history stack with the new "View" screen. Swiping back goes to List.
+                 * 3. CANCEL (No save): Normal browser history safely takes them back to View.
+                 */
                 if (isContinuous) {
                     reset(); saving = false; hasSubmitted = false; window.scrollTo({ top: 0, behavior: 'smooth' });
                 } else if (successRedirect) {
-                    await goto(successRedirect, { invalidateAll: true });
+                    if (item && window.history.length > 1) {
+                        history.back();
+                    } else {
+                        await goto(successRedirect, { invalidateAll: true, replaceState: !item });
+                    }
                 }
             }, 10);
         } catch (err) {
