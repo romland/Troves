@@ -8,7 +8,7 @@ My primary use-cases are:
 1. `Do I have that? Now, where the heck is it?`
 2. `What does it do and why did I buy it?`
 
-There is also that primal satisfaction in simply admiring your stuff; swimming through a hoard of tools, books, and components like Scrooge McDuck. This is a digital equivalent: inspect and appreciate your sh*t without having to drag 20 boxes out of the attic.
+There is also that primal satisfaction in simply admiring my stuff; swimming through a hoard of tools, books, and components like Scrooge McDuck. This is a digital equivalent: inspect and appreciate your sh*t without having to drag 20 boxes out of the attic.
 
 I absolutely hate data-entry. Creating an inventory and adding new items should be as automated as humanly possible. Most of the effort in Troves went into creating a pleasant, frictionless workflow so you actually use it. Under the hood, it uses tools like object classification, OCR, background removal, color extraction, vision, audio, and language models to do the heavy lifting, but the interface gets out of your way.
 
