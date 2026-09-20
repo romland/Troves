@@ -83,6 +83,9 @@ import path from 'path';
 
 export default function register({ on, registerItemAction, sysLog, logActivity, fetch, db, env, itemOps }) {
     
+    // Helper to be polite to APIs
+    const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
     async function getSpotifyToken() {
         const clientId = env.SPOTIFY_CLIENT_ID;
         const clientSecret = env.SPOTIFY_CLIENT_SECRET;
@@ -128,53 +131,166 @@ export default function register({ on, registerItemAction, sysLog, logActivity, 
         try {
             const token = await getSpotifyToken();
 
-            let artistQuery = '';
-            if (item.attributes) {
-                const artistAttr = item.attributes.find(a => a.key.toLowerCase() === 'artist' || a.key.toLowerCase() === 'band');
-                if (artistAttr) {
-                    artistQuery = ` ${artistAttr.value}`;
-                }
+            // 1. EXTRACT ALL RAW DATA FOR DEBUGGING
+            const allAttributes = item.attributes ? item.attributes.map(a => ({ key: a.key, value: a.value })) : [];
+            
+            // 2. FUZZY MATCH TARGETS
+            const artist = itemOps.getFuzzyAttribute(item, ['artist', 'band', 'creator', 'by']);
+            const subtitle = itemOps.getFuzzyAttribute(item, ['subtitle', 'album']);
+            
+            const broadTerms = [];
+            if (item.description && item.description.length < 150) {
+                broadTerms.push(item.description);
+            }
+            if (item.attributes && item.attributes.length > 0) {
+                const fuzzyKeyTargets = ['label', 'publisher', 'record', 'producer', 'prominent text', 'prominent graphic'];
+                item.attributes.forEach(a => {
+                    if (fuzzyKeyTargets.some(target => a.key.toLowerCase().includes(target))) {
+                        broadTerms.push(a.value);
+                    }
+                });
+            }
+            const broadExtraStr = [...new Set(broadTerms)].join(' ').trim();
+
+            // 3. LOG THE EXACT STARTING STATE
+            if (logActivity) {
+                await logActivity(
+                    item.id,
+                    'Pre-Flight Metadata Dump',
+                    'Dumping all item attributes and extracted targets before formulating Spotify queries.',
+                    'info',
+                    JSON.stringify({
+                        rawTitle: safeTitle,
+                        rawDescription: item.description || "NONE",
+                        allItemAttributes: allAttributes,
+                        mapped_SubtitleTarget: subtitle || "NONE",
+                        mapped_ArtistTarget: artist || "NONE",
+                        mapped_KitchenSinkTerms: broadExtraStr || "NONE"
+                    }, null, 2)
+                );
             }
 
-            const searchQuery = `${safeTitle}${artistQuery}`.trim();
-            const url = `https://api.spotify.com/v1/search?q=${encodeURIComponent(searchQuery)}&type=album&limit=3`;
+            // 4. BUILD TIERED QUERIES
+            const appendIfNotPresent = (baseStr, addition) => {
+                if (!addition) return baseStr;
+                if (baseStr.toLowerCase().includes(addition.toLowerCase())) return baseStr;
+                return `${baseStr} ${addition}`.trim();
+            };
+
+            const queriesToTry = [];
+            
+            // Pass 1: STRICTLY TITLE + SUBTITLE
+            const pass1 = appendIfNotPresent(safeTitle, subtitle);
+            queriesToTry.push(pass1);
+
+            // Pass 2: TITLE + ARTIST
+            const pass2 = appendIfNotPresent(safeTitle, artist);
+            if (pass2 !== pass1) {
+                queriesToTry.push(pass2);
+            }
+
+            // Pass 3: JUST THE TITLE
+            if (safeTitle !== pass1 && safeTitle !== pass2) {
+                queriesToTry.push(safeTitle);
+            }
+
+            // Pass 4: THE KITCHEN SINK
+            let pass4 = safeTitle;
+            pass4 = appendIfNotPresent(pass4, broadExtraStr);
+            if (pass4 !== pass1 && pass4 !== pass2 && pass4 !== safeTitle && broadExtraStr) {
+                queriesToTry.push(pass4);
+            }
 
             if (logActivity) {
                 await logActivity(
                     item.id,
-                    'Spotify Search Query',
-                    `Querying Spotify API for "${searchQuery}"`,
+                    'Waterfall Plan',
+                    `Will attempt ${queriesToTry.length} queries in sequence until a match is found.`,
                     'info',
-                    JSON.stringify({ query: searchQuery, url: url }, null, 2)
+                    JSON.stringify({ queryOrder: queriesToTry }, null, 2)
                 );
             }
 
-            const res = await fetch(url, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/json'
-                }
-            });
+            const executeSearchPass = async (query) => {
+                const url = `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=album&limit=3`;
 
-            if (!res.ok) {
-                let errorBody = "";
-                try { errorBody = await res.text(); } catch (e) {}
-                sysLog.error(`[SpotifyCD] API rejected request. Status: ${res.status} ${res.statusText}. Body: ${errorBody}`);
-                if (logActivity) await logActivity(item.id, 'Spotify Error', `API request failed (${res.status})`, 'error', errorBody);
-                throw new Error(`Spotify Search Failed: ${res.status} ${res.statusText}`);
+                if (logActivity) {
+                    await logActivity(
+                        item.id,
+                        'Spotify API Request',
+                        `Executing Search: "${query}"`,
+                        'info',
+                        JSON.stringify({ url: url })
+                    );
+                }
+
+                const res = await fetch(url, {
+                    headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
+                });
+
+                if (!res.ok) {
+                    let errorBody = "";
+                    try { errorBody = await res.text(); } catch (e) {}
+                    sysLog.error(`[SpotifyCD] API rejected request. Status: ${res.status} ${res.statusText}. Body: ${errorBody}`);
+                    
+                    if (logActivity) {
+                        await logActivity(item.id, 'Spotify API Error', `Status: ${res.status}`, 'error', errorBody);
+                    }
+                    
+                    if (res.status === 429) return { status: 429, data: null };
+                    throw new Error(`Spotify Search Failed: ${res.status} ${res.statusText}`);
+                }
+
+                const data = await res.json();
+                
+                if (logActivity) {
+                    const hitCount = data.albums?.items?.length || 0;
+                    await logActivity(item.id, 'Spotify API Response', `Found ${hitCount} albums for "${query}".`, hitCount > 0 ? 'success' : 'warning');
+                }
+
+                return { status: 200, data };
+            };
+
+            // --- WATERFALL EXECUTION ---
+            let bestAlbum = null;
+            let queryUsed = "";
+
+            for (const [index, query] of queriesToTry.entries()) {
+                if (index > 0) {
+                    sysLog.info(`[SpotifyCD] Pausing 1.5s to respect Spotify API burst limits...`);
+                    await sleep(1500); 
+                }
+
+                sysLog.info(`[SpotifyCD] Pass ${index + 1}: ${query}`);
+                const result = await executeSearchPass(query);
+                
+                if (result.status === 429) break; 
+                
+                const albums = result.data?.albums?.items;
+                if (albums && albums.length > 0) {
+                    bestAlbum = albums[0]; 
+                    queryUsed = query;
+                    break; // SHORT CIRCUIT: Stops the loop instantly on the first hit
+                }
             }
 
-            const data = await res.json();
-            const albums = data.albums?.items;
-
-            if (!albums || albums.length === 0) {
-                sysLog.warn(`[SpotifyCD] No albums found on Spotify for query: "${searchQuery}"`);
-                if (logActivity) await logActivity(item.id, 'Spotify Response', `No matching albums found.`, 'warning');
+            if (!bestAlbum) {
+                sysLog.warn(`[SpotifyCD] No albums found on Spotify across all tiers.`);
+                if (logActivity) await logActivity(item.id, 'Spotify Enrichment Aborted', `Exhausted all search passes with no hits.`, 'error');
                 return;
             }
 
-            const bestAlbum = albums[0];
-            sysLog.info(`[SpotifyCD] Match found: ${bestAlbum.name}`);
+            sysLog.info(`[SpotifyCD] Match found: ${bestAlbum.name} (using query: "${queryUsed}")`);
+
+            if (logActivity) {
+                await logActivity(
+                    item.id,
+                    'Spotify Match Locked',
+                    `Selected album: "${bestAlbum.name}" by ${bestAlbum.artists.map(a => a.name).join(', ')}`,
+                    'success',
+                    JSON.stringify({ queryUsed, spotifyId: bestAlbum.id }, null, 2)
+                );
+            }
 
             // Update core Item fields
             const updates = {};
@@ -196,11 +312,10 @@ export default function register({ on, registerItemAction, sysLog, logActivity, 
                 attributesToAdd.push({ key: 'Release Date', value: bestAlbum.release_date });
             }
             if (bestAlbum.total_tracks) attributesToAdd.push({ key: 'Total Tracks', value: String(bestAlbum.total_tracks) });
-            
             if (bestAlbum.uri) attributesToAdd.push({ key: 'Spotify Link', value: bestAlbum.uri });
 
             for (const attr of attributesToAdd) {
-            await itemOps.setAttribute(item.id, attr.key, attr.value);
+                await itemOps.setAttribute(item.id, attr.key, attr.value);
             }
 
             // Fetch FULL album to get tracklist
@@ -242,7 +357,7 @@ export default function register({ on, registerItemAction, sysLog, logActivity, 
                         }
                     }
                     if (tracksAdded > 0 && logActivity) {
-                        await logActivity(item.id, 'Spotify Tracks', `Attached ${tracksAdded} tracks as native app links.`, 'success');
+                        await logActivity(item.id, 'Spotify Tracks Attached', `Added ${tracksAdded} native app links.`, 'success');
                     }
                 }
             } else {
@@ -276,7 +391,7 @@ export default function register({ on, registerItemAction, sysLog, logActivity, 
                                 isPrimary: !item.photos?.some(p => p.isPrimary)
                             }
                         });
-                        if (logActivity) await logActivity(item.id, 'Cover Art', 'Downloaded album cover from Spotify.', 'success');
+                        if (logActivity) await logActivity(item.id, 'Cover Art Downloaded', 'Attached high-res cover from Spotify.', 'success');
                     }
                 } catch (imgErr) {
                     sysLog.error(`[SpotifyCD] Failed to download cover art:`, imgErr);
@@ -285,7 +400,7 @@ export default function register({ on, registerItemAction, sysLog, logActivity, 
 
         } catch (error) {
             sysLog.error(`[SpotifyCD] Unhandled error during CD enrichment:`, error);
-            if (logActivity) await logActivity(item.id, 'Spotify Sync Failed', error.message, 'error');
+            if (logActivity) await logActivity(item.id, 'Spotify Sync Exception', error.message, 'error');
             throw error; 
         }
     }
