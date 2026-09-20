@@ -73,7 +73,7 @@
 <Modal bind:this={promptModal} title={tweakPluginName ? `Tweak ${tweakPluginName}` : "Generate a Troves Extension"} boxClass="p-0 overflow-hidden sm:rounded-[2.5rem] border border-base-200 w-11/12 max-w-2xl bg-base-100">
     <div class="p-6 max-h-[75vh] overflow-y-auto">
         <div class="text-sm text-gray-500 mb-6 mt-[-10px] space-y-3">
-            <p>Describe your goal. We'll bundle your request with Troves' architectural guidelines so the language model writes code that fits our vision-first workflow.</p>
+            <p>Describe your goal. We'll bundle your request with Troves' architectural guidelines so the language model writes code that fits the vision-first workflow.</p>
             <details class="group bg-info/10 text-base-content rounded-xl border border-info/20 text-xs overflow-hidden">
                 <summary class="flex items-center justify-between p-3 cursor-pointer font-bold uppercase tracking-wider text-info select-none hover:bg-info/20 transition-colors">
                     <span><i class="bi bi-lightbulb-fill mr-1"></i> Ideas on what to include</span>

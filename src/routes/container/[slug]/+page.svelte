@@ -532,7 +532,7 @@
                                 <span class="loading loading-spinner loading-lg"></span>
                             </div>
                             <h3 class="font-bold text-2xl tracking-tight text-base-content">Tracing Compartments</h3>
-                            <p class="text-sm text-gray-500 font-medium mt-2 max-w-xs text-center">Our vision model is extracting the walls and dimensions of your container.</p>
+                            <p class="text-sm text-gray-500 font-medium mt-2 max-w-xs text-center">The vision model is extracting the walls and dimensions of your container.</p>
                         </div>
                     {/if}
                 </div>
