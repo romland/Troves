@@ -31,7 +31,6 @@ import path from 'path';
 
 export default function register({ on, registerItemAction, sysLog, logActivity, fetch, db, env, itemOps }) {
     async function lookupAndEnrichBook(baseItem) {
-        // Fetch the fully hydrated item to ensure we have all attributes
         const item = await db.item.findUnique({
             where: { id: baseItem.id },
             include: { attributes: true, photos: true }
@@ -43,28 +42,31 @@ export default function register({ on, registerItemAction, sysLog, logActivity, 
         }
 
         const safeTitle = item.title.replace(/"/g, '').trim();
-        const additionalTerms = [];
 
-        // If description is short, it was likely captured as an author/subtitle during rapid intake
+        // --- TIER 1: HIGH PRECISION (Author & Subtitle Only) ---
+        const author = itemOps.getFuzzyAttribute(item, ['author', 'writer', 'creator', 'by']);
+        const subtitle = itemOps.getFuzzyAttribute(item, ['subtitle']);
+        const preciseExtraStr = [author, subtitle].filter(Boolean).join(' ').trim();
+
+        // --- TIER 2/3: THE KITCHEN SINK (Description & Broad Attributes) ---
+        const broadTerms = [];
         if (item.description && item.description.length < 150) {
-            additionalTerms.push(item.description);
+            broadTerms.push(item.description);
         }
-
-        // Broaden the net: match any attribute key containing relevant terms
-        const fuzzyKeyTargets = ['author', 'subtitle', 'writer', 'creator', 'by', 'brand', 'maker', 'artist', 'publisher'];
+        
         if (item.attributes && item.attributes.length > 0) {
-            const relevantAttrs = item.attributes.filter(a => {
-                const lowerKey = a.key.toLowerCase();
-                return fuzzyKeyTargets.some(target => lowerKey.includes(target));
+            const fuzzyKeyTargets = ['author', 'subtitle', 'writer', 'creator', 'by', 'brand', 'maker', 'artist', 'publisher'];
+            item.attributes.forEach(a => {
+                if (fuzzyKeyTargets.some(target => a.key.toLowerCase().includes(target))) {
+                    broadTerms.push(a.value);
+                }
             });
-            relevantAttrs.forEach(a => additionalTerms.push(a.value));
         }
+        const broadExtraStr = [...new Set(broadTerms)].join(' ').trim();
 
-        const extraStr = [...new Set(additionalTerms)].join(' ').trim();
         const apiKey = env.GOOGLE_BOOKS_API_KEY;
         const keyParam = apiKey ? `&key=${apiKey}` : '';
 
-        // Internal helper to perform a query pass with full debug activity logging
         const executeSearchPass = async (query) => {
             const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=5${keyParam}`;
 
@@ -73,45 +75,27 @@ export default function register({ on, registerItemAction, sysLog, logActivity, 
                 await logActivity(
                     item.id,
                     'Google Books Query',
-                    `Querying Google Books API for "${query}"`,
+                    `Querying API for "${query}"`,
                     'info',
-                    JSON.stringify({ 
-                        query, 
-                        url: sanitizedUrl,
-                        debug_InitialState: {
-                            title: item.title,
-                            description: item.description,
-                            allAttributes: item.attributes ? item.attributes.map(a => `${a.key}: ${a.value}`) : []
-                        }
-                    }, null, 2)
+                    JSON.stringify({ query, url: sanitizedUrl }, null, 2)
                 );
             }
 
             const res = await fetch(url, {
-                headers: {
-                    'User-Agent': 'Troves-Inventory-Agent/1.0',
-                    'Accept': 'application/json'
-                }
+                headers: { 'User-Agent': 'Troves-Inventory-Agent/1.0', 'Accept': 'application/json' }
             });
 
             if (!res.ok) {
                 let errorBody = "";
                 try { errorBody = await res.text(); } catch (e) {}
 
-                sysLog.error(`[GoogleBooks] API rejected request. Status: ${res.status} ${res.statusText}. Body: ${errorBody}`);
+                sysLog.error(`[GoogleBooks] API rejected request. Status: ${res.status} ${res.statusText}`);
 
                 if (logActivity) {
-                    await logActivity(
-                        item.id,
-                        'Google Books Error',
-                        `API request failed (${res.status} ${res.statusText})`,
-                        'error',
-                        errorBody
-                    );
+                    await logActivity(item.id, 'Google Books Error', `API request failed (${res.status})`, 'error', errorBody);
                 }
 
                 if (res.status === 429) {
-                    sysLog.error(`[GoogleBooks] Too Many Requests (429). You MUST add GOOGLE_BOOKS_API_KEY to your .env file.`);
                     return { status: 429, data: null };
                 }
                 throw new Error(`Google Books API failed: ${res.status} ${res.statusText}`);
@@ -121,8 +105,6 @@ export default function register({ on, registerItemAction, sysLog, logActivity, 
             return { status: 200, data };
         };
 
-        // --- LOCAL FILTERING LOGIC ---
-        // Google's API ranking is unpredictable. We fetch 5 results and find the best actual match locally.
         const getWords = (str) => (str || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').split(' ').filter(w => w.length > 1 && !['the', 'and', 'for', 'with', 'vol', 'of'].includes(w));
         const origTitleWords = getWords(safeTitle);
         const requiredTitleMatches = Math.max(1, Math.floor(origTitleWords.length * 0.5));
@@ -134,13 +116,11 @@ export default function register({ on, registerItemAction, sysLog, logActivity, 
                 const book = item.volumeInfo;
                 if (!book.title || !book.authors || book.authors.length === 0) continue;
 
-                // Reject analyses unless the original scan actually had that word
                 const lowerTitle = book.title.toLowerCase();
                 if (rejectTerms.some(t => lowerTitle.includes(t)) && !rejectTerms.some(t => safeTitle.toLowerCase().includes(t))) {
                     continue;
                 }
 
-                // Title overlap check
                 const bookTitleWords = getWords(book.title);
                 const titleOverlap = origTitleWords.reduce((count, w) => count + (bookTitleWords.includes(w) ? 1 : 0), 0);
 
@@ -151,69 +131,69 @@ export default function register({ on, registerItemAction, sysLog, logActivity, 
             return null;
         };
 
-        // --- TWO PASS SEARCH STRATEGY ---
+        // --- THREE PASS WATERFALL STRATEGY ---
         let bestBook = null;
         let queryUsed = "";
         
-        // Pass 1: Strict Title Match
-        const pass1Query = `intitle:"${safeTitle}" ${extraStr}`.trim();
+        // Pass 1: Strict Title + Precision Attributes
+        const pass1Query = `intitle:"${safeTitle}" ${preciseExtraStr}`.trim();
         sysLog.info(`[GoogleBooks] Pass 1 (Strict): ${pass1Query}`);
         let passResult = await executeSearchPass(pass1Query);
-
         if (passResult.status === 429) return;
-
         bestBook = findBestBook(passResult.data?.items);
         queryUsed = pass1Query;
 
         if (!bestBook) {
-            // Pass 2: Loose Fallback Match
-            const pass2Query = `${safeTitle} ${extraStr}`.trim();
-            sysLog.info(`[GoogleBooks] Pass 2 (Loose Fallback): ${pass2Query}`);
+            // Pass 2: Loose Title + Precision Attributes
+            const pass2Query = `${safeTitle} ${preciseExtraStr}`.trim();
+            sysLog.info(`[GoogleBooks] Pass 2 (Loose): ${pass2Query}`);
             passResult = await executeSearchPass(pass2Query);
-            
             if (passResult.status === 429) return;
             bestBook = findBestBook(passResult.data?.items);
             queryUsed = pass2Query;
+        }
+
+        if (!bestBook && broadExtraStr !== preciseExtraStr) {
+            // Pass 3: The Kitchen Sink Fallback
+            const pass3Query = `${safeTitle} ${broadExtraStr}`.trim();
+            sysLog.info(`[GoogleBooks] Pass 3 (Kitchen Sink): ${pass3Query}`);
+            passResult = await executeSearchPass(pass3Query);
+            if (passResult.status === 429) return;
+            bestBook = findBestBook(passResult.data?.items);
+            queryUsed = pass3Query;
         }
 
         if (logActivity) {
             await logActivity(
                 item.id,
                 'Google Books Response',
-                bestBook ? `Found valid volume: "${bestBook.title}"` : `No clean matches found for "${queryUsed}"`,
+                bestBook ? `Found valid volume: "${bestBook.title}"` : `No clean matches found across all tiers.`,
                 bestBook ? 'success' : 'warning',
-                JSON.stringify({ queryUsed, match: bestBook || "None" }, null, 2)
+                JSON.stringify({ finalQueryUsed: queryUsed, match: bestBook || "None" }, null, 2)
             );
         }
 
         if (!bestBook) {
-            sysLog.warn(`[GoogleBooks] Discarding all results: No items matched our strict criteria.`);
+            sysLog.warn(`[GoogleBooks] Discarding all results: No items matched our criteria after 3 passes.`);
             return;
         }
 
         const book = bestBook;
-
         const updates = {};
 
         if (book.title && book.title !== item.title) updates.title = book.title;
 
-        // Only overwrite description if empty or previously filled with a short author string
         if (book.description && (!item.description || item.description.trim() === '' || item.description.length < 150)) {
             updates.description = book.description;
         }
 
         if (Object.keys(updates).length > 0) {
-            await db.item.update({
-                where: { id: item.id },
-                data: updates
-            });
-            
+            await db.item.update({ where: { id: item.id }, data: updates });
             if (logActivity) {
-                await logActivity(item.id, 'Google Books Overwrite', 'Updated item fields automatically. You can revert this in Version History if incorrect.', 'success');
+                await logActivity(item.id, 'Google Books Overwrite', 'Updated item fields automatically.', 'success');
             }
         }
 
-        // Extract and append KVP attributes
         const attributesToAdd = [];
         if (book.authors) attributesToAdd.push({ key: 'Author', value: book.authors.join(', ') });
         if (book.publisher) attributesToAdd.push({ key: 'Publisher', value: book.publisher });
@@ -233,7 +213,6 @@ export default function register({ on, registerItemAction, sysLog, logActivity, 
             await itemOps.setAttribute(item.id, attr.key, attr.value);
         }
 
-        // Extract and apply Categories
         if (book.categories && book.categories.length > 0) {
             const catName = book.categories[0];
             let category = await db.category.findFirst({ where: { inventoryId: item.inventoryId, name: catName }});
@@ -248,7 +227,6 @@ export default function register({ on, registerItemAction, sysLog, logActivity, 
             }
         }
 
-        // --- Cover Art Download ---
         const coverExists = await db.photo.findFirst({ 
             where: { itemId: item.id, orgPath: { contains: '-cover-' } } 
         });
@@ -260,43 +238,28 @@ export default function register({ on, registerItemAction, sysLog, logActivity, 
             if (book.imageLinks?.thumbnail) {
                 const baseImageUrl = book.imageLinks.thumbnail.replace('http:', 'https:');
                 try {
-                    sysLog.info(`[GoogleBooks] Downloading cover art from Google...`);
-                    
-                    // Try high-resolution image first
                     const highResUrl = baseImageUrl.replace('&edge=curl', '').replace('zoom=1', 'zoom=3'); 
                     let imgRes = await fetch(highResUrl);
 
-                    if (!imgRes.ok) {
-                        imgRes = await fetch(baseImageUrl);
-                    }
+                    if (!imgRes.ok) imgRes = await fetch(baseImageUrl);
 
                     if (imgRes.ok) {
                         const buffer = Buffer.from(await imgRes.arrayBuffer());
-                        
-                        // Google Books placeholders are mostly solid grey. A real zoom=3 cover is 40KB+. 
-                        // The scaled-up zoom=3 placeholder is typically ~12KB. 
-                        const isHighRes = imgRes.url.includes('zoom=3');
-                        const threshold = isHighRes ? 35000 : 4500;
+                        const threshold = imgRes.url.includes('zoom=3') ? 35000 : 4500;
 
                         if (buffer.length >= threshold) {
                             coverBuffer = buffer;
                         } else {
-                            sysLog.warn(`[GoogleBooks] Google cover too small (${buffer.length} bytes) from ${imgRes.url}. Likely a placeholder. Discarding.`);
-                            if (logActivity) await logActivity(item.id, 'Google Books Cover', `Discarded Google cover from ${imgRes.url} as it appeared to be a placeholder image (${buffer.length} bytes).`, 'warning');
+                            if (logActivity) await logActivity(item.id, 'Google Books Cover', `Discarded placeholder image (${buffer.length} bytes).`, 'warning');
                         }
-                    } else {
-                        sysLog.warn(`[GoogleBooks] Google returned ${imgRes.status} when fetching image.`);
                     }
                 } catch (e) {
                     sysLog.error(`[GoogleBooks] Failed to download cover art:`, e);
                 }
             }
 
-            // Fallback to Open Library using ISBN
             if (!coverBuffer && isbnValue) {
                 try {
-                    sysLog.info(`[GoogleBooks] Attempting fallback to Open Library for ISBN ${isbnValue}...`);
-                    // default=false ensures OpenLibrary returns a 404 instead of their own generic placeholder
                     const olUrl = `https://covers.openlibrary.org/b/isbn/${isbnValue}-L.jpg?default=false`;
                     const olRes = await fetch(olUrl);
                     
@@ -305,7 +268,6 @@ export default function register({ on, registerItemAction, sysLog, logActivity, 
                         if (buffer.length > 5000) {
                             coverBuffer = buffer;
                             coverSource = 'openlibrary';
-                            sysLog.info(`[GoogleBooks] Successfully acquired fallback cover from Open Library.`);
                         }
                     }
                 } catch (e) {
@@ -330,17 +292,11 @@ export default function register({ on, registerItemAction, sysLog, logActivity, 
                         isPrimary: true
                     }
                 });
-                sysLog.info(`[GoogleBooks] Cover art saved successfully.`);
-                if (logActivity) await logActivity(item.id, 'Cover Art', `Downloaded and attached book cover from ${coverSource === 'google' ? 'Google Books' : 'Open Library'}.`, 'success');
-            } else {
-                sysLog.info(`[GoogleBooks] No cover art exists for this book in Google or Open Library.`);
+                if (logActivity) await logActivity(item.id, 'Cover Art', `Downloaded cover from ${coverSource === 'google' ? 'Google Books' : 'Open Library'}.`, 'success');
             }
         }
-
-        sysLog.info(`[GoogleBooks] Successfully enriched ${item.title}!`);
     }
 
-    // 1. Automatic Post-Processing Trigger (Runs after background ML pipeline finishes on newly created items)
     on(
         'onItemProcessed',
         async (payload) => {
@@ -351,7 +307,6 @@ export default function register({ on, registerItemAction, sysLog, logActivity, 
         { maxRetries: 3, retryDelayMs: 3000, rateLimitRpm: 50 }
     );
 
-    // 2. Manual UI Action Trigger (Available from item context menu anytime)
     registerItemAction(
         { 
             id: 'fetch-google-books', 
