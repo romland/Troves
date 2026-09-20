@@ -31,10 +31,10 @@ Just snap a picture, or paste in a URL and let the system organize it.
     </td>
   </tr>
 </table>
-To add a product, grab your phone, take a picture, and scan the QR-code on the container you want to place it in. That's it.
 
-If you're feeling ambitious, you can also:
+To add a product, grab your phone, take a picture, and scan the QR-code on the container you want to place it in. That's it.  
 
+That said, if you're feeling ambitious, you can:
 * Take a picture of an invoice or receipt (Troves will figure out the juicy bits).
 * Add additional photos or just paste in web links.
 * Scan QR-codes containing URLs to relevant documents.
