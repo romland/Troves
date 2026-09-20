@@ -14,7 +14,7 @@ const eavResponseSchema = {
             uiLabel: { type: 'string', description: 'Layman/everyday human label. E.g., use "Fabric" instead of "textile_construction", or "Worn On" instead of "body_zone"' },
             type: { type: 'string', enum: ['string', 'enum', 'boolean', 'number'] },
             options: { type: 'array', items: { type: 'string' }, description: 'Array of enums if type is enum' },
-                matchWeight: { type: 'string', enum: ['STRICT_DEDUPE', 'FUZZY_SECONDARY', 'METADATA_ONLY', 'SUBJECTIVE_TEXT'] },
+            matchWeight: { type: 'string', enum: ['STRICT_DEDUPE', 'FUZZY_SECONDARY', 'METADATA_ONLY', 'SUBJECTIVE_TEXT'] },
             extractionMethod: { type: 'string', enum: ['VISION_STRICT', 'HUMAN_REQUIRED', 'HYBRID'] }
         },
         required: ['name', 'uiLabel', 'type', 'matchWeight', 'extractionMethod']
@@ -157,21 +157,21 @@ export async function bootstrapCategorySchema(categoryId: number, categoryName: 
         const existingCatNames = existingCategories.map(c => c.name).join(', ');
 
         const prompt = `You are a Principal Data Architect. Define 1-3 critical visual attributes needed to uniquely identify and deduplicate an item specifically in the sub-category: "${categoryName}".
-            
-            CONTEXT (THE ZOOM LEVEL):
-            The overarching inventory archetype is: "${(inv as any)?.archetype || 'generic'}".
-            Existing categories in this inventory: [${existingCatNames}].
-            
-            CRITICAL RULES:
-            1. RELATIVE RESOLUTION (MACRO vs MICRO): Gauge the "Zoom Level" of this inventory. 
-                - High Variance (MACRO): If existing categories are vastly different (e.g., 'shirts', 'hardware', 'books'), DO NOT generate micro-attributes like 'fastening_mechanism'. Stick to macro identifiers.
-                - Low Variance (MICRO): If existing categories are highly clustered (e.g., 'sneakers', 'boots', 'loafers'), you are operating at MICRO resolution. You MUST generate specific micro-attributes (e.g., 'sole_pattern', 'heel_height') because every item is structurally similar.
-            2. Categorize EVERY attribute with an extractionMethod:
-               - "VISION_STRICT": 100% undeniable visual geometry or physical form.
-               - "HYBRID": Visible text, brands, or labels that might be obscured.
-                - "HUMAN_REQUIRED": Context the camera CANNOT reliably know without reading a hidden tag, using a measuring tool, or chemical testing (e.g., size, exact dimensions, weight, capacity, internal material).
-            3. For ALL enums, provide a HIGHLY EXHAUSTIVE 'options' array.
-            4. NO REDUNDANCY: Do not generate "Color", "Color Mix", or "Brand" fields as they are tracked globally.`;
+
+CONTEXT (THE ZOOM LEVEL):
+The overarching inventory archetype is: "${(inv as any)?.archetype || 'generic'}".
+Existing categories in this inventory: [${existingCatNames}].
+
+CRITICAL RULES:
+1. RELATIVE RESOLUTION (MACRO vs MICRO): Gauge the "Zoom Level" of this inventory. 
+    - High Variance (MACRO): If existing categories are vastly different (e.g., 'shirts', 'hardware', 'books'), DO NOT generate micro-attributes like 'fastening_mechanism'. Stick to macro identifiers.
+    - Low Variance (MICRO): If existing categories are highly clustered (e.g., 'sneakers', 'boots', 'loafers'), you are operating at MICRO resolution. You MUST generate specific micro-attributes (e.g., 'sole_pattern', 'heel_height') because every item is structurally similar.
+2. Categorize EVERY attribute with an extractionMethod:
+    - "VISION_STRICT": 100% undeniable visual geometry or physical form.
+    - "HYBRID": Visible text, brands, or labels that might be obscured.
+    - "HUMAN_REQUIRED": Context the camera CANNOT reliably know without reading a hidden tag, using a measuring tool, or chemical testing (e.g., size, exact dimensions, weight, capacity, internal material).
+3. For ALL enums, provide a HIGHLY EXHAUSTIVE 'options' array.
+4. NO REDUNDANCY: Do not generate "Color", "Color Mix", or "Brand" fields as they are tracked globally.`;
 
         const resText = await generateText('You are a helpful assistant.', prompt, true, eavResponseSchema, `Category Bootstrap: ${categoryName}`, undefined, 'TAXONOMY');
         const fields = JSON.parse(resText);
