@@ -14,6 +14,7 @@ I absolutely hate data-entry. Creating an inventory and adding new items should 
 
 Just snap a picture, or paste in a URL and let the system organize it.
 
+## 📸 The Core Workflow
 <table align="right" width="30%">
   <tr>
     <td>
@@ -28,8 +29,6 @@ Just snap a picture, or paste in a URL and let the system organize it.
     </td>
   </tr>
 </table>
-
-## 📸 The Core Workflow
 
 To add a product, grab your phone, take a picture, and scan the QR-code on the container you want to place it in. That's it.
 
