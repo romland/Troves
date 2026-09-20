@@ -98,7 +98,7 @@ Because the Voice Engine relies on dictionaries and regular expressions rather t
 
 ## 📚 The Knowledge Base (Link-Rot Prevention)
 
-Troves isn't just about physical objects; it doubles as a localized knowledge base. We've blurred the lines between strict inventory tracking and capturing the context surrounding your stuff.
+Troves isn't just for physical junk. It also hoards your digital files, manuals, datasheets, and notes, so you actually remember how to use the things you bought.
 
 * **Offline Archives:**  
 Never run into a dead link again. If you link to a webpage, manual, or spec sheet, Troves downloads, parses, summarizes, and archives it locally on your disk. (Scraping is restricted to 1-level depth to prevent infinite spidering).
