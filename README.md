@@ -19,7 +19,7 @@ sh*t without having to drag 20 boxes out of the attic.
 _This readme is very much a work in progress; it's currently not organized or complete at all._
 _Also: Quite a few of the more recent bits are written by an LLM acting as a sales person, which is very cringe. I will deal with it._
 
-<video src="https://github.com/romland/Troves/blob/main/.github/screenshots/spatial-indexing-001.mp4" controls width="100%"></video>
+
 
 ### How to use
 To add a product, grab your phone and take a picture, scan the QR-code on the container
