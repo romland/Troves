@@ -33,10 +33,20 @@ If bulk import is how you ingest a mountain of data into Troves, the Comparison 
 * **Flea Market Scan ($A \setminus B$):** Snap a photo of a crate of 40 CDs or books to see what is **✨ New to You** and what is already **✓ In Your Trove**.
 * **Kit Check ($B \setminus A$):** Dump your stuff on a table, scope the comparison to the `#camping-gear` tag, and snap a photo to see exactly what you forgot to pack (a bit of a forced example, but ah, why not...).
 
-<div width="50%">
-    <img src="./.github/screenshots/gif-multi-scan-cds.gif" width="60%" align="right" alt="Multi-scan CDs" />
-    This demonstrates the Spotify Extension during bulk import of CDs
-</div>
+<table align="right" width="50%">
+  <tr>
+    <td>
+        <img src="./.github/screenshots/gif-multi-scan-cds.gif" width="100%" alt="Multi-scan CDs" />
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+        <i>
+            <i>This demonstrates the <a href="./docs/extensions/04-examples.md">Spotify Extension</a> during bulk import of CDs</i>
+        </i>
+    </td>
+  </tr>
+</table>
 
 ## 🧠 Self-Organizing Taxonomy
 
