@@ -18,7 +18,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     const localPath = `data${imagePath}`;
     if (!fs.existsSync(localPath)) return json({ error: 'Image not found' }, { status: 404 });
 
-    const taskId = taskManager.start('global', 0, `Deep scanning ${slots.length} compartments...`);
+    const taskId = taskManager.startDirect('global', 0, `Deep scanning ${slots.length} compartments...`);
     
     try {
         // 1. Generate SVG Overlay to "Burn In" numbers onto the image for the LLM

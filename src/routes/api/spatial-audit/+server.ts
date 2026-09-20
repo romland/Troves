@@ -51,7 +51,7 @@ export const POST = async ({ request, locals }) => {
 
     const slots: any[] = [];
 
-    const taskId = taskManager.start('global', 0, `Spatial Audit: Aligning & Processing ${originalPolygons.length} compartments...`);
+    const taskId = taskManager.startDirect('global', 0, `Spatial Audit: Aligning & Processing ${originalPolygons.length} compartments...`);
 
     try {
         // 3. Homography Alignment (Pure TS CV Engine)

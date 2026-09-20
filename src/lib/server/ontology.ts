@@ -63,7 +63,7 @@ export async function bootstrapInventorySchema(inventoryId: number, domainName: 
     const inv = await db.inventory.findUnique({ where: { id: inventoryId } });
     if (!(inv as any)?.allowAutoTaxonomy) return false;
 
-    const taskId = taskManager.start('global', inventoryId, `Bootstrapping taxonomy rules for "${domainName}"`);
+    const taskId = taskManager.startDirect('global', inventoryId, `Bootstrapping taxonomy rules for "${domainName}"`);
     console.log(`[Taxonomy Engine] 🚀 Starting schema generation for Trove ID ${inventoryId}: "${domainName}"`);
     
     const archetype = (inv as any)?.archetype || 'generic';
@@ -149,7 +149,7 @@ export async function bootstrapCategorySchema(categoryId: number, categoryName: 
     const inv = await db.inventory.findUnique({ where: { id: inventoryId } });
     if (!(inv as any)?.allowAutoTaxonomy) return false;
 
-    const taskId = taskManager.start('global', inventoryId, `Bootstrapping category schema for "${categoryName}"`);
+    const taskId = taskManager.startDirect('global', inventoryId, `Bootstrapping category schema for "${categoryName}"`);
     console.log(`[Taxonomy Engine] 🚀 Starting category schema generation for ID ${categoryId}: "${categoryName}"`);
 
     try {
@@ -220,7 +220,7 @@ export async function beautifyTaxonomyRules(inventoryId: number) {
     const fields = await db.templateField.findMany({ where: { inventoryId } });
     if (fields.length === 0) return false;
 
-    const taskId = taskManager.start('global', inventoryId, `Beautifying taxonomy labels`);
+    const taskId = taskManager.startDirect('global', inventoryId, `Beautifying taxonomy labels`);
     try {
         const payload = fields.map(f => ({
             id: f.id, name: f.name, uiLabel: f.uiLabel, options: f.options ? JSON.parse(f.options) : null

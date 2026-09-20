@@ -22,8 +22,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     }
 
     let localFilePath = `data${container.photoPath}`;
-    const taskId = taskManager.start('global', 0, `Mapping compartments for ${container.name}`);
 
+    const taskId = taskManager.startDirect('global', 0, `Mapping compartments for ${container.name}`);
     console.log(`[DEBUG-MAPPER] POST /api/container-map hit. localFilePath: ${localFilePath}`);
     try {
         console.log(`[DEBUG-MAPPER] Calling mapContainerCompartments...`);

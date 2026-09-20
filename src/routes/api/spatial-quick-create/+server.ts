@@ -22,7 +22,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     const fillStatus = formData.get('fillStatus') as string;
     const clientId = formData.get('clientId') as string;
     
-    const taskId = taskManager.start('global', 0, `Creating item from spatial map...`);
+    const taskId = taskManager.startDirect('global', 0, `Creating item from spatial map...`);
+
     try {
         const localPath = `data${parentImagePath}`;
         let cropWebPath = null;

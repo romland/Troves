@@ -35,7 +35,7 @@ export async function downloadAndStoreDocuments(target: { itemId?: number, timel
 {
 	const targetType = target.itemId ? 'item' : 'note';
 	const targetId = target.itemId || target.timelineNoteId || 0;
-	const taskId = taskManager.start(targetType, targetId, 'Fetching and parsing linked documents');
+	const taskId = taskManager.startDirect(targetType, targetId, 'Fetching and parsing linked documents');
 	try {  
 		if (depth === 0) {
 			//

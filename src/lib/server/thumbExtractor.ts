@@ -23,7 +23,7 @@ export async function generateDocumentThumbnail(docId: number, diskPath: string,
     const tempPath = path.join(process.cwd(), uploadsDiskFolder, `temp-${docId}`);
 
     return ioQueue.add(async () => {
-        const taskId = taskManager.start(targetType, targetId, `Generating thumbnail for ${doc?.title || docType.toUpperCase()}`);
+        const taskId = taskManager.startDirect(targetType, targetId, `Generating thumbnail for ${doc?.title || docType.toUpperCase()}`);
         let tempFilesToClean: string[] = [];
 
         try {
