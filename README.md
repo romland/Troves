@@ -16,7 +16,25 @@ Just snap a picture, or paste in a URL and let the system organize it.
 
 [There](https://youtu.be/5B0cxLwS8fo) might [be](https://youtu.be/8WpgqJUO7SQ) a [bunch](https://youtu.be/n4YAiE8Yv5Y) of [demo](https://youtube.com/shorts/qyyXUC3TYlg?feature=share) videos [uploaded](https://youtube.com/shorts/U_juc8A-QqI?feature=share) to [YouTube](https://youtube.com/shorts/JtorL9VRztQ?feature=share). Oh, and there are also [some shorts](https://www.youtube.com/@friya/shorts). 
 
-This [one is pretty fun](https://www.youtube.com/shorts/P1S-qs7-n8E) for instance!
+
+<table>
+  <tr>
+    <td align="center" width="100%">
+        <i>
+          <a href="https://www.youtube.com/shorts/P1S-qs7-n8E">
+            This one is pretty fun for instance!
+          </a>
+        </i>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="300">
+        <a href="https://www.youtube.com/shorts/P1S-qs7-n8E">
+          <img src="./.github/screenshots/033-component-drawer.webp" width="300" alt="Multi-scan CDs" />
+        </a>
+    </td>
+  </tr>
+</table>
 
 
 ## 📸 The Core Workflow
