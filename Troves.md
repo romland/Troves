@@ -28,23 +28,16 @@ If you're feeling ambitious, you can also:
 * **Fire-and-Forget Outbox:** Never wait for a progress bar. Tapping 'Save' pushes the item to an offline-tolerant IndexedDB queue and resets the UI. You can scan items in a deep basement with no signal, and the app will sync whenever your Wi-Fi reconnects.
 
 **Bulk Import & The Comparison Lens**
+<img src="./.github/screenshots/gif-multi-scan-cds.gif" width="50%" align="right" padding="20px" alt="" />
+
 If bulk import is how you ingest a mountain of data into Troves, the Comparison Lens is how you audit reality against your database using set math.
 
 * **Flea Market Scan ($A \setminus B$):** Snap a photo of a crate of 40 CDs or books to see what is **✨ New to You** and what is already **✓ In Your Trove**.
 * **Kit Check ($B \setminus A$):** Dump your stuff on a table, scope the comparison to the `#camping-gear` tag, and snap a photo to see exactly what you forgot to pack (a bit of a forced example, but ah, why not...).
 
-
-### Screenshot(s)
-It's a couple of years overdue because I never really did anything about the visuals ... 
-But, let's get the ball rolling in 2026, the first screenshot(s):
-<div>
-    <img src="./.github/screenshots/004.webp" width="22%" alt="Document search results" />
-</div>
-
-
 ## 🧠 Self-Organizing Taxonomy
 
-Because Troves has to handle a bit of everything, from winter coats to spark plugs to whiskey to trollbeads to ESP32 boards, it can't be pre-programmed with rigid spreadsheet columns like "Brand" or "Shoe Size." Instead, it creates (and updates) its own structure on the fly using an Entity-Attribute-Value taxonomy. There's a bit more to it, but that is the idea.
+Because Troves has to handle a bit of everything, from winter coats to spark plugs to whiskey to trollbeads to ESP32 boards, it can't be pre-programmed with rigid spreadsheet columns like "Brand" or "Shoe Size." Instead, it creates, destroys (and updates) its own structure on the fly using an Entity-Attribute-Value taxonomy. There's a bit more to it, but that is the idea.
 
 **Keeping the language consistent:**
 Image-recognition tools are naturally messy. If you feed the system photos of three different t-shirts, it might label one with "short sleeves," another with "arm style," and a third with "sleeve length." You can't build a useful search tool out of that. To fix this, the first time the app sees a new category, it locks in a specific set of labels and forces the software to reuse those exact terms for all future items. It turns messy, fluid text into a clean, predictable database.
@@ -53,6 +46,29 @@ Image-recognition tools are naturally messy. If you feed the system photos of th
 If you take a picture of a jacket on your bed today, the lighting and folds will look completely different than when you first logged it hanging in a closet months ago. To handle this, Troves cross-references the visual details and the text to figure out if it's the same item, ensuring it doesn't log a duplicate or confuse two completely different blue shirts.
 
 *Note:* Does the vision model sometimes guess wrong? Look for the ✨ Sparkle icon next to the title. Click it to provide a hint (e.g. "It's an IKEA MITTZON desk") to nudge the classification. Empty categories vaporize if you move the last item out of them, keeping your database clean.
+
+
+### Some very random screenshots
+It's a couple of years overdue because I never really did anything about the visuals...  
+But, let's get the ball rolling in 2026! The first screenshots:
+
+<div>
+    <img src="./.github/screenshots/000-create-trove.webp" width="19%" alt="" />
+    <img src="./.github/screenshots/003-book-search.webp" width="19%" alt="" />
+    <img src="./.github/screenshots/004-document-search.webp" width="19%" alt="" />
+    <img src="./.github/screenshots/005-items-electronics.webp" width="19%" alt="" />
+    <img src="./.github/screenshots/008-add-single.webp" width="19%" alt="" />
+</div>
+
+<div>
+    <img src="./.github/screenshots/014-trove-settings.webp" width="19%" alt="" />
+    <img src="./.github/screenshots/016-activity-model-use.webp" width="19%" alt="" />
+    <img src="./.github/screenshots/018-spatially-mapped.webp" width="19%" alt="" />
+    <img src="./.github/screenshots/020-advanced-search.webp" width="19%" alt="" />
+    <img src="./.github/screenshots/025-garden.webp" width="19%" alt="" />
+</div>
+
+
 
 ## 🗺️ Spatial Mapping vs. Semantic Tagging
 
