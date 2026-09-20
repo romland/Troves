@@ -14,6 +14,7 @@ I absolutely hate data-entry. Creating an inventory and adding new items should 
 
 Just snap a picture, or paste in a URL and let the system organize it.
 
+
 ## 📸 The Core Workflow
 
 To add a product, grab your phone, take a picture, and scan the QR-code on the container you want to place it in. That's it.
@@ -27,8 +28,7 @@ If you're feeling ambitious, you can also:
 * **Fire-and-Forget Outbox:** Never wait for a progress bar. Tapping 'Save' pushes the item to an offline-tolerant IndexedDB queue and resets the UI. You can scan items in a deep basement with no signal, and the app will sync whenever your Wi-Fi reconnects.
 
 **Bulk Import & The Comparison Lens**
-<!--img src="./.github/screenshots/gif-multi-scan-cds.gif" width="50%" align="right"/-->
-<video src="https://github.com/user-attachments/assets/ab96641d-8dec-4621-a876-b13621dc85c8" controls width="50%" alt="Bulk import of CDs"></video>
+<img src="./.github/screenshots/gif-multi-scan-cds.gif" width="50%" align="right" alt="Multi-scan CDs" />
 
 If bulk import is how you ingest a mountain of data into Troves, the Comparison Lens is how you audit reality against your database using set math.
 
@@ -168,8 +168,12 @@ Follow the instructions to install the generated `rootCA.crt` on your phone, gen
 * **Photo-Level Categories:** Need an item to exist in two categories? Give it multiple photos and assign a different category to each. The engine resolves categories at the photo level. (This also means changing a category requires opening the image lightbox and using the "..." menu there).
 * **Quick Notes:** Long-tap the Notebook button to add a quick note without leaving your current context.
 
-## Some clips
+## Some Recordings
 <div>
-    <video src="https://github.com/user-attachments/assets/1ca11e70-2ff3-47e7-9614-9276dd2945dc" controls width="24%" alt="Single item import"></video>
+    <video src="https://github.com/user-attachments/assets/1ca11e70-2ff3-47e7-9614-9276dd2945dc" controls width="45%" alt="Single item import"></video>
+    <video src="https://github.com/user-attachments/assets/ab96641d-8dec-4621-a876-b13621dc85c8" controls width="45%" alt="Bulk import of CDs"></video>
 </div>
 
+<div>
+    <video src="https://github.com/user-attachments/assets/661ee52e-e49e-42ca-9d35-80476a92036e" controls width="45" alt="Spatial placement"></video>
+</div>
