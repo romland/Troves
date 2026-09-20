@@ -22,7 +22,7 @@ This [one is pretty fun](https://www.youtube.com/shorts/P1S-qs7-n8E) for instanc
 ## 📸 The Core Workflow
 <table align="right" width="50%">
   <tr>
-    <td align="center">
+    <td align="center" width="50%">
         <i>
             <i>This demonstrates the <a href="./docs/extensions/04-examples.md">Spotify Extension</a> during bulk import of CDs</i>
         </i>
