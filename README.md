@@ -20,17 +20,17 @@ This [one is pretty fun](https://www.youtube.com/shorts/P1S-qs7-n8E) for instanc
 
 
 ## 📸 The Core Workflow
-<table align="right" width="50%">
+<table align="right">
   <tr>
-    <td align="center" width="50%">
+    <td align="center" width="300">
         <i>
             <i>This demonstrates the <a href="./docs/extensions/04-examples.md">Spotify Extension</a> during bulk import of CDs</i>
         </i>
     </td>
   </tr>
   <tr>
-    <td align="center">
-        <img src="./.github/screenshots/gif-multi-scan-cds.gif" width="50%" alt="Multi-scan CDs" />
+    <td align="center" width="300">
+        <img src="./.github/screenshots/gif-multi-scan-cds.gif" width="300" alt="Multi-scan CDs" />
     </td>
   </tr>
 </table>
