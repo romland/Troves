@@ -20,7 +20,7 @@ This [one is pretty fun](https://www.youtube.com/shorts/P1S-qs7-n8E) for instanc
 
 
 ## 📸 The Core Workflow
-<table align="right" width="30%">
+<table align="right" width="50%">
   <tr>
     <td align="center">
         <i>
@@ -29,8 +29,8 @@ This [one is pretty fun](https://www.youtube.com/shorts/P1S-qs7-n8E) for instanc
     </td>
   </tr>
   <tr>
-    <td>
-        <img src="./.github/screenshots/gif-multi-scan-cds.gif" width="100%" alt="Multi-scan CDs" />
+    <td align="center">
+        <img src="./.github/screenshots/gif-multi-scan-cds.gif" width="50%" alt="Multi-scan CDs" />
     </td>
   </tr>
 </table>
