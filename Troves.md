@@ -28,12 +28,15 @@ If you're feeling ambitious, you can also:
 * **Fire-and-Forget Outbox:** Never wait for a progress bar. Tapping 'Save' pushes the item to an offline-tolerant IndexedDB queue and resets the UI. You can scan items in a deep basement with no signal, and the app will sync whenever your Wi-Fi reconnects.
 
 **Bulk Import & The Comparison Lens**
-<img src="./.github/screenshots/gif-multi-scan-cds.gif" width="50%" align="right" alt="Multi-scan CDs" />
-
 If bulk import is how you ingest a mountain of data into Troves, the Comparison Lens is how you audit reality against your database using set math.
 
 * **Flea Market Scan ($A \setminus B$):** Snap a photo of a crate of 40 CDs or books to see what is **✨ New to You** and what is already **✓ In Your Trove**.
 * **Kit Check ($B \setminus A$):** Dump your stuff on a table, scope the comparison to the `#camping-gear` tag, and snap a photo to see exactly what you forgot to pack (a bit of a forced example, but ah, why not...).
+
+<div width="50%">
+    <img src="./.github/screenshots/gif-multi-scan-cds.gif" width="60%" align="right" alt="Multi-scan CDs" />
+    This demonstrates the Spotify Extension during bulk import of CDs
+</div>
 
 ## 🧠 Self-Organizing Taxonomy
 
