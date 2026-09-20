@@ -269,7 +269,7 @@ class ExtensionManager {
 				} catch (err) {
 					sysLog.error(`${prefix} Error executing '${event}':`, err);
 				}
-                }, { targetType: 'plugin', targetId: hook.pluginName, description });
+                }, { targetType: 'plugin', targetId: 0, description });
             }
         })();
 	}
@@ -312,7 +312,7 @@ class ExtensionManager {
 			} catch (err) {
 				sysLog.error(`${prefix} Error executing UI action '${action.label}':`, err);
 			}
-		}, { targetType: 'system', targetId: 0, description });
+		}, { targetType: 'plugin', targetId: 0, description });
 	}
 	
     async reloadPlugins() {
