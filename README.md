@@ -29,7 +29,7 @@ Just snap a picture, or paste in a URL and let the system organize it.
     <td align="center" width="300">
         <i>
           <a href="https://www.youtube.com/shorts/P1S-qs7-n8E">
-            This one is pretty fun for instance!
+            This one is pretty fun for instance
           </a>
         </i>
     </td>
