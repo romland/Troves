@@ -14,21 +14,7 @@ I absolutely hate data-entry. Creating an inventory and adding new items should 
 
 Just snap a picture, or paste in a URL and let the system organize it.
 
-
-## 📸 The Core Workflow
-
-To add a product, grab your phone, take a picture, and scan the QR-code on the container you want to place it in. That's it.
-
-If you're feeling ambitious, you can also:
-
-* Take a picture of an invoice or receipt (Troves will figure out the juicy bits).
-* Add additional photos or just paste in web links.
-* Scan QR-codes containing URLs to relevant documents.
-* **Just Paste Anything:** Hit `Ctrl+V` anywhere. The global PasteHandler detects images in your clipboard, raw URLs (fetching the webpage), text blocks (creating local Markdown notes), and even raw Key-Value Pair lists (weight/color/size), mapping them to attributes.
-* **Fire-and-Forget Outbox:** Never wait for a progress bar. Tapping 'Save' pushes the item to an offline-tolerant IndexedDB queue and resets the UI. You can scan items in a deep basement with no signal, and the app will sync whenever your Wi-Fi reconnects.
-
-
-<table align="right" width="50%">
+<table align="right" width="30%">
   <tr>
     <td>
         <img src="./.github/screenshots/gif-multi-scan-cds.gif" width="100%" alt="Multi-scan CDs" />
@@ -42,6 +28,18 @@ If you're feeling ambitious, you can also:
     </td>
   </tr>
 </table>
+
+## 📸 The Core Workflow
+
+To add a product, grab your phone, take a picture, and scan the QR-code on the container you want to place it in. That's it.
+
+If you're feeling ambitious, you can also:
+
+* Take a picture of an invoice or receipt (Troves will figure out the juicy bits).
+* Add additional photos or just paste in web links.
+* Scan QR-codes containing URLs to relevant documents.
+* **Just Paste Anything:** Hit `Ctrl+V` anywhere. The global PasteHandler detects images in your clipboard, raw URLs (fetching the webpage), text blocks (creating local Markdown notes), and even raw Key-Value Pair lists (weight/color/size), mapping them to attributes.
+* **Fire-and-Forget Outbox:** Never wait for a progress bar. Tapping 'Save' pushes the item to an offline-tolerant IndexedDB queue and resets the UI. You can scan items in a deep basement with no signal, and the app will sync whenever your Wi-Fi reconnects.
 
 **Bulk Import & The Comparison Lens**
 If bulk import is how you ingest a mountain of data into Troves, the Comparison Lens is how you audit reality against your database using set math.
