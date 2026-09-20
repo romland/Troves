@@ -19,6 +19,8 @@ sh*t without having to drag 20 boxes out of the attic.
 _This readme is very much a work in progress; it's currently not organized or complete at all._
 _Also: Quite a few of the more recent bits are written by an LLM acting as a sales person, which is very cringe. I will deal with it._
 
+<video src="https://github-production-user-asset-6210df.s3.amazonaws.com/184137/655358682-4e8f8766-22b6-47e2-b06b-e5af395c81ed.mp4?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20260920%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260920T120638Z&X-Amz-Expires=300&X-Amz-Signature=65339b93b2e403423dcc5e64603f50c6ae3adfdd781c0e49f460646d59f46270&X-Amz-SignedHeaders=host&response-content-type=video%2Fmp4" controls width="100%"></video>
+
 ### How to use
 To add a product, grab your phone and take a picture, scan the QR-code on the container
 to place it in and that's it.  
