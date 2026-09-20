@@ -8,9 +8,9 @@ My primary use-cases are:
 1. `Do I have that? Now, where the heck is it?`
 2. `What does it do and why did I buy it?`
 
-There is also that primal satisfaction in simply admiring your stuff; swimming through a hoard of tools, books, and components like Scrooge McDuck. This is a digital equivalent: inspect and appreciate your shit without having to drag 20 boxes out of the attic.
+There is also that primal satisfaction in simply admiring your stuff; swimming through a hoard of tools, books, and components like Scrooge McDuck. This is a digital equivalent: inspect and appreciate your sh*t without having to drag 20 boxes out of the attic.
 
-I absolutely hate data-entry. Creating an inventory and adding new items should be as automated as humanly possible. Most of the effort in Troves went into creating a pleasant, frictionless workflow so you actually use it. Under the hood, it uses tools like object classification, OCR, background removal, vision, audio and language models to do the heavy lifting, but the interface gets out of your way.
+I absolutely hate data-entry. Creating an inventory and adding new items should be as automated as humanly possible. Most of the effort in Troves went into creating a pleasant, frictionless workflow so you actually use it. Under the hood, it uses tools like object classification, OCR, background removal, color extraction, vision, audio, and language models to do the heavy lifting, but the interface gets out of your way.
 
 Just snap a picture, or paste in a URL and let the system organize it.
 
@@ -38,11 +38,12 @@ That said, if you're feeling ambitious, you can:
 * Take a picture of an invoice or receipt (Troves will figure out the juicy bits).
 * Add additional photos or just paste in web links.
 * Scan QR-codes containing URLs to relevant documents.
+* Manually type tags, amounts, and descriptions (but then you are *very* ambitious).
 * **Just Paste Anything:** Hit `Ctrl+V` anywhere. The global PasteHandler detects images in your clipboard, raw URLs (fetching the webpage), text blocks (creating local Markdown notes), and even raw Key-Value Pair lists (weight/color/size), mapping them to attributes.
 * **Fire-and-Forget Outbox:** Never wait for a progress bar. Tapping 'Save' pushes the item to an offline-tolerant IndexedDB queue and resets the UI. You can scan items in a deep basement with no signal, and the app will sync whenever your Wi-Fi reconnects.
 
 **Bulk Import & The Comparison Lens**
-If bulk import is how you ingest a mountain of data into Troves, the Comparison Lens is how you audit reality against your database using set math.
+If bulk import is how you ingest a mountain of data into Troves, the Comparison Lens is how you audit reality against your database using set math. *(Tip: Count the physical items before snapping a multi-scan photo. It gives you a quick sanity check to know if your picture was clear enough for the model to catch everything).*
 
 * **Flea Market Scan ($A \setminus B$):** Snap a photo of a crate of 40 CDs or books to see what is **✨ New to You** and what is already **✓ In Your Trove**.
 * **Kit Check ($B \setminus A$):** Dump your stuff on a table, scope the comparison to the `#camping-gear` tag, and snap a photo to see exactly what you forgot to pack (a bit of a forced example, but ah, why not...).
@@ -76,6 +77,10 @@ You snap an overhead photo of an open drawer, Gridfinity layout, or wine rack. Y
 **Deep Scan Grid:**
 If you don't want to tap 60 times, hit ✨ Deep Scan. The Vision Model analyzes the entire drawer in one go, reading printed labels and identifying the physical components in each specific slot. Troves then opens a "Triage" screen where you step through the results, verify the model's guess, and accept it into your inventory.
 
+**⚠️ Important Note on Medication:**
+Please do **NOT** use the automatic indexing, spatial mapping, or LLM-based label reading for organizing medication, drugs, or hazardous materials. Vision and Language models are eager servants and can easily misread dosages and labels. Rigorous human proof-reading is always required.
+
+
 ## 🗣️ Hardware-Aware Voice Search
 
 The search field supports voice dictation parsed by a custom NLP engine. Ask natural questions to locate things ("Find my grey jeans" or "Where is the USB to TTL converter?"), check stock ("How many BNCQ9 connectors do I have?"), or group items ("List my microcontrollers").
@@ -83,6 +88,10 @@ The search field supports voice dictation parsed by a custom NLP engine. Ask nat
 Standard NLP stemmers usually destroy alphanumeric model numbers. Troves' engine explicitly rescues tokens containing digits, ensuring terms like `ESP32`, `LM317`, or `1k` survive. It also uses bidirectional unit translation, meaning if you say "10 microfarad", it perfectly matches the `10µF` stored in your database.
 
 You can test the intent parser without a microphone by prefixing your search with `/v ` (e.g., `/v where are my 10k ohm resistors?`).
+
+**Extending to Other Domains:**
+Because the Voice Engine relies on dictionaries and regular expressions rather than rigid database schemas, extending it to entirely different troves (like a wardrobe or wine cellar) is trivial. You just expand the pre-processing maps in `VoiceEngine.ts` to add domain-specific phonetics (e.g., mapping `Cab Sauv` to `Cabernet Sauvignon` or expanding `32x34` to `waist 32 length 34` for TTS) and custom intent triggers.
+
 
 ## 📚 The Knowledge Base (Link-Rot Prevention)
 
@@ -110,14 +119,24 @@ The Extension Engine handles asynchronous routing, offline queuing, and secure e
 
 ## 🔒 Privacy, Transparency & BYOM
 
+**Completely Free (If you want it to be):**
+You do not need expensive subscriptions to run Troves. The free tiers for Google Gemini (15 requests/min) and Groq are generous and completely sufficient for a normal household. I have not paid a single cent during my use or development.
+
+**Bring Your Own Model & Granular Routing:**
+Troves supports any OpenAI-compatible API (Ollama, LM Studio, vLLM) alongside native Groq and Gemini. You aren't restricted to a single model per modality. You can map specific cognitive tasks via `.env` overrides: route `AI_TEXT_PARSER` to a free local Ollama instance for background JSON structuring, while pointing `AI_TEXT_SUMMARY` to Groq for fast webpage summaries.
+
+**Multiple Isolated Databases:**
+You aren't forced into one giant bucket. You can run completely separate, isolated inventories (e.g., one for shoes, another for clothes, and a strict one for electronics).
+
+**The `NO_THIRD_PARTY_SERVICES` Flag:**
+I really dislike it when I have to register for 3rd-party services to try software. If you set `NO_THIRD_PARTY_SERVICES = true` in your `.env` file, you can use the core app entirely offline without any API keys (though adding new items will require more manual entry).
+
 **Your data is completely yours and sits securely on your own device.**
 Your entire database runs from a single SQLite file, and all photos/documents are saved directly into your local upload folder. There is no cloud telemetry, no forced accounts, and no vendor lock-in.
 
 **Transparency:**
 Troves offers full transparency over what is being sent to external APIs. In the `/activity` dashboard, you can view the exact data sent to the Vision model, its raw JSON responses, execution times, and possible token usage limits.
 
-**Bring Your Own Model & Granular Routing:**
-Troves supports any OpenAI-compatible API (Ollama, LM Studio, vLLM) alongside native Groq and Gemini. You aren't restricted to a single model per modality. You can map specific cognitive tasks via `.env` overrides: route `AI_TEXT_PARSER` to a free local Ollama instance for background JSON structuring, while pointing `AI_TEXT_SUMMARY` to Groq for fast webpage summaries.
 
 ## Some Screenshots
 It's a couple of years overdue because I never really did anything about the visuals. But, let's get the ball rolling in 2026! The first screenshots:
@@ -167,8 +186,58 @@ Run the included HTTPS setup script:
 ```bash
 bash bin/setup-https.sh
 ```
-
 Follow the instructions to install the generated `rootCA.crt` on your phone, generate the local `.pem` files, and your traffic remains fast, unrestricted, and completely offline.
+
+
+## 💻 Development & Under the Hood
+**Tech Stack:** SvelteKit 2, PWA, Prisma, SQLite, Tailwind CSS, TypeScript, LLMs + various ML models.
+**A Note on Terminology:** While the UI refers to your top-level databases as "Troves", the underlying database schema still calls them "Inventories". Furthermore, the bulk camera feature is called "Multi-Scan" in the UI, but referred to as "Collections" in the code. I mention this because there is bound to be confusion if you start poking around the repo.
+
+### Dev Setup
+```bash
+# 1. Clone the repo
+npx degit romland/troves troves
+cd troves/sveltekit-starter
+
+# 2. Setup environment
+cp .env.example .env
+npm install
+
+# 3. Setup database
+npx prisma migrate dev --name init
+npx prisma db seed
+
+# 4. Run dev server
+npm run dev
+```
+
+### The ARRRGH's (dev troubleshooting)
+This is for myself.
+
+**Canvas Module Error:** If you get `Error: Cannot find module '../build/Release/canvas.node'` after `npm install`:
+```bash
+cd node_modules/canvas
+npx node-gyp rebuild
+```
+
+**Prisma Error:** If you deleted `node_modules` and Prisma breaks:
+```bash
+npx prisma generate
+```
+
+**Updating yt-dlp:** If video archiving stops working, YouTube likely changed their player. Manually update yt-dlp:
+```bash
+P="$(which yt-dlp)" && sudo wget https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -O "$P" && sudo chmod a+rx "$P"
+```
+
+## 📌 My Personal Setup (TODO, flesh this out)
+*Document how I actually use this day-to-day:*
+* Which thermal label printer I use.
+* Which hardware cabinets and organizers I rely on.
+* Pictures of my physical containers.
+* The Firefox QR-code generator extension I use for current links.
+* Which fields I actually bother filling in vs. leaving to the AI.
+
 
 ## 💡 Hacks & Pro-Tips
 
