@@ -126,6 +126,11 @@ Troves supports a drop-in, zero-config plugin architecture. If you want to ping 
 
 The Extension Engine handles asynchronous routing, offline queuing, and secure environment variable injection, and supports hot-reloading plugins without server restarts.
 
+Check out the [Extensions Documentation](docs/extensions/01-architecture.md) to write your own.
+
+Or ... just use one of the already available extensions: [Spotify](docs/extensions/99-more-examples/spotify-music-enhancer.js), [Google Books](docs/extensions/99-more-examples/google-books-enhancer.js), [Mouser](docs/extensions/99-more-examples/mouser-spec-downloader.js), [Vinted](docs/extensions/99-more-examples/vinted-detailed-search-scout.js), [etc](docs/extensions/99-more-examples/).
+
+
 ## 🔒 Privacy, Transparency & BYOM
 
 **Completely Free (If you want it to be):**  
