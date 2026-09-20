@@ -130,6 +130,7 @@ Check out the [Extensions Documentation](docs/extensions/01-architecture.md) to 
 
 Or ... just use one of the already available extensions: [Spotify](docs/extensions/99-more-examples/spotify-music-enhancer.js), [Google Books](docs/extensions/99-more-examples/google-books-enhancer.js), [Mouser](docs/extensions/99-more-examples/mouser-spec-downloader.js), [Vinted](docs/extensions/99-more-examples/vinted-detailed-search-scout.js), [etc](docs/extensions/99-more-examples/).
 
+⚠️ SECURITY HEADS-UP: Extensions execute in the core server context. They have unrestricted access to .env variables, database, and local filesystem. Only install extensions you verified yourself or from sources you trust. Installing a malicious plugin is equivalent to giving your server away. If you use an LLM to write a plugin, verify that it does not expose environment variables to unverified third-party endpoints.
 
 ## 🔒 Privacy, Transparency & BYOM
 

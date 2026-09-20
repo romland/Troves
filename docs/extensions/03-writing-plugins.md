@@ -2,9 +2,9 @@
 
 Troves supports a zero-config, drop-in plugin architecture. To add a new integration, simply place a `.js` file into the `data/plugins/` directory. Troves will load it when the server starts, or you can instantly apply changes by clicking **Hot Reload Plugins** in the **Settings > Admin** dashboard. You can also create and edit plugins directly from the browser there!
 
-> **⚠️ SECURITY WARNING:**
-> Plugins execute in the core Node.js server context. They have unrestricted access to the `.env` variables, the database, and the local filesystem. **Only install plugins from sources you completely trust.** Installing a malicious plugin is equivalent to handing over the root keys to your server.
-> If you use an LLM to write a plugin, carefully verify that it does not expose environment variables to unverified third-party endpoints.
+> **⚠️ SECURITY HEADS-UP:**  
+> Extensions execute in the core server context. They have unrestricted access to .env variables, database, and local filesystem. Only install extensions you verified yourself or from sources you trust. Installing a malicious plugin is equivalent to giving your server away. If you use an LLM to write a plugin, verify that it does not expose environment variables to unverified third-party endpoints.
+
 
 ## The Plugin Toolkit
 Plugins must `export default function`. Troves securely injects a toolkit object containing everything the plugin needs to operate, so you never have to worry about internal module resolution or SvelteKit SSR rules.
