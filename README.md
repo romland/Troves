@@ -277,7 +277,7 @@ P="$(which yt-dlp)" && sudo wget https://github.com/yt-dlp/yt-dlp/releases/lates
 * Which hardware cabinets and organizers I rely on.
 * Pictures of my physical containers.
 * The Firefox QR-code generator extension I use for current links.
-* Which fields I actually bother filling in vs. leaving to the AI.
+* Which fields I actually bother filling in vs. automated.
 
 
 ## 💡 Hacks & Pro-Tips
