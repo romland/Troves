@@ -11,6 +11,7 @@
 	
 	let name = '';
 	let contentsHint = '';
+	let isHintDirty = false;
 	
 	// =============================================================================
 	// [ARCHETYPE DEFAULTS CONFIGURATION - UI NOTE]
@@ -25,6 +26,12 @@
 	// =============================================================================
 	let selectedArchetype = 'hardware';
 	
+	// Auto-fill the contents hint based on the archetype if the user hasn't typed a custom one
+	$: activeArch =$page.data.archetypes?.find((a: any) => a.id === selectedArchetype);
+	$: if (activeArch?.contentsHint && !isHintDirty) {
+		contentsHint = activeArch.contentsHint;
+	}
+
 	function handleEnhance({ formElement }: any) {
 		return async ({ result, update }: any) => {
 			if (result.type === 'success' || result.type === 'redirect') {
@@ -32,6 +39,7 @@
 				modal.close();
 				name = '';
 				contentsHint = '';
+				isHintDirty = false;
 				selectedArchetype = 'hardware';
 				formElement.reset();
 			} else {
@@ -56,7 +64,7 @@
 		<div class="p-4 sm:p-6 overflow-y-auto flex flex-col gap-6 bg-base-50">
 			<FormInput label="Name your Trove" labelClass="font-semibold text-lg" name="name" bind:value={name} placeholder="e.g., Garage Workbench, Wine Cellar, Electronics, Shed..." required autocomplete="off" inputClass="input-lg rounded-2xl shadow-inner focus:border-primary" />
 			
-			<FormInput label="What will be in it? (1-3 words)" labelClass="font-semibold text-lg" name="contentsHint" bind:value={contentsHint} placeholder="e.g. vintage stamps, lego, cables, electronics, whiskey, clothes..." required inputClass="rounded-2xl shadow-inner focus:border-primary" class="-mt-2" />
+			<FormInput label="What will be in it? (1-3 words)" labelClass="font-semibold text-lg" name="contentsHint" bind:value={contentsHint} on:input={() => isHintDirty = true} placeholder="e.g. vintage stamps, lego, cables, electronics, whiskey, clothes..." required inputClass="rounded-2xl shadow-inner focus:border-primary" class="-mt-2" />
 			
 			<div>
                 <div class="label pb-2"><span class="label-text font-semibold text-lg">Select Archetype</span></div>
@@ -70,9 +78,9 @@
 								<div class="w-10 h-10 rounded-xl bg-base-200 flex items-center justify-center text-xl shrink-0 text-base-content peer-checked:bg-primary peer-checked:text-primary-content transition-colors"><i class="bi {type.icon}"></i></div>
 								<div class="flex flex-col flex-1 min-w-0 pr-6 h-full">
 									<span class="font-bold text-lg leading-tight mb-1">{type.name}</span>
-									<span class="text-xs text-gray-500 leading-snug mb-3">{type.examples}</span>
+									<span class="text-xs text-gray-500 leading-snug mb-3">{type.examples || 'Custom collection archetype.'}</span>
 									<div class="mt-auto pt-3 border-t border-base-200/60 flex flex-wrap gap-1.5 w-full min-w-0">
-										{#each type.defaults as def}
+										{#each (type.defaults || []) as def}
 										<span class="badge badge-sm badge-ghost text-[10px] font-bold uppercase tracking-wider max-w-full transition-colors {def.highlight ? 'bg-primary/10 text-primary border-primary/20 hover:bg-primary/20' : 'opacity-70 hover:opacity-100 hover:bg-base-200'}" title="{def.tooltip}">
 											<i class="bi {def.icon} mr-1 shrink-0"></i> 
 											<span class="truncate">{def.label}</span>

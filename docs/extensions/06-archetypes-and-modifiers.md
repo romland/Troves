@@ -10,6 +10,8 @@ An Archetype represents the highest-level concept of a Trove (e.g., "Hardware & 
 
 A plugin can register a new, specialized Archetype (like "Trollbeads Collection" or "Sneakers") that appears in this list. 
 
+> **Note:** You do NOT need to create a custom archetype plugin for every domain or vertical. In fact, it's quite rare. The standard generic archetypes (Apparel, Hardware, Consumables, etc.) bundled with Troves are incredibly robust and rely on dynamic LLM taxonomy generation. Custom Archetypes are reserved for highly specific reseller niches where enforcing a strict *pre-defined* schema across all users is mandatory.
+
 ```javascript
 export default function register({ registerArchetype }) {
     registerArchetype({
