@@ -28,3 +28,4 @@ data/
 docker-compose.override.yml
 prisma/dev.db.bak
 fix-prompt.txt
+docs/extensions/99-more-examples/
