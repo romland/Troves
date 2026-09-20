@@ -17,15 +17,15 @@ Just snap a picture, or paste in a URL and let the system organize it.
 ## 📸 The Core Workflow
 <table align="right" width="30%">
   <tr>
-    <td>
-        <img src="./.github/screenshots/gif-multi-scan-cds.gif" width="100%" alt="Multi-scan CDs" />
-    </td>
-  </tr>
-  <tr>
     <td align="center">
         <i>
             <i>This demonstrates the <a href="./docs/extensions/04-examples.md">Spotify Extension</a> during bulk import of CDs</i>
         </i>
+    </td>
+  </tr>
+  <tr>
+    <td>
+        <img src="./.github/screenshots/gif-multi-scan-cds.gif" width="100%" alt="Multi-scan CDs" />
     </td>
   </tr>
 </table>
@@ -58,28 +58,6 @@ Image-recognition tools are naturally messy. If you feed the system photos of th
 If you take a picture of a jacket on your bed today, the lighting and folds will look completely different than when you first logged it hanging in a closet months ago. To handle this, Troves cross-references the visual details and the text to figure out if it's the same item, ensuring it doesn't log a duplicate or confuse two completely different blue shirts.
 
 *Note:* Does the vision model sometimes guess wrong? Look for the ✨ Sparkle icon next to the title. Click it to provide a hint (e.g. "It's an IKEA MITTZON desk") to nudge the classification. Empty categories vaporize if you move the last item out of them, keeping your database clean.
-
-
-### Some very random screenshots
-It's a couple of years overdue because I never really did anything about the visuals...  
-But, let's get the ball rolling in 2026! The first screenshots:
-
-<div>
-    <img src="./.github/screenshots/000-create-trove.webp" width="19%" alt="" />
-    <img src="./.github/screenshots/003-book-search.webp" width="19%" alt="" />
-    <img src="./.github/screenshots/004-document-search.webp" width="19%" alt="" />
-    <img src="./.github/screenshots/005-items-electronics.webp" width="19%" alt="" />
-    <img src="./.github/screenshots/008-add-single.webp" width="19%" alt="" />
-</div>
-
-<div>
-    <img src="./.github/screenshots/014-trove-settings.webp" width="19%" alt="" />
-    <img src="./.github/screenshots/016-activity-model-use.webp" width="19%" alt="" />
-    <img src="./.github/screenshots/018-spatially-mapped.webp" width="19%" alt="" />
-    <img src="./.github/screenshots/020-advanced-search.webp" width="19%" alt="" />
-    <img src="./.github/screenshots/025-garden.webp" width="19%" alt="" />
-</div>
-
 
 
 ## 🗺️ Spatial Mapping vs. Semantic Tagging
@@ -139,6 +117,25 @@ Troves offers full transparency over what is being sent to external APIs. In the
 
 **Bring Your Own Model & Granular Routing:**
 Troves supports any OpenAI-compatible API (Ollama, LM Studio, vLLM) alongside native Groq and Gemini. You aren't restricted to a single model per modality. You can map specific cognitive tasks via `.env` overrides: route `AI_TEXT_PARSER` to a free local Ollama instance for background JSON structuring, while pointing `AI_TEXT_SUMMARY` to Groq for fast webpage summaries.
+
+## Some Screenshots
+It's a couple of years overdue because I never really did anything about the visuals. But, let's get the ball rolling in 2026! The first screenshots:
+
+<div>
+    <img src="./.github/screenshots/000-create-trove.webp" width="19%" alt="" />
+    <img src="./.github/screenshots/003-book-search.webp" width="19%" alt="" />
+    <img src="./.github/screenshots/004-document-search.webp" width="19%" alt="" />
+    <img src="./.github/screenshots/005-items-electronics.webp" width="19%" alt="" />
+    <img src="./.github/screenshots/008-add-single.webp" width="19%" alt="" />
+</div>
+
+<div>
+    <img src="./.github/screenshots/014-trove-settings.webp" width="19%" alt="" />
+    <img src="./.github/screenshots/016-activity-model-use.webp" width="19%" alt="" />
+    <img src="./.github/screenshots/018-spatially-mapped.webp" width="19%" alt="" />
+    <img src="./.github/screenshots/020-advanced-search.webp" width="19%" alt="" />
+    <img src="./.github/screenshots/025-garden.webp" width="19%" alt="" />
+</div>
 
 ---
 
