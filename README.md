@@ -234,8 +234,8 @@ While the UI refers to your top-level databases as "Troves", the underlying data
 ### Dev Setup
 ```bash
 # 1. Clone the repo
-npx degit romland/troves troves
-cd troves/sveltekit-starter
+git clone https://github.com/romland/Troves.git
+cd troves
 
 # 2. Setup environment
 cp .env.example .env
