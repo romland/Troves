@@ -35,33 +35,52 @@ export default function register({ registerArchetype }) {
 
 ## 2. Prompt Modifiers (Middleware Waterfall)
 
-Troves runs purely asynchronous background queues. You cannot block the user's UI. However, right before the Vision model is executed, the `ExtensionManager` passes the raw prompt through the `applyModifiers` waterfall.
+Troves runs purely asynchronous background queues. You cannot block the user's UI. However, right before the Vision model is executed, the `ExtensionManager` passes the vision prompt through the `applyModifiers` waterfall.
 
 This allows your plugin to **silently inject expertise into the Vision model** based on the active archetype, completely eliminating the need for the user to type manual hints.
 
+### The `PromptBuilder` Object
+
+To give more control over the prompt and help preventing contradictions or overriding the "security rules" (cough, sigh), the `beforeVisionClassification` hook does NOT receive a raw string. 
+
+Instead, it receives a structured `PromptBuilder` object:
+
+```typescript
+{
+    identity: string,       // e.g., "Analyze this image for a home inventory system."
+    context: string[],      // Schema dictionaries, existing categories, user hints
+    domainExpertise: string[], // <-- Extensions push their custom instructions here!
+    rules: string[],        // Core engine rules
+    tasks: string[],        // Expected JSON output fields
+    security: string[]      // Absolute bottom sandbox rules "preventing" (cough sigh) prompt injection
+}
+
+```
+
+Troves compiles this object back into a final string *after* all plugins have touched it, ensuring the structural integrity of the request.
+
 ```javascript
 export default function register({ addModifier }) {
-    // Intercept the prompt for the vision model in flight
-    addModifier('beforeVisionClassification', (basePrompt, context) => {
-        
+    // Intercept the structured prompt object for the vision model in flight
+    addModifier('beforeVisionClassification', (promptObj, context) => {
         // Ensure we only mess with our own Archetype!
-        if (context.archetype !== 'sneakers') return basePrompt;
+        if (context.archetype !== 'sneakers') return promptObj;
 
-        // The LLM will obey this injected rule
         const expertPrompt = `
-            CRITICAL DOMAIN EXPERTISE: You are a sneaker authenticator and archivist.
+            You are a sneaker authenticator and archivist.
             Analyze this shoe. Extract the exact 'silhouette' (e.g., Jordan 1 High, Yeezy 350 V2) and the 'colorway' (e.g., Bred, Zebra).
             Ignore the background entirely.
         `;
         
-        return basePrompt + "\n\n" + expertPrompt;
+        promptObj.domainExpertise.push(expertPrompt);
+        return promptObj;
     });
 }
 ```
 
 ### Available Modifier Hooks
 
-- **`beforeVisionClassification`**: 
-  - **Payload**: `(basePrompt: string, context: { inventoryId: number, archetype: string, isMultiScan: boolean, hint?: string })`
-  - **Purpose**: Add specific visual extraction instructions before `analyze-draft` or `analyze-multiscan` executes.
-  - **Rule**: ALWAYS check the `context.archetype` before modifying the prompt, or you will accidentally break standard scans for unrelated Troves!
+* **`beforeVisionClassification`**:
+* **Payload**: `(promptObj: PromptBuilder, context: { inventoryId: number, archetype: string, isMultiScan: boolean, hint?: string })`
+* **Purpose**: Add specific visual extraction instructions before `analyze-draft` or `analyze-multiscan` executes.
+* **Rule**: ALWAYS check the `context.archetype` before modifying the prompt, or you will accidentally break standard scans for unrelated Troves!

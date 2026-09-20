@@ -88,7 +88,10 @@ class ExtensionManager {
         let result = value;
         for (const mod of mods) {
             try {
-                result = await mod.handler(result, context);
+                const modified = await mod.handler(result, context);
+                if (modified !== undefined) {
+                    result = modified;
+                }
             } catch (err) {
                 sysLog.error(`[ExtensionManager] Modifier '${name}' in plugin ${mod.pluginName} failed:`, err);
             }

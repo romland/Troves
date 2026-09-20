@@ -83,39 +83,40 @@ export default function register({ registerArchetype, addModifier, on, sysLog, l
 
     // 2. INJECT VISION EXPERTISE (One-Shot Prompt Interception)
     // This runs in memory right before the image is sent to the Vision model.
-    addModifier('beforeVisionClassification', (basePrompt, context) => {
-        if (context.archetype !== 'trollbeads') return basePrompt;
+	addModifier('beforeVisionClassification', (promptObj, context) => {
+		if (context.archetype !== 'trollbeads') return promptObj;
 
         const expertPrompt = `
-		CRITICAL DOMAIN EXPERTISE: You are an elite Trollbeads appraiser and archivist. You possess encyclopedic knowledge of Lise Aagaard's designs.
-		Analyze this bead/charm systematically:
-		
-		1. MATERIAL & CORE: 
-		   - Is it Murano Glass, Sterling Silver, 18k Gold, Amber, or Gemstone?
-		   - Look at the center hole (the core). A 'Small Core' is flush or barely protrudes. A 'Universal Core' has a wide, distinct silver tube protruding on both sides (designed to fit Pandora bracelets).
-		
-		2. HALLMARKS (AUTHENTICITY):
-		   - Look extremely closely at the silver core or the edge of silver charms. Authentic Trollbeads are stamped 'LAA 925S' (post-2006) or just '925S' / 'LAA'. Gold is 'LAA 750'.
-		   - If you see this stamp, set 'hallmark_verified' to true and transcribe the exact text into 'prominent_text_or_graphic'.
+You are an elite Trollbeads appraiser and archivist. You possess encyclopedic knowledge of Lise Aagaard's designs.
+Analyze this bead/charm systematically:
 
-		3. GLASS BEAD CHEAT SHEET (If Glass):
-		   - Armadillo: Layered, overlapping scale-like dots (like a 3D brick pattern).
-		   - Python: Wavy, snake-skin lines.
-		   - Prism: Faceted glass, triangular geometric cuts on the surface.
-		   - Bubbles/Drops: Internal trapped air bubbles (e.g., 'Azure Bubbles' is earthy brown/blue with deep bubbles).
-		   - Dichroic: Highly reflective, glittery, metallic foil embedded in the glass.
-		   - Flowers: Distinct petals, often embedded deep in clear glass (e.g., 'Desert Rose', 'Milan', 'Traces').
-		   - OOAK (One of a Kind): Often features 6 dots/buds, unique color combos not in the main catalog, or experimental swirls. If it looks non-standard, name it "OOAK" and describe the colors thoroughly.
-		
-		4. SILVER CHARM MOTIFS (If Silver):
-		   - Identify the specific sculptural subject (e.g., Troll, Knot, Animal, Letter, Mythological figure).
+1. MATERIAL & CORE: 
+    - Is it Murano Glass, Sterling Silver, 18k Gold, Amber, or Gemstone?
+    - Look at the center hole (the core). A 'Small Core' is flush or barely protrudes. A 'Universal Core' has a wide, distinct silver tube protruding on both sides (designed to fit Pandora bracelets).
 
-		OUTPUT INSTRUCTIONS:
-		- Extract the exact commercial 'bead_name' if known. If unknown, describe its visual motif vividly (e.g., 'Silver Floral Knot' or 'Blue Dot OOAK').
-		- Strictly categorize its 'pattern_family' and 'material'.
-        `;
+2. HALLMARKS (AUTHENTICITY):
+    - Look extremely closely at the silver core or the edge of silver charms. Authentic Trollbeads are stamped 'LAA 925S' (post-2006) or just '925S' / 'LAA'. Gold is 'LAA 750'.
+    - If you see this stamp, set 'hallmark_verified' to true and transcribe the exact text into 'prominent_text_or_graphic'.
+
+3. GLASS BEAD CHEAT SHEET (If Glass):
+    - Armadillo: Layered, overlapping scale-like dots (like a 3D brick pattern).
+    - Python: Wavy, snake-skin lines.
+    - Prism: Faceted glass, triangular geometric cuts on the surface.
+    - Bubbles/Drops: Internal trapped air bubbles (e.g., 'Azure Bubbles' is earthy brown/blue with deep bubbles).
+    - Dichroic: Highly reflective, glittery, metallic foil embedded in the glass.
+    - Flowers: Distinct petals, often embedded deep in clear glass (e.g., 'Desert Rose', 'Milan', 'Traces').
+    - OOAK (One of a Kind): Often features 6 dots/buds, unique color combos not in the main catalog, or experimental swirls. If it looks non-standard, name it "OOAK" and describe the colors thoroughly.
+
+4. SILVER CHARM MOTIFS (If Silver):
+    - Identify the specific sculptural subject (e.g., Troll, Knot, Animal, Letter, Mythological figure).
+
+OUTPUT INSTRUCTIONS:
+- Extract the exact commercial 'bead_name' if known. If unknown, describe its visual motif vividly (e.g., 'Silver Floral Knot' or 'Blue Dot OOAK').
+- Strictly categorize its 'pattern_family' and 'material'.
+`;
         
-        return basePrompt + "\n\n" + expertPrompt;
+        promptObj.domainExpertise.push(expertPrompt);
+        return promptObj;
     });
 
     // 3. POST-PROCESSING (SEO Titles & Grounded Web Search)
