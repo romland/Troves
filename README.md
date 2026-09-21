@@ -213,6 +213,8 @@ It's a couple of years overdue because I never really did anything about the vis
     <img src="./.github/screenshots/025-garden.webp" width="19%" alt="" />
 </div>
 
+<i>More <a href="./docs/Screenshots.md">screenshots</a> here</i>
+
 ---
 
 ## 🛠️ Installation & Setup
