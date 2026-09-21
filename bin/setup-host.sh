@@ -423,6 +423,10 @@ else
     [ -f "$CA_DIR/rootCA.pem" ] && cp -f "$CA_DIR/rootCA.pem" ./rootCA.crt
 fi
 
+# Guarantee SSL files exist as regular files so Docker never mounts them as directories
+[ -f cert.pem ] || touch cert.pem
+[ -f key.pem ] || touch key.pem
+
 # ------------------------------------------------------------------------------
 # Setup Summary
 # ------------------------------------------------------------------------------
