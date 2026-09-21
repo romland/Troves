@@ -387,25 +387,35 @@ grep -q "^ENABLE_SINGLEFILE=" .env && sed -i "s/^ENABLE_SINGLEFILE=.*/ENABLE_SIN
 success "Troves unpacked into $INSTALL_DIR"
 
 # ------------------------------------------------------------------------------
-# 7. Local LAN HTTPS & PWA Setup
+# 7. Network Configuration & PWA Setup
 # ------------------------------------------------------------------------------
-info "Configuring Local HTTPS for Mobile PWA on LAN..."
-if ! command -v mkcert &> /dev/null; then
-    MKARCH="amd64"
-    [ "$(uname -m)" = "aarch64" ] || [ "$(uname -m)" = "arm64" ] && MKARCH="arm64"
-    sudo apt-get install -y -qq libnss3-tools 2>/dev/null || true
-    sudo curl -fsSL -o /usr/local/bin/mkcert "https://dl.filippo.io/mkcert/latest?for=linux/${MKARCH}"
-    sudo chmod +x /usr/local/bin/mkcert
-fi
-
-mkcert -install >/dev/null 2>&1
 LAN_IP=$(ip route get 1.1.1.1 2>/dev/null | grep -oP 'src \K\S+' || hostname -I | awk '{print $1}')
 
-info "Generating SSL certificates for IP: $LAN_IP..."
-mkcert -cert-file cert.pem -key-file key.pem localhost 127.0.0.1 "$LAN_IP" >/dev/null 2>&1
+echo ""
+read -p "Is this server exposed to the public internet? (y/N): " PUBLIC_IP
+if [[ $PUBLIC_IP =~ ^[Yy]$ ]]; then
+    info "Public Server Detected."
+    echo "Skipping local mkcert installation. To ensure the mobile PWA works,"
+    echo "you should put Troves behind a reverse proxy (like Caddy or Nginx)"
+    echo "and use Let's Encrypt for standard SSL certificates."
+else
+    info "Configuring Local HTTPS for Mobile PWA on LAN..."
+    if ! command -v mkcert &> /dev/null; then
+        MKARCH="amd64"
+        [ "$(uname -m)" = "aarch64" ] || [ "$(uname -m)" = "arm64" ] && MKARCH="arm64"
+        sudo apt-get install -y -qq libnss3-tools 2>/dev/null || true
+        sudo curl -fsSL -o /usr/local/bin/mkcert "https://dl.filippo.io/mkcert/latest?for=linux/${MKARCH}"
+        sudo chmod +x /usr/local/bin/mkcert
+    fi
 
-CA_DIR=$(mkcert -CAROOT)
-[ -f "$CA_DIR/rootCA.pem" ] && cp -f "$CA_DIR/rootCA.pem" ./rootCA.crt
+    mkcert -install >/dev/null 2>&1
+    
+    info "Generating SSL certificates for IP: $LAN_IP..."
+    mkcert -cert-file cert.pem -key-file key.pem localhost 127.0.0.1 "$LAN_IP" >/dev/null 2>&1
+
+    CA_DIR=$(mkcert -CAROOT)
+    [ -f "$CA_DIR/rootCA.pem" ] && cp -f "$CA_DIR/rootCA.pem" ./rootCA.crt
+fi
 
 # ------------------------------------------------------------------------------
 # Setup Summary
@@ -421,6 +431,14 @@ echo ""
 echo "🔒 To enable mobile access, install the Root CA on your phone:"
 echo "   Run: python3 -m http.server 1025"
 echo "   Then open http://${LAN_IP}:1025/rootCA.crt on your phone."
+fi
+echo ""
+echo -e "${YELLOW}${BOLD}⚠️  CRITICAL NEXT STEP: CONFIGURE YOUR AI MODELS${NC}"
+echo "Troves relies on AI models to organize your items. Before starting,"
+echo "you MUST edit the '.env' file in this directory and add your API keys:"
+echo "  nano .env"
+echo "Look for GEMINI_API_KEY, GROQ_API_TOKEN, or OPENAI_API_TOKEN."
 echo ""
 echo "🚀 To start Troves: ./start.sh (App will be at https://${LAN_IP}:${USER_PORT:-3000})"
+echo "🚀 To manage Troves: ./troves.sh"
 echo "=========================================================================="
