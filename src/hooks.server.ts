@@ -3,7 +3,7 @@ import { redirect, type Handle } from "@sveltejs/kit";
 import { db } from "$lib/server/database";
 import { initFTS } from "$lib/server/fts";
 import { validateAndRefreshSession } from "$lib/server/session";
- import { extensionManager } from "$lib/server/extensions/ExtensionManager";
+import { extensionManager } from "$lib/server/extensions/ExtensionManager";
 import { pingTelemetry } from "$lib/server/telemetry";
 
 export interface UserPreferences {
@@ -25,36 +25,36 @@ if (!building) {
 }
 
 export const handle = (async ({ event, resolve }) => {
-	// 1. Initial Setup Guard: Route new installations directly to the Setup Wizard
-	if (!building && !isSetupComplete) {
-		const userCount = await db.user.count();
-		if (userCount > 0) {
-			isSetupComplete = true;
-		} else if (!event.url.pathname.startsWith('/setup')) {
-			throw redirect(307, '/setup');
-		}
-	}
-
-	if (isSetupComplete && event.url.pathname.startsWith('/setup')) {
+    // 1. Initial Setup Guard: Route new installations directly to the Setup Wizard
+    if (!building && !isSetupComplete) {
+        const userCount = await db.user.count();
+        if (userCount > 0) {
+            isSetupComplete = true;
+        } else if (!event.url.pathname.startsWith('/setup')) {
+            throw redirect(307, '/setup');
+        }
+    }
+    
+    if (isSetupComplete && event.url.pathname.startsWith('/setup')) {
         throw redirect(303, '/login');
     }
-
-	let theme: string = 'coffee';  // default theme
-
-	const session = event.cookies.get('session');
-	const newTheme = event.url.searchParams.get('theme');
-	const cookieTheme = event.cookies.get('theme');
-	const path = event.url.pathname;
-
-	if (newTheme) {
-		theme = newTheme;
-	} else if (cookieTheme) {
-		theme = cookieTheme;
-	}
-
-	if (session) {
+    
+    let theme: string = 'coffee';  // default theme
+    
+    const session = event.cookies.get('session');
+    const newTheme = event.url.searchParams.get('theme');
+    const cookieTheme = event.cookies.get('theme');
+    const path = event.url.pathname;
+    
+    if (newTheme) {
+        theme = newTheme;
+    } else if (cookieTheme) {
+        theme = cookieTheme;
+    }
+    
+    if (session) {
         const validSession = await validateAndRefreshSession(session, event.cookies);
-
+        
         if (validSession) {
             const user = validSession.user;
             event.locals.user = {
@@ -67,7 +67,7 @@ export const handle = (async ({ event, resolve }) => {
                 preferences: user.preferences,
                 canCreateInventories: user.canCreateInventories
             };
-
+            
             // Inventory Routing Logic
             const cookieInvId = event.cookies.get('activeInventoryId');
             const allowedIds = user.inventoryAccess.map(ia => ia.inventoryId);
@@ -78,37 +78,37 @@ export const handle = (async ({ event, resolve }) => {
                 event.locals.activeInventoryId = allowedIds[0];
                 event.cookies.set('activeInventoryId', allowedIds[0].toString(), { path: '/' });
             } else {
-                    event.locals.activeInventoryId = null;
-                }
-
-                // Hydrate the user's role for this specific inventory
-                if (event.locals.activeInventoryId) {
-                    const access = user.inventoryAccess.find(ia => ia.inventoryId === event.locals.activeInventoryId);
-                    event.locals.role = access?.role || 'VIEWER';
-                } else {
-                    event.locals.role = 'NONE';
+                event.locals.activeInventoryId = null;
             }
-
-				try {
-			const prefs: UserPreferences = JSON.parse(user.preferences || '{}');
-					if (prefs.largeFont) event.locals.largeFont = true;
-				} catch(e) {}
-
+            
+            // Hydrate the user's role for this specific inventory
+            if (event.locals.activeInventoryId) {
+                const access = user.inventoryAccess.find(ia => ia.inventoryId === event.locals.activeInventoryId);
+                event.locals.role = access?.role || 'VIEWER';
+            } else {
+                event.locals.role = 'NONE';
+            }
+            
+            try {
+                const prefs: UserPreferences = JSON.parse(user.preferences || '{}');
+                if (prefs.largeFont) event.locals.largeFont = true;
+            } catch(e) {}
+            
             // Sort Routing Logic (Remembered per inventory)
             const urlSort = event.url.searchParams.get('sort');
             if (urlSort) {
                 event.cookies.set('troves_sort_' + event.locals.activeInventoryId, urlSort, { path: '/', maxAge: 60 * 60 * 24 * 365, httpOnly: false });
                 event.locals.activeSort = urlSort;
             } else {
-			const cookieSort = event.cookies.get('troves_sort_' + event.locals.activeInventoryId);
-			let dbSort = 'newest';
-			try {
-				const currentPrefs: UserPreferences = JSON.parse(user.preferences || '{}');
-				if (currentPrefs.defaultSorts?.[String(event.locals.activeInventoryId)]) dbSort = currentPrefs.defaultSorts[String(event.locals.activeInventoryId)];
-			} catch (e) {}
-			event.locals.activeSort = cookieSort || dbSort || 'newest';
+                const cookieSort = event.cookies.get('troves_sort_' + event.locals.activeInventoryId);
+                let dbSort = 'newest';
+                try {
+                    const currentPrefs: UserPreferences = JSON.parse(user.preferences || '{}');
+                    if (currentPrefs.defaultSorts?.[String(event.locals.activeInventoryId)]) dbSort = currentPrefs.defaultSorts[String(event.locals.activeInventoryId)];
+                } catch (e) {}
+                event.locals.activeSort = cookieSort || dbSort || 'newest';
             }
-
+            
             // UI View Modes
             const cookieViewMode = event.cookies.get('troves_viewmode_' + event.locals.activeInventoryId);
             if (cookieViewMode) {
@@ -120,7 +120,7 @@ export const handle = (async ({ event, resolve }) => {
                 event.locals.activeViewMode = 'grid';
             }
             event.locals.activeAddMode = event.cookies.get('troves_add_mode') || 'single';
-
+            
         } else {
             // Destroy the invalid cookie so we don't keep querying a dead token
             event.cookies.delete('session', { path: '/' }); 
@@ -140,14 +140,14 @@ export const handle = (async ({ event, resolve }) => {
         // Prevent access to standard routes if they belong to no inventory, funnel to profile
         redirect(303, '/profile');
     }
-
-	return await resolve(event, {
-		transformPageChunk: ({ html }) => {
-			let out = html.replace('data-theme=""', `data-theme="${theme}"`);
-			if (event.locals.largeFont) {
-				out = out.replace('<html ', '<html style="font-size: 110%;" ');
-			}
-			return out;
-		}
-	});
+    
+    return await resolve(event, {
+        transformPageChunk: ({ html }) => {
+            let out = html.replace('data-theme=""', `data-theme="${theme}"`);
+            if (event.locals.largeFont) {
+                out = out.replace('<html ', '<html style="font-size: 110%;" ');
+            }
+            return out;
+        }
+    });
 }) satisfies Handle;
