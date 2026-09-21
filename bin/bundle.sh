@@ -40,6 +40,7 @@ cp package.json package-lock.json .env.example server.js dist/
 echo "🧹 Adding uninstall script to release..."
 # Place it right in the root next to start.sh for easy access
 [ -f bin/uninstall.sh ] && cp bin/uninstall.sh dist/uninstall.sh && chmod +x dist/uninstall.sh
+[ -f bin/troves.sh ] && cp bin/troves.sh dist/troves.sh && chmod +x dist/troves.sh
 
 echo "🐳 Copying Docker services (excluding caches & virtualenvs)..."
 rsync -av \
