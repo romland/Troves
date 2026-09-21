@@ -37,6 +37,7 @@ RUN npm ci --omit=dev && npm install prisma@^5.0.0 && npx prisma generate
 # 3. Copy the pre-built application from the distribution bundle
 COPY build ./build
 COPY server.js ./
+COPY scripts/teardown-fts.js ./scripts/teardown-fts.js
 
 EXPOSE 3000
 ENV NODE_ENV=production

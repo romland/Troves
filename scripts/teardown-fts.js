@@ -11,23 +11,23 @@ import path from 'path';
  * will automatically and safely rebuild the FTS index on boot via `initFTS()`.
  */
 try {
-    const dbPath = path.resolve(process.cwd(), 'prisma/dev.db');
-    const db = new Database(dbPath);
-    
-    db.exec(`
-        DROP TRIGGER IF EXISTS Document_ai;
-        DROP TRIGGER IF EXISTS Document_ad;
-        DROP TRIGGER IF EXISTS Document_au;
-        DROP TABLE IF EXISTS DocumentIndex;
+	const dbPath = path.resolve(process.cwd(), 'prisma/dev.db');
+	const db = new Database(dbPath);
+	
+	db.exec(`
+		DROP TRIGGER IF EXISTS Document_ai;
+		DROP TRIGGER IF EXISTS Document_ad;
+		DROP TRIGGER IF EXISTS Document_au;
+		DROP TABLE IF EXISTS DocumentIndex;
 		DROP TABLE IF EXISTS DocumentIndex_config;
 		DROP TABLE IF EXISTS DocumentIndex_content;
 		DROP TABLE IF EXISTS DocumentIndex_data;
 		DROP TABLE IF EXISTS DocumentIndex_docsize;
 		DROP TABLE IF EXISTS DocumentIndex_idx;
-    `);
-    
-    console.log('✅ [Pre-Push] Safely cleared FTS5 tables and triggers for Prisma compatibility.');
-    db.close();
-} catch (e: any) {
-    console.warn(`⚠️ [Pre-Push] Could not drop FTS tables (${e.message}). Skipping.`);
+	`);
+	
+	console.log('✅ [Pre-Push] Safely cleared FTS5 tables and triggers for Prisma compatibility.');
+	db.close();
+} catch (e) {
+	console.warn(`⚠️ [Pre-Push] Could not drop FTS tables (${e.message}). Skipping.`);
 }

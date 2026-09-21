@@ -51,6 +51,7 @@ WORKDIR /app
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/build ./build
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/scripts/teardown-fts.js ./scripts/teardown-fts.js
 COPY package*.json server.js ./
 
 EXPOSE 3000

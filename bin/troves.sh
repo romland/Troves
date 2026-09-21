@@ -15,7 +15,8 @@ case "$COMMAND" in
         fi
         pkill -f "node server.js" 2>/dev/null || true
         if grep -q "^DOCKER_MODE=true" .env 2>/dev/null; then
-            docker compose --profile full down || true
+            # docker compose --profile full down || true
+            docker compose --profile "*" down --remove-orphans || true
         else
             docker compose down || true
         fi
@@ -28,10 +29,16 @@ case "$COMMAND" in
         ;;
     update)
         echo "🔄 Updating Troves..."
-        $0 stop
-        # Re-fetch latest via the setup script mechanism
-        curl -fsSL https://raw.githubusercontent.com/romland/troves/main/bin/setup-host.sh | bash -s -- -y
-        $0 start
+        if grep -q "^DOCKER_MODE=true" .env 2>/dev/null; then
+            echo "🐳 Pulling latest Docker images..."
+            docker compose --profile "*" pull
+            $0 restart
+        else
+            $0 stop
+            # Re-fetch latest via the setup script mechanism
+            curl -fsSL https://raw.githubusercontent.com/romland/troves/main/bin/setup-host.sh | bash -s -- -y
+            $0 start
+        fi
         ;;
     logs)
         bash bin/logs.sh
