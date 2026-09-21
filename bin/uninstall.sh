@@ -56,7 +56,8 @@ if [ -n "$DOCKER_CMD" ]; then
     
     # Gracefully spin down using compose if the file still exists
     if [ -f docker-compose.yml ]; then
-        $DOCKER_CMD compose down || true
+        # $DOCKER_CMD compose down || true
+        $DOCKER_CMD compose --profile "*" down --remove-orphans || true
     else
         # Brute force fallback if docker-compose.yml was already deleted
         $DOCKER_CMD rm -f troves-app troves-rembg troves-paddleocr troves-singlefile 2>/dev/null \vert{}\vert{} true$DOCKER_CMD network rm troves_default 2>/dev/null || true
