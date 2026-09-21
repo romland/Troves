@@ -66,10 +66,10 @@ That said, if you're feeling ambitious, you can:
 **Bulk Import & The Comparison Lens**  
 If bulk import is how you ingest a mountain of data into Troves, the Comparison Lens is how you audit reality against your database using set math. *(Tip: Count the physical items before snapping a multi-scan photo. It gives you a quick sanity check to know if your picture was clear enough for the model to catch everything).*
 
-* **Flea Market Scan ($A \setminus B$):**  
+* **Flea Market Scan ($A \setminus B$)**  
 Snap a photo of a crate of 40 CDs or books to see what is **✨ New to You** and what is already **✓ In Your Trove**.
 
-* **Kit Check ($B \setminus A$):**  
+* **Kit Check ($B \setminus A$)**  
 Dump your stuff on a table, scope the comparison to the `#camping-gear` tag, and snap a photo to see exactly what you forgot to pack (a bit of a forced example, but ah, why not...).
 
 
@@ -77,10 +77,10 @@ Dump your stuff on a table, scope the comparison to the `#camping-gear` tag, and
 
 Because Troves has to handle a bit of everything, from winter coats to spark plugs to whiskey to trollbeads to ESP32 boards, it can't be pre-programmed with rigid spreadsheet columns like "Brand" or "Shoe Size." Instead, it creates, destroys (and updates) its own structure on the fly using an Entity-Attribute-Value taxonomy. There's a bit more to it, but that is the idea.
 
-**Keeping the language consistent:**  
+**Keeping the language consistent**  
 Image-recognition tools are naturally messy. If you feed the system photos of three different t-shirts, it might label one with "short sleeves," another with "arm style," and a third with "sleeve length." You can't build a useful search tool out of that. To fix this, the first time the app sees a new category, it locks in a specific set of labels and forces the software to reuse those exact terms for all future items. It turns messy, fluid text into a clean, predictable database. Mildly related, but not quite: Empty categories vaporize if you move the last item out of them, keeping your database clean.
 
-**Spotting duplicates from photos:**  
+**Spotting duplicates from photos**  
 If you take a picture of a jacket on your bed today, the lighting and folds will look completely different than when you first logged it hanging in a closet months ago. To handle this, Troves cross-references the visual details and the text to figure out if it's the same item, ensuring it doesn't log a duplicate or confuse two completely different blue shirts.
 
 ### Expect the classification to fail
@@ -105,10 +105,10 @@ You type or scan a name (e.g., "Garage Shelf 2" or "Moving Box A"). When you sea
 You snap an overhead photo of an open drawer, Gridfinity layout, or wine rack. You define the grid in the UI. Then, the app asks, "Tap where it goes."
 *Best for: Micro items. Resistors, screws, Lego parts. It bypasses the need to read tiny labels on 40 identical hardware trays.*
 
-**Deep Scan Grid:**  
+**Deep Scan Grid**  
 If you don't want to tap 60 times, hit ✨ Deep Scan. The Vision Model analyzes the entire drawer in one go, reading printed labels and identifying the physical components in each specific slot. Troves then opens a "Triage" screen where you step through the results, verify the model's guess, and accept it into your inventory.
 
-**⚠️ Important Note on Medication:**  
+**⚠️ Important Note on Medication**  
 Please do **NOT** use the automatic indexing, spatial mapping, or LLM-based label reading for organizing medication, drugs, or hazardous materials. Vision and Language models are eager servants and can easily misread dosages and labels. Rigorous human proof-reading is always required.
 
 
@@ -120,7 +120,7 @@ Standard NLP stemmers usually destroy alphanumeric model numbers. Troves' engine
 
 You can test the intent parser without a microphone by prefixing your search with `/v ` (e.g., `/v where are my 10k ohm resistors?`).
 
-**Extending to Other Domains:**  
+**Extending to Other Domains**  
 Because the Voice Engine relies on dictionaries and regular expressions rather than rigid database schemas, extending it to entirely different troves (like a wardrobe or wine cellar) is trivial. You just expand the pre-processing maps in `VoiceEngine.ts` to add domain-specific phonetics (e.g., mapping `Cab Sauv` to `Cabernet Sauvignon` or expanding `32x34` to `waist 32 length 34` for TTS) and custom intent triggers.
 
 
@@ -128,22 +128,22 @@ Because the Voice Engine relies on dictionaries and regular expressions rather t
 
 Troves isn't just for physical junk. It also hoards your digital files, manuals, datasheets, and notes, so you actually remember how to use the things you bought.
 
-* **Offline Archives:**  
+* **Offline Archives**  
 Never run into a dead link again. If you link to a webpage, manual, or spec sheet, Troves downloads, parses, summarizes, and archives it locally on your disk. (Scraping is restricted to 1-level depth to prevent infinite spidering).
-* **Digital Reader & EPUB Sync:**  
+* **Digital Reader & EPUB Sync**  
 Drop an EPUB or PDF into an item, and Troves extracts the cover art. The built-in reader saves your exact scroll position across sessions. Highlighting text inside an EPUB syncs that quote and the surrounding chapter context to the Trove's Notebook.
-* **Video Archiving:**  
+* **Video Archiving**  
 Paste a link to YouTube, Twitter, Reddit, or TikTok, and Troves uses `yt-dlp` in the background to physically download the video and archive it forever alongside your item.
 
 ## 🔍 Actually good searching for items and documents
 
 Search in most local apps is an afterthought. Troves uses SQLite Full Text Search (FTS) across the entire database, going far beyond standard title and tag matching.
 
-* **Deep Document Indexing:**  
+* **Deep Document Indexing**  
 If you attach a PDF manual, EPUB, or webpage to an item, Troves parses and indexes the text. You aren't just searching your physical inventory; you are searching your documentation.
-* **Fuzzy Search Toggles:**  
+* **Fuzzy Search Toggles**  
 Search stemming is great for tools, but infuriating when it floods an apparel search with false positives. You can toggle "Fuzzy Word Search" off per-trove for strict, exact-match queries.
-* **Spatial Context:**  
+* **Spatial Context**  
 Search results return the exact container, nested tray, and (visually) grid slot it currently occupies. Or in documents, the exact location of the text.
 
 ## 🔌 Extensions & Modding
@@ -165,22 +165,22 @@ Or ... just use one of the already available extensions: [Spotify](docs/extensio
 
 ## 🔒 Privacy, Transparency & BYOM
 
-**Completely Free (If you want it to be):**  
+**Completely Free (If you want it to be)**  
 You do not need expensive subscriptions to run Troves. The free tiers for Google Gemini (15 requests/min) and Groq are generous and completely sufficient for a normal household. I have not paid a single cent during my use or development.
 
-**Bring Your Own Model & Granular Routing:**  
+**Bring Your Own Model & Granular Routing**  
 Troves supports any OpenAI-compatible API (Ollama, LM Studio, vLLM) alongside native Groq and Gemini. You aren't restricted to a single model per modality. You can map specific cognitive tasks via `.env` overrides: route `AI_TEXT_PARSER` to a free local Ollama instance for background JSON structuring, while pointing `AI_TEXT_SUMMARY` to Groq for fast webpage summaries.
 
-**Multiple Isolated Databases:**  
+**Multiple Isolated Databases**  
 You aren't forced into one giant bucket. You can run completely separate, isolated inventories (e.g., one for shoes, another for clothes, and a strict one for electronics).
 
-**The `NO_THIRD_PARTY_SERVICES` Flag:**  
+**The `NO_THIRD_PARTY_SERVICES` Flag**  
 I really dislike it when I have to register for 3rd-party services to try software. If you set `NO_THIRD_PARTY_SERVICES = true` in your `.env` file, you can use the core app entirely offline without any API keys (though adding new items will require more manual entry).
 
 **Your data is completely yours and sits securely on your own device.**  
 Your entire database runs from a single SQLite file, and all photos/documents are saved directly into your local upload folder. There is no cloud telemetry, no forced accounts, and no vendor lock-in.
 
-**Transparency:**  
+**Transparency**  
 Troves offers full transparency over what is being sent to external APIs. In the `/activity` dashboard, you can view the exact data sent to the Vision model, its raw JSON responses, execution times, and possible token usage limits.
 
 
@@ -207,7 +207,7 @@ It's a couple of years overdue because I never really did anything about the vis
 
 ## 🛠️ Installation & Setup
 
-**Linux Installer:**  
+**Linux Installer**  
 ```bash
 mkdir troves && \
     cd troves && \
@@ -216,14 +216,14 @@ mkdir troves && \
 
 ```
 
-**Host Dependencies (Optional):**  
+**Host Dependencies (Optional)**  
 All external dependencies gracefully fall back if a tool isn't installed.
 
 * `poppler-utils` (extracts PDF first pages as thumbnails)
 * `ffmpeg` (extracts frame grabs from video files)
 * `yt-dlp` (downloads linked videos)
 
-**Local LAN HTTPS:**  
+**Local LAN HTTPS**  
 Mobile browsers strictly require HTTPS to use the Camera or install the PWA to your home screen. Why go through the hassle of local certs instead of a Cloudflare Tunnel? Because of the "trombone effect." If you use an external tunnel, taking a photo sends the image out over your internet connection to a remote datacenter, just to bounce it right back to the server sitting 5 feet away from you. Cloudflare/others also impose hard limits on uploads, etc.
 
 Run the included HTTPS setup script:
@@ -235,10 +235,10 @@ Follow the instructions to install the generated `rootCA.crt` on your phone, gen
 
 
 ## 💻 Development & Under the Hood
-**Stack:**  
+**Stack**  
 SvelteKit 2, PWA, Prisma, SQLite, Tailwind CSS, TypeScript, LLMs + various ML models.
 
-**A Note on Terminology:**  
+**A Note on Terminology**  
 While the UI refers to your top-level databases as "Troves", the underlying database schema still calls them "Inventories". Furthermore, the bulk camera feature is called "Multi-Scan" in the UI, but referred to as "Collections" in the code. I mention this because there is bound to be confusion if you start poking around the repo.
 
 ### Dev Setup
@@ -262,20 +262,20 @@ npm run dev
 ### The ARRRGH's (dev troubleshooting)
 This is for myself.
 
-**Canvas Module Error:**  
+**Canvas Module Error**  
 If you get `Error: Cannot find module '../build/Release/canvas.node'` after `npm install`:
 ```bash
 cd node_modules/canvas
 npx node-gyp rebuild
 ```
 
-**Prisma Error:**  
+**Prisma Error**  
 If you deleted `node_modules` and Prisma breaks:
 ```bash
 npx prisma generate
 ```
 
-**Updating yt-dlp:**  
+**Updating yt-dlp**  
 If video archiving stops working, YouTube likely changed their player. Manually update yt-dlp:
 ```bash
 P="$(which yt-dlp)" && sudo wget https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -O "$P" && sudo chmod a+rx "$P"
@@ -292,22 +292,22 @@ P="$(which yt-dlp)" && sudo wget https://github.com/yt-dlp/yt-dlp/releases/lates
 
 ## 💡 Hacks & Pro-Tips
 
-* **The Pool Noodle Hack ($2):**  
+* **The Pool Noodle Hack ($2)**  
 When scanning clothes, especially if you use the background removal feature, limp sleeves and hanger-pokes ruin the cutout. Slit a dense foam pool noodle down the side and slide it over the top bar of a standard wooden hanger. It immediately widens the shoulder profile.
 
-* **iOS Safari Share Workaround:**  
+* **iOS Safari Share Workaround**  
 Apple does not support the Web Share Target API for PWAs. To share things into Troves on an iPhone, build a quick iOS Shortcut that accepts URLs/Images, URL-encodes the input, and opens `https://[your-troves-ip]/timeline?pasteText=[Encoded Input]`.
 
-* **System Diagnostics:**  
+* **System Diagnostics**  
 If something breaks, check `/settings/admin` to run a self-diagnosis on host tools, Docker microservices (RemBG, OCR), and API configurations.
 
-* **Photo-Level Categories:**  
+* **Photo-Level Categories**  
 Need an item to exist in two categories? Give it multiple photos and assign a different category to each. The engine resolves categories at the photo level. (This also means changing a category requires opening the image lightbox and using the "..." menu there).
 
-* **Quick Notes:**  
+* **Quick Notes**  
 Long-tap the Notebook button to add a quick note without leaving your current context.
 
-* **Count the items:**  
+* **Count the items**  
 So, we all know generative models can be a bit ... excited. If you are doing large multi-cans (dozens of items), a good way to make sure you and the model are on the same page is to count the items before scanning. It'll give you an idea during triage if you had a good enough picture.
 
 
