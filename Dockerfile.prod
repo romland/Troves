@@ -31,7 +31,8 @@ WORKDIR /app
 # 2. Copy dependency manifests and install ONLY production packages
 COPY package*.json ./
 COPY prisma ./prisma/
-RUN npm ci --omit=dev && npx prisma generate
+# The prisma CLI is a devDependency, so we explicitly install it to generate the binary client and run migrations on boot
+RUN npm ci --omit=dev && npm install prisma@^5.0.0 && npx prisma generate
 
 # 3. Copy the pre-built application from the distribution bundle
 COPY build ./build

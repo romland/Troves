@@ -3,7 +3,7 @@ services:
     profiles: ["rembg", "full"]
     container_name: troves-rembg
     build: ./services/rembg
-    image: troves-rembg:latest
+    image: ghcr.io/romland/troves-rembg:latest
     command: s --no-ui
     environment:
       - OMP_NUM_THREADS=2
@@ -22,7 +22,7 @@ services:
     profiles: ["paddleocr", "full"]
     container_name: troves-paddleocr
     build: ./services/paddleocr
-    image: paddleocrfastapi:paddlejr
+    image: ghcr.io/romland/troves-paddleocr:latest
     environment:
       - TZ=Europe/Amsterdam
       - PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK=True
@@ -44,6 +44,7 @@ services:
   singlefile:
     profiles: ["singlefile", "full"]
     container_name: troves-singlefile
+    image: ghcr.io/romland/troves-singlefile:latest
     build: ./services/singlefile
     command: node webserver.js 8001
     mem_limit: 768m
@@ -63,7 +64,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: troves-app:latest
+    image: ghcr.io/romland/troves-app:latest
     restart: unless-stopped
     mem_limit: 768m
     cpus: 2.0
