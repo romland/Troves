@@ -297,15 +297,6 @@ If video archiving stops working, YouTube likely changed their player. Manually 
 P="$(which yt-dlp)" && sudo wget https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -O "$P" && sudo chmod a+rx "$P"
 ```
 
-## 📌 My Personal Setup (TODO, flesh this out)
-*Document how I actually use this day-to-day:*
-* Which thermal label printer I use.
-* Which hardware cabinets and organizers I rely on.
-* Pictures of my physical containers.
-* The Firefox QR-code generator extension I use for current links.
-* Which fields I actually bother filling in vs. automated.
-
-
 ## 💡 Hacks & Pro-Tips
 
 * **Add it to your Home Screen**  
@@ -330,9 +321,10 @@ Long-tap the Notebook button to add a quick note without leaving your current co
 So, we all know generative models can be a bit ... excited. If you are doing large multi-cans (dozens of items), a good way to make sure you and the model are on the same page is to count the items before scanning. It'll give you an idea during triage if you had a good enough picture.
 
 
-## Some Recordings
-<div>
-    <video src="https://github.com/user-attachments/assets/1ca11e70-2ff3-47e7-9614-9276dd2945dc" controls width="45%" alt="Single item import"></video>
-    <!-- video src="https://github.com/user-attachments/assets/ab96641d-8dec-4621-a876-b13621dc85c8" controls width="45%" alt="Bulk import of CDs"></video -->
-    <video src="https://github.com/user-attachments/assets/661ee52e-e49e-42ca-9d35-80476a92036e" controls width="45" alt="Spatial placement"></video>
-</div>
+## 📌 My Personal Setup (TODO, flesh this out)
+*Document how I actually use this day-to-day:*
+* Which thermal label printer I use.
+* Which hardware cabinets and organizers I rely on.
+* Pictures of my physical containers.
+* The Firefox QR-code generator extension I use for current links.
+* Which fields I actually bother filling in vs. automated.
