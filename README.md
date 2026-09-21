@@ -284,6 +284,22 @@ GROQ_API_TOKEN="gsk_..."
 ```
 *Note for power users: If you want to use local runners like Ollama or vLLM, you can scroll down in the `.env` file to override specific tasks (e.g., `AI_TEXT_PARSER`) with your local endpoint URLs.*
 
+## Maintenance & Updates
+To update Troves to the latest release, pull updates, and automatically rebuild/restart services:
+
+```bash
+./troves.sh update
+```
+**CLI Management**  
+You can control the Troves service using the included `troves.sh` utility wrapper:
+```
+./troves.sh start     # Start all configured services
+./troves.sh stop      # Stop running containers / processes
+./troves.sh restart   # Restart the stack
+./troves.sh update    # Pull latest updates and restart
+./troves.sh logs      # Tail live application logs
+```
+
 
 ## 💻 Development & Under the Hood
 **Stack**  

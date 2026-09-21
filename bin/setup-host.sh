@@ -401,9 +401,13 @@ echo ""
 read -p "Is this server exposed to the public internet? (y/N): " PUBLIC_IP
 if [[ $PUBLIC_IP =~ ^[Yy]$ ]]; then
     info "Public Server Detected."
-    echo "Skipping local mkcert installation. To ensure the mobile PWA works,"
-    echo "you should put Troves behind a reverse proxy (like Caddy or Nginx)"
-    echo "and use Let's Encrypt for standard SSL certificates."
+    echo "Skipping local mkcert installation. To ensure the mobile PWA features work,"
+    echo "you must put Troves behind a reverse proxy with standard SSL (e.g., Let's Encrypt)."
+    echo ""
+    echo "Reverse Proxy Routing Details:"
+    echo "  • Target URL : http://127.0.0.1:${USER_PORT:-3000}"
+    echo "  • Headers    : Ensure X-Forwarded-For and X-Forwarded-Proto are passed"
+    echo "  • WebSockets : Pass the Upgrade and Connection headers"
 else
     info "Configuring Local HTTPS for Mobile PWA on LAN..."
     if ! command -v mkcert &> /dev/null; then
