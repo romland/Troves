@@ -41,7 +41,22 @@ case "$COMMAND" in
         fi
         ;;
     logs)
-        bash bin/logs.sh
+        echo "🖨️ Tailing Troves logs (Ctrl+C to exit)..."
+        
+        # Method A: The proper compose way (forces Compose to un-hide the profiled containers)
+        if [ -f docker-compose.yml ]; then
+            docker compose --profile "*" logs -f --tail 100
+        
+        # Method B: The bulletproof pure-Docker fallback
+        # If compose is still acting up, this finds every container with "troves" in the name,
+        # tails them all simultaneously, and prefixes the log lines with the container name.
+        else
+            trap 'kill $(jobs -p) 2>/dev/null' EXIT
+            for container in $(docker ps -a --filter "name=troves" --format "{{.Names}}"); do
+                docker logs -f --tail 100 "$container" | sed "s/^/[$container] /" &
+            done
+            wait
+        fi
         ;;
     *)
         echo "Troves Management CLI"
