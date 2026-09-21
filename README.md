@@ -14,7 +14,7 @@ I absolutely hate data-entry. Creating an inventory and adding new items should 
 
 Just snap a picture, or paste in a URL and let the system organize it.
 
-[There](https://youtu.be/5B0cxLwS8fo) might [be](https://youtu.be/8WpgqJUO7SQ) a [bunch](https://youtu.be/n4YAiE8Yv5Y) of [demo](https://youtube.com/shorts/qyyXUC3TYlg?feature=share) videos [uploaded](https://youtube.com/shorts/U_juc8A-QqI?feature=share) to [YouTube](https://youtube.com/shorts/JtorL9VRztQ?feature=share). Oh, and there are also [some shorts](https://www.youtube.com/@friya/shorts). 
+[There](https://youtu.be/5B0cxLwS8fo) might [be](https://youtu.be/8WpgqJUO7SQ) a [bunch](https://youtu.be/n4YAiE8Yv5Y) of [demo](https://youtube.com/shorts/qyyXUC3TYlg?feature=share) videos [uploaded](https://youtube.com/shorts/U_juc8A-QqI?feature=share) to [YouTube](https://youtube.com/shorts/JtorL9VRztQ?feature=share). Oh, and there are also [some shorts](https://www.youtube.com/@friya/shorts) (whatever the heck that is). 
 
 
 <table align="center">
