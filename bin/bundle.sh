@@ -158,7 +158,7 @@ if [ "$RUN_DOCKER" = true ]; then
   else
     (cd services && $DOCKER_CMD compose --profile full $COMPOSE_PROFILES up -d)
   fi
-  echo "🚀 Troves full stack running on http://localhost:${TROVES_PORT:-${PORT:-3000}}"
+  echo "🚀 Troves is running on https://localhost:${TROVES_PORT:-${PORT:-3000}}"
 else
   echo "🐳 Starting Docker microservices (RemBG, PaddleOCR, SingleFile)..."
   if [ -f docker-compose.yml ]; then

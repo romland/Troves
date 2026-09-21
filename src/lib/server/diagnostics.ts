@@ -63,7 +63,6 @@ export async function getSystemDiagnostics() {
 }
 
 export async function checkEngineHealth() {
-	const { getSystemDiagnostics } = await import('./diagnostics');
 	const { engines } = await getSystemDiagnostics();
 	const missingEngines = engines.filter(e => !e.configured);
 	return {
