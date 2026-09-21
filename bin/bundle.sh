@@ -37,6 +37,11 @@ cp package.json package-lock.json .env.example server.js dist/
 [ -f Dockerfile.prod ] && cp Dockerfile.prod dist/Dockerfile
 [ -f docker-compose.yml ] && cp docker-compose.yml dist/
 
+echo "🧩 Copying scripts and example extensions..."
+mkdir -p dist/scripts dist/docs/extensions
+[ -f scripts/teardown-fts.js ] && cp scripts/teardown-fts.js dist/scripts/
+[ -d docs/extensions/99-more-examples ] && cp -r docs/extensions/99-more-examples dist/docs/extensions/
+
 echo "🧹 Adding uninstall script to release..."
 # Place it right in the root next to start.sh for easy access
 [ -f bin/uninstall.sh ] && cp bin/uninstall.sh dist/uninstall.sh && chmod +x dist/uninstall.sh

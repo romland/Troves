@@ -427,6 +427,25 @@ else
     [ -f "$CA_DIR/rootCA.pem" ] && cp -f "$CA_DIR/rootCA.pem" ./rootCA.crt
 fi
 
+# ------------------------------------------------------------------------------
+# 8. Example Extensions Setup
+# ------------------------------------------------------------------------------
+if [ -d "docs/extensions/99-more-examples" ]; then
+    echo ""
+    INSTALL_EXT="n"
+    if [ "$SKIP_PROMPT" = false ]; then
+        read -p "Would you like to install example extensions (Ebay, Google Books, Spotify, etc.)? (y/N): " INSTALL_EXT
+    fi
+    
+    if [[ $INSTALL_EXT =~ ^[Yy]$ ]]; then
+        info "Installing example extensions..."
+        mkdir -p data/plugins
+        # Copy only the .js files (ignoring .tmp backups)
+        find docs/extensions/99-more-examples -maxdepth 1 -name "*.js" -exec cp {} data/plugins/ \;
+        success "Example extensions copied to data/plugins/"
+    fi
+fi
+
 # Guarantee SSL files exist as regular files so Docker never mounts them as directories
 [ -f cert.pem ] || touch cert.pem
 [ -f key.pem ] || touch key.pem
