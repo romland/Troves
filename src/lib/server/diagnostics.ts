@@ -2,6 +2,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import { env } from '$env/dynamic/private';
 import os from 'os';
+import fs from 'fs';
 
 const execAsync = promisify(exec);
 
@@ -15,12 +16,13 @@ async function checkService(url: string) {
 
 export async function getSystemDiagnostics() {
     const totalRamGB = os.totalmem() / (1024 ** 3);
+    const isContainer = fs.existsSync('/.dockerenv') || env.DOCKER_MODE === 'true';
 
     const deps = [
         { id: 'ffmpeg', name: 'FFmpeg', desc: 'Extracts frames from video files.', cmd: 'apt-get install ffmpeg', installed: await checkCommand('ffmpeg') },
         { id: 'pdftoppm', name: 'Poppler (pdftoppm)', desc: 'Generates PDF thumbnails.', cmd: 'apt-get install poppler-utils', installed: await checkCommand('pdftoppm') },
         { id: 'ytdlp', name: 'yt-dlp', desc: 'Downloads linked videos natively.', cmd: 'pip install yt-dlp', installed: await checkCommand('yt-dlp') },
-        { id: 'docker', name: 'Docker', desc: 'Microservice management.', cmd: 'apt-get install docker', installed: await checkCommand('docker') },
+        { id: 'docker', name: 'Docker', desc: isContainer ? 'Managed (Containerized)' : 'Microservice management.', cmd: 'apt-get install docker', installed: isContainer || await checkCommand('docker') },
     ];
 
     const microservices = [

@@ -351,6 +351,9 @@ rm -f troves-dist.tar.gz
 info "Microservice Configuration"
 echo "Troves uses Docker containers for optional heavy lifting."
 if [ "$SKIP_PROMPT" = false ]; then
+    read -p "Which port should Troves run on? (Default: 3000): " USER_PORT
+    USER_PORT=${USER_PORT:-3000}
+
     read -p "Enable Background Removal (RemBG)? (Y/n): " -n 1 -r; echo ""
     [[ $REPLY =~ ^[Nn]$ ]] && ENABLE_REMBG=false || ENABLE_REMBG=true
 
@@ -360,6 +363,7 @@ if [ "$SKIP_PROMPT" = false ]; then
     read -p "Enable offline webpage downloading (SingleFile)? (Y/n): " -n 1 -r; echo ""
     [[ $REPLY =~ ^[Nn]$ ]] && ENABLE_SINGLEFILE=false || ENABLE_SINGLEFILE=true
 else
+    USER_PORT=3000
     ENABLE_REMBG=true
     ENABLE_PADDLEOCR=true
     ENABLE_SINGLEFILE=true
@@ -374,6 +378,8 @@ else
     grep -q "^DOCKER_MODE=" .env && sed -i 's/^DOCKER_MODE=.*/DOCKER_MODE=false/' .env || echo "DOCKER_MODE=false" >> .env
 fi
 
+grep -q "^PORT=" .env && sed -i "s/^PORT=.*/PORT=$USER_PORT/" .env || echo "PORT=$USER_PORT" >> .env
+grep -q "^TROVES_PORT=" .env && sed -i "s/^TROVES_PORT=.*/TROVES_PORT=$USER_PORT/" .env || echo "TROVES_PORT=$USER_PORT" >> .env
 grep -q "^ENABLE_REMBG=" .env && sed -i "s/^ENABLE_REMBG=.*/ENABLE_REMBG=$ENABLE_REMBG/" .env || echo "ENABLE_REMBG=$ENABLE_REMBG" >> .env
 grep -q "^ENABLE_PADDLEOCR=" .env && sed -i "s/^ENABLE_PADDLEOCR=.*/ENABLE_PADDLEOCR=$ENABLE_PADDLEOCR/" .env || echo "ENABLE_PADDLEOCR=$ENABLE_PADDLEOCR" >> .env
 grep -q "^ENABLE_SINGLEFILE=" .env && sed -i "s/^ENABLE_SINGLEFILE=.*/ENABLE_SINGLEFILE=$ENABLE_SINGLEFILE/" .env || echo "ENABLE_SINGLEFILE=$ENABLE_SINGLEFILE" >> .env
@@ -416,5 +422,5 @@ echo "🔒 To enable mobile access, install the Root CA on your phone:"
 echo "   Run: python3 -m http.server 1025"
 echo "   Then open http://${LAN_IP}:1025/rootCA.crt on your phone."
 echo ""
-echo "🚀 To start Troves: ./start.sh (App will be at https://${LAN_IP}:3000)"
+echo "🚀 To start Troves: ./start.sh (App will be at https://${LAN_IP}:${USER_PORT:-3000})"
 echo "=========================================================================="

@@ -93,6 +93,11 @@ if [ ! -f .env ]; then
   cp .env.example .env
 fi
 
+# Source .env so this script knows which port to announce
+if [ -f .env ]; then
+  export $(grep -E '^(PORT|TROVES_PORT)=' .env | xargs) 2>/dev/null || true
+fi
+
 # ---------------------------------------------------------
 # Auto-adapt to 32-bit userland on 64-bit kernel
 # ---------------------------------------------------------
@@ -148,7 +153,7 @@ if [ "$RUN_DOCKER" = true ]; then
   else
     (cd services && $DOCKER_CMD compose --profile full $COMPOSE_PROFILES up -d)
   fi
-  echo "🚀 Troves full stack running on http://localhost:${PORT:-3000}"
+  echo "🚀 Troves full stack running on http://localhost:${TROVES_PORT:-${PORT:-3000}}"
 else
   echo "🐳 Starting Docker microservices (RemBG, PaddleOCR, SingleFile)..."
   if [ -f docker-compose.yml ]; then
