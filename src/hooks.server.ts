@@ -4,6 +4,7 @@ import { db } from "$lib/server/database";
 import { initFTS } from "$lib/server/fts";
 import { validateAndRefreshSession } from "$lib/server/session";
  import { extensionManager } from "$lib/server/extensions/ExtensionManager";
+import { pingTelemetry } from "$lib/server/telemetry";
 
 export interface UserPreferences {
 	largeFont?: boolean;
@@ -20,6 +21,7 @@ let isSetupComplete = false;
 if (!building) {
     initFTS().catch(console.error);
     extensionManager.loadPlugins().catch(console.error);
+    pingTelemetry('boot');
 }
 
 export const handle = (async ({ event, resolve }) => {

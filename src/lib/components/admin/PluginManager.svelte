@@ -69,7 +69,7 @@
                             {#if p.actions?.length}<span class="text-gray-500 font-mono truncate"><b>Actions:</b> {p.actions.join(', ')}</span>{/if}
                             {#if p.modifiers?.length}<span class="text-gray-500 font-mono truncate"><b>Modifiers:</b> {p.modifiers.join(', ')}</span>{/if}
                             {#if p.archetypes?.length}<span class="text-gray-500 font-mono truncate"><b>Archetypes:</b> {p.archetypes.join(', ')}</span>{/if}
-                            {#if !p.hooks.length && !p.actions.length && !p.modifiers?.length && !p.archetypes?.length}<span class="text-gray-400 italic">No registered events</span>{/if}
+                            {#if !p.hooks?.length && !p.actions?.length && !p.modifiers?.length && !p.archetypes?.length}<span class="text-gray-400 italic">No registered events</span>{/if}
                         </div>
                     </div>
                     

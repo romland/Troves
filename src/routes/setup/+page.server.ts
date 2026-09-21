@@ -6,6 +6,7 @@ import type { PageServerLoad, Actions } from './$types';
 import { getSystemDiagnostics } from '$lib/server/diagnostics';
 import fs from 'fs';
 import path from 'path';
+import { pingTelemetry } from "$lib/server/telemetry";
 
 export const load = (async () => {
     // Re-verify just in case the hook check was bypassed
@@ -39,6 +40,8 @@ export const actions = {
                 canCreateInventories: true
             }
         });
+
+        pingTelemetry('install');
 
         // 2. Automatically log them in
         const userAgent = request.headers.get('user-agent');
