@@ -248,7 +248,7 @@ Follow the instructions to install the generated `rootCA.crt` on your phone, gen
 
 ## 💻 Development & Under the Hood
 **Stack**  
-SvelteKit 5, PWA, Prisma, SQLite, Tailwind, TypeScript, LLMs + various ML models.
+Svelte 5, PWA, Prisma, SQLite, Tailwind, TypeScript, LLMs + various ML models.
 
 **A Note on Terminology**  
 While the UI refers to your top-level databases as "Troves", the underlying database schema still calls them "Inventories". Furthermore, the bulk camera feature is called "Multi-Scan" in the UI, but referred to as "Collections" in the code. I mention this because there is bound to be confusion if you start poking around the repo.
