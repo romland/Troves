@@ -14,8 +14,7 @@ Ik heb een absolute bloedhekel aan data-entry. Het aanmaken van een inventaris e
 
 Maak gewoon een foto of plak een URL, en laat het systeem de boel organiseren.
 
-[Er](https://youtu.be/5B0cxLwS8fo) zijn [misschien](https://youtu.be/8WpgqJUO7SQ) een [aantal](https://youtu.be/n4YAiE8Yv5Y) demo [video's](https://youtube.com/shorts/qyyXUC3TYlg?feature=share) geüpload [naar](https://youtube.com/shorts/U_juc8A-QqI?feature=share) [YouTube](https://youtube.com/shorts/JtorL9VRztQ?feature=share). Oh, and there are also [some here](https://www.youtube.com/@friya/shorts). 
-
+[Er](https://youtu.be/5B0cxLwS8fo) zijn [misschien](https://youtu.be/8WpgqJUO7SQ) een [aantal](https://youtu.be/n4YAiE8Yv5Y) demo [video's](https://youtube.com/shorts/qyyXUC3TYlg?feature=share) geüpload [naar](https://youtube.com/shorts/U_juc8A-QqI?feature=share) [YouTube](https://youtube.com/shorts/JtorL9VRztQ?feature=share). Oh, en er staan er ook [wat hier](https://www.youtube.com/@friya/shorts). 
 
 <table align="center">
   <tr>
