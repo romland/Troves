@@ -172,7 +172,7 @@ else
 
   echo "🗄️ Running database migrations..."
    # Bypass interactive installation prompts since npm ci --omit=dev removes the local CLI
-   npx --yes prisma migrate deploy || npx --yes prisma db push
+   npx --yes prisma migrate deploy || npm run updatedbschema
 
   echo "🚀 Starting Troves server on port ${PORT:-3000}..."
   PORT=${PORT:-3000} node server.js
