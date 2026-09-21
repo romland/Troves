@@ -210,6 +210,8 @@ Dit had ik eigenlijk een paar jaar geleden al moeten doen, maar ik heb me nooit 
     <img src="./.github/screenshots/025-garden.webp" width="19%" alt="" />
 </div>
 
+<i>More <a href="./docs/Screenshots.md">screenshots</a> here</i>
+
 ---
 
 ## 🛠️ Installatie & Setup
