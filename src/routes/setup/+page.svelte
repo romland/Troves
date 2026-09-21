@@ -189,8 +189,17 @@
                         <div class="flex items-center gap-3 text-success font-bold text-lg mb-2">
                             <i class="bi bi-check-circle-fill text-2xl"></i> System Ready
                         </div>
-                        <p class="text-base-content/70 text-sm">Everything is configured. Welcome to your new inventory.</p>
                         
+                        {#if data.keysMissing}
+                            <div class="bg-base-200/50 border border-base-300 rounded-2xl p-5 mb-6 text-sm text-base-content/80 text-left leading-relaxed shadow-inner">
+                                <strong>💡 Note on Model Integration:</strong><br>
+                                Some configured task engines are missing API credentials in <code>.env</code>. Manual entry works natively, but to enable automatic extraction and classification, update your key(s) in <code>.env</code> and restart Troves using:<br>
+                                <code class="bg-base-300 px-2 py-1 rounded mt-2 inline-block font-mono text-xs">./troves.sh restart</code>
+                            </div>
+                        {:else}
+                            <p class="text-base-content/70 text-sm leading-relaxed mb-6">Everything is configured. Welcome to your new inventory.</p>
+                        {/if}
+
                         <button type="button" class="btn btn-success text-white w-full rounded-xl shadow-lg shadow-success/20 h-14 mt-2" on:click={() => window.location.href = '/'}>
                             Enter Troves <i class="bi bi-arrow-right"></i>
                         </button>

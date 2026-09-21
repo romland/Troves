@@ -13,7 +13,10 @@ export const load = (async () => {
     const userCount = await db.user.count();
     if (userCount > 0) throw redirect(303, '/login');
 
-    return { diagnostics: await getSystemDiagnostics() };
+    const { checkEngineHealth } = await import('$lib/server/diagnostics');
+    const health = await checkEngineHealth();
+
+    return { diagnostics: await getSystemDiagnostics(), keysMissing: health.hasMissingKeys };
 }) satisfies PageServerLoad;
 
 export const actions = {

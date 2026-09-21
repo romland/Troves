@@ -371,7 +371,13 @@ fi
 
 
 # Persist user choice into .env so start.sh knows how to boot
-touch .env
+# Seed .env from .env.example if it doesn't exist yet
+if [ ! -f .env ] && [ -f .env.example ]; then
+    cp .env.example .env
+else
+    touch .env
+fi
+
 if [ "$USE_DOCKER" = true ]; then
     grep -q "^DOCKER_MODE=" .env && sed -i 's/^DOCKER_MODE=.*/DOCKER_MODE=true/' .env || echo "DOCKER_MODE=true" >> .env
 else
@@ -431,13 +437,15 @@ echo ""
 echo "🔒 To enable mobile access, install the Root CA on your phone:"
 echo "   Run: python3 -m http.server 1025"
 echo "   Then open http://${LAN_IP}:1025/rootCA.crt on your phone."
-fi
 echo ""
-echo -e "${YELLOW}${BOLD}⚠️  CRITICAL NEXT STEP: CONFIGURE YOUR AI MODELS${NC}"
-echo "Troves relies on AI models to organize your items. Before starting,"
-echo "you MUST edit the '.env' file in this directory and add your API keys:"
-echo "  nano .env"
+echo -e "${CYAN}${BOLD}💡 One last thing: API Keys (recommended)${NC}"
+echo "To get the automatic classification, vision, voice and extraction features working,"
+echo "you'll want to add your API tokens to the '.env' file:"
+echo "  vim .env      # it's a trap!"
 echo "Look for GEMINI_API_KEY, GROQ_API_TOKEN, or OPENAI_API_TOKEN."
+echo ""
+echo "You can also find more information here:"
+echo "https://github.com/romland/Troves/blob/main/docs/bring-your-own-model.md"
 echo ""
 echo "🚀 To start Troves: ./start.sh (App will be at https://${LAN_IP}:${USER_PORT:-3000})"
 echo "🚀 To manage Troves: ./troves.sh"

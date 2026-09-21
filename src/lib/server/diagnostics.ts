@@ -34,14 +34,26 @@ export async function getSystemDiagnostics() {
 	const { getAIConfig } = await import('./ai/index');
 	const mapEngine = (modality: 'VISION' | 'TEXT' | 'AUDIO', task: string, subTask?: string) => {
 		const config = getAIConfig(modality, subTask);
+		const isLocal = !!(config.baseURL && (config.baseURL.includes('localhost') || config.baseURL.includes('127.0.0.1') || config.baseURL.includes('192.168.')));
+		const hasValidKey = !!(config.apiKey && config.apiKey.trim() !== '' && !config.apiKey.includes('AQ....') && !config.apiKey.includes('gsk_...') && !config.apiKey.includes('sk-...'));
 		return {
 			modality,
 			task,
 			provider: config.provider,
 			model: config.model || 'default',
-			configured: !!config.apiKey || !!config.baseURL
+			configured: hasValidKey || isLocal
 		};
 	};
+
+export async function checkEngineHealth() {
+	const { getSystemDiagnostics } = await import('./diagnostics');
+	const { engines } = await getSystemDiagnostics();
+	const missingEngines = engines.filter(e => !e.configured);
+	return {
+		hasMissingKeys: missingEngines.length > 0,
+		missingEngines
+	};
+}
 
 	const engines = [
 		mapEngine('VISION', 'Base / Default'),

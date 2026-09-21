@@ -263,6 +263,28 @@ You should save the database and the data in `troves/prisma/dev.db` and `troves/
 *To remove everything including your database and uploaded photos, you can simply delete the directory: `rm -rf troves`.*
 
 
+### ⚙️ Configuring and setting API keys in .env
+Troves can function completely offline with manual data entry, but the real magic (automatic classification, vision scanning, etc) requires access to language and vision models. You see my personal preferences on which models and providers to use in `.env.example`.
+
+The installer will rename the `.env.example` to `.env` in your `troves` directory. Open it and plug in your keys. 
+
+You do **not** need paid subscriptions. I use the generous free tiers of Gemini (3.1-flash-lite) (for vision and image tasks) and Groq (for text summaries, receipt parsing and voice dictation).
+
+1. **Gemini Key:** Grab a free key from [Google](https://aistudio.google.com/).
+2. **Groq Key:** Grab a free key from the [Groq Console](https://console.groq.com/).
+
+Just paste the keys into the base credentials section of your `.env` file:
+
+```env
+# ==========================================
+# BASE CREDENTIALS (FALLBACK)
+# ==========================================
+GEMINI_API_KEY="AIza..."
+GROQ_API_TOKEN="gsk_..."
+```
+*Note for power users: If you want to use local runners like Ollama or vLLM, you can scroll down in the `.env` file to override specific tasks (e.g., `AI_TEXT_PARSER`) with your local endpoint URLs.*
+
+
 ## 💻 Development & Under the Hood
 **Stack**  
 Svelte 5, PWA, Prisma, SQLite, Tailwind, TypeScript, LLMs + various ML models.
