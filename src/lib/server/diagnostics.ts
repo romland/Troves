@@ -45,16 +45,6 @@ export async function getSystemDiagnostics() {
 		};
 	};
 
-export async function checkEngineHealth() {
-	const { getSystemDiagnostics } = await import('./diagnostics');
-	const { engines } = await getSystemDiagnostics();
-	const missingEngines = engines.filter(e => !e.configured);
-	return {
-		hasMissingKeys: missingEngines.length > 0,
-		missingEngines
-	};
-}
-
 	const engines = [
 		mapEngine('VISION', 'Base / Default'),
 		mapEngine('VISION', 'Classification', 'CLASSIFY'),
@@ -70,4 +60,14 @@ export async function checkEngineHealth() {
 	];
 
 	return { totalRamGB, deps, microservices, engines };
+}
+
+export async function checkEngineHealth() {
+	const { getSystemDiagnostics } = await import('./diagnostics');
+	const { engines } = await getSystemDiagnostics();
+	const missingEngines = engines.filter(e => !e.configured);
+	return {
+		hasMissingKeys: missingEngines.length > 0,
+		missingEngines
+	};
 }
