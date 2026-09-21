@@ -180,6 +180,10 @@ I really dislike it when I have to register for 3rd-party services to try softwa
 **All your data is completely yours and sits securely on your own device.**  
 Your entire database runs from a single, portable SQLite file, and all photos/documents are saved directly into your local upload folder. There are no tracking cookies, no forced accounts, and no vendor lock-in.
 
+**Transparency**  
+Troves offers full transparency over what is being sent to external APIs. In the `/activity` dashboard, you can view the exact data sent to the Vision model, its raw JSON responses, execution times, and possible token usage limits.
+
+
 **📡 The "Feel-Good" Telemetry**  
 I added a tiny ping to the backend that reaches out to my personal server (via CF proxy) when Troves boots up or gets installed. It’s only for my own sanity, it is incredibly motivating to know that other people are actually out there using your stuff. Whoever they might be.  
 
@@ -188,10 +192,6 @@ It sends the app version and a scrambled instance ID (to make sure it's not the 
 *Verify it: The code for the ping is in `src/lib/server/telemetry.ts`, you can grep for `pingTelemetry` to see how and where it's called.*
 
 That said, I totally get wanting your self-hosted software to stay completely quiet. If you want to opt out, just add `DISABLE_FEELGOOD_TELEMETRY="true"` to your `.env` file. It won't make a peep, no hard feelings!
-
-
-**Transparency**  
-Troves offers full transparency over what is being sent to external APIs. In the `/activity` dashboard, you can view the exact data sent to the Vision model, its raw JSON responses, execution times, and possible token usage limits.
 
 
 ## Some Screenshots
