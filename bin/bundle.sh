@@ -33,7 +33,8 @@ rsync -av \
   prisma/ dist/prisma/
 
 cp package.json package-lock.json .env.example server.js dist/
-[ -f Dockerfile ] && cp Dockerfile dist/
+# Use the dedicated production Dockerfile to ensure a clean runner environment
+[ -f Dockerfile.prod ] && cp Dockerfile.prod dist/Dockerfile
 [ -f docker-compose.yml ] && cp docker-compose.yml dist/
 
 echo "🐳 Copying Docker services (excluding caches & virtualenvs)..."
@@ -58,6 +59,26 @@ echo "📜 Generating launch script..."
 cat << 'EOF' > dist/start.sh
 #!/usr/bin/env bash
 set -e
+
+# ---------------------------------------------------------
+# Transparent Docker Permission Resolution
+# ---------------------------------------------------------
+# If the user was just added to the 'docker' group, it requires a logout.
+# We intercept the failure and dynamically apply the group to this execution
+# using 'sg', preventing the "permission denied" socket crash elegantly.
+DOCKER_CMD="docker"
+if command -v docker >/dev/null 2>&1; then
+  if ! docker info >/dev/null 2>&1; then
+    if groups "$USER" 2>/dev/null | grep -q '\bdocker\b'; then
+      echo "🔄 Applying pending 'docker' group permissions (no logout required)..."
+      exec sg docker -c "\"\$0\" \"\$@\""
+      exit 0
+    else
+      echo "🔒 Elevating Docker permissions via sudo..."
+      DOCKER_CMD="sudo docker"
+    fi
+  fi
+fi
 
 mkdir -p data/images/u
 mkdir -p data/images/containers
@@ -92,13 +113,13 @@ if [ "$(uname -m)" = "aarch64" ] && [ "$(dpkg --print-architecture 2>/dev/null |
   fi
 
   echo "🛡️ Bootstrapping unconfined 64-bit BuildKit engine to bypass host seccomp poison..."
-  docker rm -f franken-buildkitd 2>/dev/null || true
-  docker buildx rm franken-builder 2>/dev/null || true
+  $DOCKER_CMD rm -f franken-buildkitd 2>/dev/null || true
+  $DOCKER_CMD buildx rm franken-builder 2>/dev/null || true
   
   # Launch an entirely isolated, privileged build engine bound to localhost
-  docker run -d --name franken-buildkitd --privileged -p 127.0.0.1:8338:8338 moby/buildkit:latest --addr tcp://0.0.0.0:8338
+  $DOCKER_CMD run -d --name franken-buildkitd --privileged -p 127.0.0.1:8338:8338 moby/buildkit:latest --addr tcp://0.0.0.0:8338
   sleep 3
-  docker buildx create --use --name franken-builder --driver remote tcp://127.0.0.1:8338
+  $DOCKER_CMD buildx create --use --name franken-builder --driver remote tcp://127.0.0.1:8338
 fi
 
 # Ensure NVM is loaded if running native mode
@@ -123,17 +144,17 @@ grep -q "^ENABLE_SINGLEFILE=true" .env && COMPOSE_PROFILES="$COMPOSE_PROFILES --
 if [ "$RUN_DOCKER" = true ]; then
   echo "🐳 Starting Troves in Full Docker Mode..."
   if [ -f docker-compose.yml ]; then
-    docker compose --profile full $COMPOSE_PROFILES up -d
+    $DOCKER_CMD compose --profile full $COMPOSE_PROFILES up -d
   else
-    (cd services && docker compose --profile full $COMPOSE_PROFILES up -d)
+    (cd services && $DOCKER_CMD compose --profile full $COMPOSE_PROFILES up -d)
   fi
   echo "🚀 Troves full stack running on http://localhost:${PORT:-3000}"
 else
   echo "🐳 Starting Docker microservices (RemBG, PaddleOCR, SingleFile)..."
   if [ -f docker-compose.yml ]; then
-    docker compose $COMPOSE_PROFILES up -d
+    $DOCKER_CMD compose $COMPOSE_PROFILES up -d
   else
-    (cd services && docker compose $COMPOSE_PROFILES up -d)
+    (cd services && $DOCKER_CMD compose $COMPOSE_PROFILES up -d)
   fi
 
   echo "📦 Installing production dependencies..."
