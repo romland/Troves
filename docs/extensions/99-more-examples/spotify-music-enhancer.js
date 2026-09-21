@@ -2,27 +2,6 @@
  * ============================================================================
  * TROVES PLUGIN: SPOTIFY CD METADATA MATCHER
  * ============================================================================
- * 
- * ARCHITECTURAL PAUSE & API SUGGESTIONS:
- * You mentioned having a Spotify account and wanting to avoid paid services. 
- * Spotify is an excellent choice for rich metadata and high-quality cover art. 
- * I have implemented the full Spotify plugin below for you. 
- * 
- * However, since you are tracking physical CDs, please be aware:
- * 1. Spotify (Implemented Below): Great for general album info, track counts, 
- *    and cover art. Free via Developer API.
- * 2. Discogs (Alternative): The gold standard for physical CDs. It tracks 
- *    specific pressings, barcodes, matrix runouts, and physical media values. 
- *    It has a free API (requires generating a Personal Access Token).
- * 3. MusicBrainz (Alternative): Open-source, incredibly detailed physical 
- *    release groups. 100% free, no API key required, but rate-limited strictly.
- * 
- * If you ever want to switch to Discogs to track physical barcodes instead of 
- * digital releases, let me know and we can write a Discogs version!
- * 
- * ============================================================================
- * FEATURE BREAKDOWN
- * ============================================================================
  * 1. SMART METADATA SEARCH
  * When a CD is processed, the plugin takes the Troves `title` (and the `Artist` 
  * attribute if the ML found one) and queries Spotify. 
