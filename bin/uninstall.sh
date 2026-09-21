@@ -14,7 +14,7 @@ echo -e "=======================================================${NC}"
 echo ""
 echo "This script will permanently remove the application code and infrastructure:"
 echo "  🗑️  All Troves Docker containers and internal networks"
-echo "  🗑️  All downloaded Troves Docker images (~3GB of space reclaimed)"
+# echo "  🗑️  All downloaded Troves Docker images (~3GB of space reclaimed)"
 echo "  🗑️  Microservice caches (PaddleOCR models, RemBG models)"
 echo "  🗑️  All application source code and binaries"
 echo ""
@@ -23,6 +23,7 @@ echo "  💾  Your database (prisma/dev.db)"
 echo "  📸  Your uploaded images, crops, and documents (data/)"
 echo "  🔑  Your configuration and API keys (.env)"
 echo "  🔒  Your local SSL certificates (*.pem, *.crt)"
+echo "  🐳  Downloaded Docker images (kept for fast reinstall)"
 echo ""
 
 read -p "Are you sure you want to uninstall Troves? (Type 'yes' to continue): " CONFIRM
@@ -60,15 +61,18 @@ if [ -n "$DOCKER_CMD" ]; then
         $DOCKER_CMD compose --profile "*" down --remove-orphans || true
     else
         # Brute force fallback if docker-compose.yml was already deleted
-        $DOCKER_CMD rm -f troves-app troves-rembg troves-paddleocr troves-singlefile 2>/dev/null \vert{}\vert{} true$DOCKER_CMD network rm troves_default 2>/dev/null || true
+        $DOCKER_CMD rm -f troves-app troves-rembg troves-paddleocr troves-singlefile 2>/dev/null \vert{}\vert{} true
+        $DOCKER_CMD network rm troves_default 2>/dev/null || true
     fi
 
-    echo -e "${BOLD}🧹 Removing Troves Docker images from host...${NC}"
-    $DOCKER_CMD rmi ghcr.io/romland/troves-app:latest 2>/dev/null \vert{}\vert{} true$DOCKER_CMD rmi ghcr.io/romland/troves-rembg:latest 2>/dev/null || true
-    $DOCKER_CMD rmi ghcr.io/romland/troves-paddleocr:latest 2>/dev/null \vert{}\vert{} true$DOCKER_CMD rmi ghcr.io/romland/troves-singlefile:latest 2>/dev/null || true
+    # echo -e "${BOLD}🧹 Removing Troves Docker images from host...${NC}"
+    # $DOCKER_CMD rmi ghcr.io/romland/troves-app:latest 2>/dev/null \vert{}\vert{} true
+    # $DOCKER_CMD rmi ghcr.io/romland/troves-rembg:latest 2>/dev/null || true
+    # $DOCKER_CMD rmi ghcr.io/romland/troves-paddleocr:latest 2>/dev/null \vert{}\vert{} true
+    # $DOCKER_CMD rmi ghcr.io/romland/troves-singlefile:latest 2>/dev/null || true
     
-    # Prune any dangling <none> images created during local testing
-    $DOCKER_CMD image prune -f --filter "label=org.opencontainers.image.title=troves" 2>/dev/null || true
+    # # Prune any dangling <none> images created during local testing
+    # $DOCKER_CMD image prune -f --filter "label=org.opencontainers.image.title=troves" 2>/dev/null || true
 fi
 
 # ---------------------------------------------------------
