@@ -248,7 +248,7 @@ Follow the instructions to install the generated `rootCA.crt` on your phone, gen
 
 ## 💻 Development & Under the Hood
 **Stack**  
-SvelteKit 2, PWA, Prisma, SQLite, Tailwind CSS, TypeScript, LLMs + various ML models.
+SvelteKit 5, PWA, Prisma, SQLite, Tailwind, TypeScript, LLMs + various ML models.
 
 **A Note on Terminology**  
 While the UI refers to your top-level databases as "Troves", the underlying database schema still calls them "Inventories". Furthermore, the bulk camera feature is called "Multi-Scan" in the UI, but referred to as "Collections" in the code. I mention this because there is bound to be confusion if you start poking around the repo.
@@ -305,7 +305,7 @@ P="$(which yt-dlp)" && sudo wget https://github.com/yt-dlp/yt-dlp/releases/lates
 ## 💡 Hacks & Pro-Tips
 
 * **Add it to your Home Screen**  
-I highly recommend using the "Add to Home Screen" button on your phone. Hiding the browser UI gives you back a ton of vertical space for the camera, and it just makes the whole thing much nicer to use.
+I highly recommend using the "Add to Home Screen" button on your phone. Hiding the browser UI gives you back a ton of vertical space, and it just makes the whole thing much nicer to use.
 
 * **The Pool Noodle Hack ($2)**  
 When scanning clothes, especially if you use the background removal feature, limp sleeves and hanger-pokes ruin the cutout. Slit a dense foam pool noodle down the side and slide it over the top bar of a standard wooden hanger. It immediately widens the shoulder profile.
