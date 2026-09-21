@@ -78,12 +78,19 @@ Dump your stuff on a table, scope the comparison to the `#camping-gear` tag, and
 Because Troves has to handle a bit of everything, from winter coats to spark plugs to whiskey to trollbeads to ESP32 boards, it can't be pre-programmed with rigid spreadsheet columns like "Brand" or "Shoe Size." Instead, it creates, destroys (and updates) its own structure on the fly using an Entity-Attribute-Value taxonomy. There's a bit more to it, but that is the idea.
 
 **Keeping the language consistent:**  
-Image-recognition tools are naturally messy. If you feed the system photos of three different t-shirts, it might label one with "short sleeves," another with "arm style," and a third with "sleeve length." You can't build a useful search tool out of that. To fix this, the first time the app sees a new category, it locks in a specific set of labels and forces the software to reuse those exact terms for all future items. It turns messy, fluid text into a clean, predictable database.
+Image-recognition tools are naturally messy. If you feed the system photos of three different t-shirts, it might label one with "short sleeves," another with "arm style," and a third with "sleeve length." You can't build a useful search tool out of that. To fix this, the first time the app sees a new category, it locks in a specific set of labels and forces the software to reuse those exact terms for all future items. It turns messy, fluid text into a clean, predictable database. Mildly related, but not quite: Empty categories vaporize if you move the last item out of them, keeping your database clean.
 
 **Spotting duplicates from photos:**  
 If you take a picture of a jacket on your bed today, the lighting and folds will look completely different than when you first logged it hanging in a closet months ago. To handle this, Troves cross-references the visual details and the text to figure out if it's the same item, ensuring it doesn't log a duplicate or confuse two completely different blue shirts.
 
-*Note:* Does the vision model sometimes guess wrong? Look for the ✨ Sparkle icon next to the title. Click it to provide a hint (e.g. "It's an IKEA MITTZON desk") to nudge the classification. Empty categories vaporize if you move the last item out of them, keeping your database clean.
+### Expect the classification to fail
+A quick warning: go into this assuming the automatic classification will just get your items wrong.  
+
+For me, it actually nails it about 95% of the time without me typing a single word. But that's exactly the trap. It works just often enough that you get completely spoiled, and then you get genuinely annoyed when it looks at a logic analyzer and confidently labels it a "black plastic box."
+
+Tweaking the data manually is normal. The whole workflow is built around making it completely frictionless to fix a bad guess or nudge the model in the right direction. Just let the scanner do the dumb heavy lifting to get the item into the system. Digging up the exact specs, attaching PDFs, and nerding out over the details later is actually quite pleasant, since you can just do it from the couch whenever you feel like it.
+
+*Note:* Is the classification wrong? Look for the ✨ Sparkle icon at ... various places. Click it to provide a hint (e.g. "It's an IKEA MITTZON desk") to nudge it. 
 
 
 ## 🗺️ Spatial Mapping vs. Semantic Tagging
