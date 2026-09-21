@@ -2,6 +2,7 @@
     import { enhance } from "$app/forms";
     import { onMount } from "svelte";
     import { fade, fly } from "svelte/transition";
+    import { cubicOut, cubicIn } from "svelte/easing";
     import FormInput from "$lib/components/FormInput.svelte";
     import SystemDiagnostics from "$lib/components/SystemDiagnostics.svelte";
     import Logo from "$lib/components/Logo.svelte";
@@ -19,17 +20,38 @@
 
     // Cinematic Intro State
     let showIntro = true;
-    let greeting = "Hello.";
+    let currentMessage = 0;
+    const messages = ["Troves", "Welcome."];
 
     onMount(() => {
-        // Step 1: "Hello." stays for 1.8s, then swaps.
-        setTimeout(() => greeting = "Welcome to Troves.", 1800);
-        
-        // Step 2: The entire intro curtain lifts at 3.8s.
-        setTimeout(() => showIntro = false, 3800);
+        // Hold message 1 for 2s, swap to message 2, hold for 2s, lift curtain
+        setTimeout(() => currentMessage = 1, 2000);
+        setTimeout(() => showIntro = false, 4000);
     });
 
     pageTitle.set("System Setup");
+    // Custom transitions for the camera focus effect
+    function focusIn(node: Element, { duration = 1500 }) {
+        return {
+            duration,
+            easing: cubicOut,
+            css: (t: number, u: number) => `
+                opacity: ${t};
+                filter: blur(${u * 24}px);
+                transform: scale(${1 + u * 0.15});
+            `
+        };
+    }
+    function focusOut(node: Element, { duration = 600 }) {
+        return {
+            duration,
+            easing: cubicIn,
+            css: (t: number, u: number) => `
+                opacity: ${t};
+                filter: blur(${u * 12}px);
+            `
+        };
+    }
 </script>
 
 <!-- The Ambient Mesh Gradient (Runs persistently in the background) -->
@@ -41,14 +63,18 @@
 
 <!-- Cinematic Intro Curtain -->
 {#if showIntro}
-    <div class="fixed inset-0 z-50 flex items-center justify-center bg-base-100" out:fade={{ duration: 1000 }}>
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-base-100" out:fade={{ duration: 800 }}>
         <div class="relative flex items-center justify-center w-full h-40">
-            {#key greeting}
-                <h1 class="absolute text-5xl md:text-7xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-primary to-secondary drop-shadow-sm"
-                    in:fly={{ y: 20, duration: 800, delay: 300 }}
-                    out:fly={{ y: -20, duration: 600 }}>
-                    {greeting}
-                </h1>
+            {#key currentMessage}
+                <div class="absolute"
+                     in:focusIn={{ duration: 1500 }}
+                     out:focusOut={{ duration: 600 }}>
+                    <h1 class="text-5xl md:text-7xl font-black tracking-tighter drop-shadow-sm animate-glitch premium-text"
+                        class:glitch-lines={currentMessage === 0}
+                        data-text={messages[currentMessage]}>
+                        {messages[currentMessage]}
+                    </h1>
+                </div>
             {/key}
         </div>
     </div>
@@ -57,11 +83,11 @@
 <!-- Main UI (Revealed after intro) -->
 {#if !showIntro}
     <div class="min-h-[85vh] flex flex-col items-center justify-center p-4 relative z-10 gap-8">
-        <div class="max-w-5xl w-full grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-start">
+        <div class="max-w-4xl w-full flex flex-col gap-6 lg:gap-8 items-center">
             
-            <!-- LEFT: Setup Wizard Flow -->
-            <div class="bg-base-100/60 backdrop-blur-3xl border border-base-200/50 shadow-2xl rounded-[2.5rem] p-8 sm:p-10" 
-                 in:fly={{ y: 40, duration: 1000, delay: 200 }}>
+            <!-- TOP: Setup Wizard Flow -->
+            <div class="bg-base-100/60 backdrop-blur-3xl border border-base-200/50 shadow-2xl rounded-[2.5rem] p-8 sm:p-12 w-full" 
+                 in:fly={{ y: 30, duration: 800, delay: 200 }}>
                 
                 <div class="flex justify-start mb-6">
                     <Logo size="lg" />
@@ -172,9 +198,9 @@
                 {/if}
             </div>
 
-            <!-- RIGHT: System Diagnostics -->
-            <div class="bg-base-100/60 backdrop-blur-3xl border border-base-200/50 shadow-xl rounded-[2.5rem] p-8 sm:p-10" 
-                 in:fly={{ y: 40, duration: 1000, delay: 400 }}>
+            <!-- BOTTOM: System Diagnostics -->
+            <div class="bg-base-100/60 backdrop-blur-3xl border border-base-200/50 shadow-xl rounded-[2.5rem] p-8 sm:p-12 w-full" 
+                 in:fly={{ y: 30, duration: 800, delay: 400 }}>
                 <SystemDiagnostics diagnostics={data.diagnostics} />
             </div>
             
@@ -189,6 +215,106 @@
 <CreateInventoryModal bind:this={createModal} on:success={() => step = 3} />
 
 <style>
+    /* Premium Animated Text Sweep */
+    .premium-text {
+        background: linear-gradient(
+            110deg,
+            oklch(var(--bc)) 0%,
+            #FFD700 30%, /* Vivid Gold */
+            #00BFFF 50%, /* Electric Blue */
+            oklch(var(--bc)) 70%,
+            oklch(var(--bc)) 100%
+        );
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: text-shine 2s linear infinite;
+    }
+    @keyframes text-shine {
+        0% { background-position: 200% center; }
+        100% { background-position: 0% center; }
+    }
+
+    /* Glitch Tearing Lines */
+    .glitch-lines {
+        position: relative;
+    }
+    .glitch-lines::before,
+    .glitch-lines::after {
+        content: attr(data-text);
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: inherit;
+        background-size: inherit;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        opacity: 0;
+    }
+    .glitch-lines::before {
+        left: 6px;
+        animation: glitch-slice-1 1.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+    }
+    .glitch-lines::after {
+        left: -6px;
+        animation: glitch-slice-2 1.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+    }
+    @keyframes glitch-slice-1 {
+        0%, 100% { clip-path: inset(50% 0 50% 0); opacity: 0; }
+        2%  { clip-path: inset(10% 0 60% 0); opacity: 1; transform: translate3d(5px, 0, 0); }
+        4%  { clip-path: inset(40% 0 20% 0); opacity: 1; transform: translate3d(-5px, 0, 0); }
+        6%, 15% { opacity: 0; }
+        17% { clip-path: inset(80% 0 5% 0); opacity: 1; transform: translate3d(8px, 0, 0); }
+        19% { clip-path: inset(20% 0 70% 0); opacity: 1; transform: translate3d(-8px, 0, 0); }
+        21%, 45% { opacity: 0; }
+        47% { clip-path: inset(30% 0 40% 0); opacity: 1; transform: translate3d(6px, 0, 0); }
+        49% { clip-path: inset(60% 0 10% 0); opacity: 1; transform: translate3d(-6px, 0, 0); }
+        51%, 70% { opacity: 0; }
+        72% { clip-path: inset(5% 0 80% 0); opacity: 1; transform: translate3d(7px, 0, 0); }
+        74% { opacity: 0; }
+    }
+    @keyframes glitch-slice-2 {
+        0%, 100% { clip-path: inset(50% 0 50% 0); opacity: 0; }
+        2%  { clip-path: inset(60% 0 10% 0); opacity: 1; transform: translate3d(-5px, 0, 0); }
+        4%  { clip-path: inset(20% 0 40% 0); opacity: 1; transform: translate3d(5px, 0, 0); }
+        6%, 15% { opacity: 0; }
+        17% { clip-path: inset(5% 0 80% 0); opacity: 1; transform: translate3d(-8px, 0, 0); }
+        19% { clip-path: inset(70% 0 20% 0); opacity: 1; transform: translate3d(8px, 0, 0); }
+        21%, 45% { opacity: 0; }
+        47% { clip-path: inset(40% 0 30% 0); opacity: 1; transform: translate3d(-6px, 0, 0); }
+        49% { clip-path: inset(10% 0 60% 0); opacity: 1; transform: translate3d(6px, 0, 0); }
+        51%, 70% { opacity: 0; }
+        72% { clip-path: inset(80% 0 5% 0); opacity: 1; transform: translate3d(-7px, 0, 0); }
+        74% { opacity: 0; }
+    }
+
+    /* Hardware-Accelerated Digital Glitch */
+    @keyframes digital-glitch {
+        0%, 100% { transform: translate3d(0, 0, 0) skewX(0deg) scaleY(1); }
+        2%  { transform: translate3d(8px, 0, 0) skewX(-15deg) scaleY(1.1); }
+        4%  { transform: translate3d(-8px, 0, 0) skewX(15deg) scaleY(0.9); }
+        6%  { transform: translate3d(0, 0, 0) skewX(0deg) scaleY(1); }
+        15% { transform: translate3d(0, 0, 0) skewX(0deg); }
+        17% { transform: translate3d(-12px, 2px, 0) skewX(-20deg) scaleY(1.2); }
+        19% { transform: translate3d(6px, -2px, 0) skewX(10deg) scaleY(0.8); }
+        21% { transform: translate3d(0, 0, 0) skewX(0deg) scaleY(1); }
+        45% { transform: translate3d(0, 0, 0) skewX(0deg); }
+        47% { transform: translate3d(5px, -1px, 0) skewX(5deg); }
+        49% { transform: translate3d(-3px, 1px, 0) skewX(-5deg); }
+        51% { transform: translate3d(0, 0, 0) skewX(0deg); }
+        70% { transform: translate3d(0, 0, 0) skewX(0deg); }
+        72% { transform: translate3d(-4px, 0, 0) skewX(10deg); }
+        74% { transform: translate3d(0, 0, 0) skewX(0deg); }
+    }
+    .animate-glitch {
+        animation: digital-glitch 1.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        will-change: transform;
+    }
+
     /* hardware-accelerated animated mesh blobs */
     @keyframes blob {
         0% { transform: translate(0px, 0px) scale(1); }
