@@ -19,6 +19,11 @@ try {
         DROP TRIGGER IF EXISTS Document_ad;
         DROP TRIGGER IF EXISTS Document_au;
         DROP TABLE IF EXISTS DocumentIndex;
+		DROP TABLE IF EXISTS DocumentIndex_config;
+		DROP TABLE IF EXISTS DocumentIndex_content;
+		DROP TABLE IF EXISTS DocumentIndex_data;
+		DROP TABLE IF EXISTS DocumentIndex_docsize;
+		DROP TABLE IF EXISTS DocumentIndex_idx;
     `);
     
     console.log('✅ [Pre-Push] Safely cleared FTS5 tables and triggers for Prisma compatibility.');
