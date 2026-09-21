@@ -60,8 +60,8 @@ That said, if you're feeling ambitious, you can:
 * Add additional photos or just paste in web links.
 * Scan QR-codes containing URLs to relevant documents.
 * Manually type tags, amounts, and descriptions (but then you are *very* ambitious).
-* **Just Paste Anything:** Hit `Ctrl+V` anywhere. The global PasteHandler detects images in your clipboard, raw URLs (fetching the webpage), text blocks (creating local Markdown notes), and even raw Key-Value Pair lists (weight/color/size), mapping them to attributes.
-* **Fire-and-Forget Outbox:** Never wait for a progress bar. Tapping 'Save' pushes the item to an offline-tolerant IndexedDB queue and resets the UI. You can scan items in a deep basement with no signal, and the app will sync whenever your Wi-Fi reconnects.
+* **Just Paste Anything:** Hit `Ctrl+V` anywhere. The global PasteHandler detects images in your clipboard, raw URLs (fetching the webpage), text blocks (creating local Markdown notes). Well, Key-Value Pairs and lists (weight/color/size) in all varieties are picked up, mapping them to attributes.
+* **Fire-and-Forget Outbox:** `Never` wait for a progress bar. Tapping 'Save' pushes the item to an offline-tolerant IndexedDB queue and resets the UI. You can scan items in a deep basement with no signal, and the app will sync whenever your Wi-Fi reconnects. ... Okay, okay, I will backpedal on `never` since we sometimes have to verify bulk stuff.
 
 **Bulk Import & The Comparison Lens**  
 If bulk import is how you ingest a mountain of data into Troves, the Comparison Lens is how you audit reality against your database using set math. *(Tip: Count the physical items before snapping a multi-scan photo. It gives you a quick sanity check to know if your picture was clear enough for the model to catch everything).*
