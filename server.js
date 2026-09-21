@@ -31,7 +31,12 @@ const port = process.env.PORT || 3000;
 const keyPath = path.join(process.cwd(), 'key.pem');
 const certPath = path.join(process.cwd(), 'cert.pem');
 
-if (fs.existsSync(keyPath) && fs.existsSync(certPath)) {
+const isValidCertFile = (p) => {
+    try { return fs.existsSync(p) && fs.statSync(p).isFile() && fs.readFileSync(p, 'utf8').includes('BEGIN '); }
+    catch { return false; }
+};
+
+if (isValidCertFile(keyPath) && isValidCertFile(certPath)) {
     const options = { key: fs.readFileSync(keyPath), cert: fs.readFileSync(certPath) };
     https.createServer(options, app).listen(port, '0.0.0.0', () => {
         console.log(`🔒 Custom Server running securely on HTTPS port ${port}`);

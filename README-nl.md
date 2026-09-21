@@ -75,7 +75,7 @@ Gooi je spullen op tafel, filter de vergelijking op de tag `#camping-gear`, en m
 
 ## 🧠 Zelforganiserende Taxonomie
 
-Omdat Troves van alles wat moet kunnen verwerken—van winterjassen en bougies tot whisky, trollbeads en ESP32-bordjes—kan het niet vooraf geprogrammeerd worden met stugge spreadsheet-kolommen zoals "Merk" of "Schoenmaat". In plaats daarvan bouwt, vernietigt (en updatet) het on-the-fly zijn eigen structuur met een Entity-Attribute-Value taxonomie. Er zit iets meer achter, maar dat is de kern.
+Omdat Troves van alles wat moet kunnen verwerken, van winterjassen en bougies tot whisky, trollbeads en ESP32-bordjes, kan het niet vooraf geprogrammeerd worden met stugge spreadsheet-kolommen zoals "Merk" of "Schoenmaat". In plaats daarvan bouwt, vernietigt (en updatet) het on-the-fly zijn eigen structuur met een Entity-Attribute-Value taxonomie. Er zit iets meer achter, maar dat is de kern.
 
 **Taalgebruik consistent houden**  
 Beeldherkenningstools maken er qua tekst nogal een zootje van. Als je het systeem foto's van drie verschillende t-shirts voert, krijgt de ene het label "korte mouwen", de andere "mouwstijl" en de derde "mouwlengte". Daar kun je geen fatsoenlijke zoekfunctie op bouwen. Om dit op te lossen: zodra de app voor het eerst een nieuwe categorie ziet, zet hij een specifieke set labels vast en dwingt hij de software om precies die termen te hergebruiken voor alle toekomstige items in die groep. Het verandert rommelige, willekeurige tekst in een strakke, voorspelbare database. Semi-gerelateerd: Lege categorieën verdampen vanzelf als je het laatste item eruit haalt, wat je database lekker schoon houdt.
