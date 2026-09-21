@@ -115,33 +115,33 @@
                                 A self-hosted, offline-first inventory system for your physical items. It automatically builds a growing taxonomy and stays fully searchable, even when offline.
                             </p>
                             <form method="POST" action="?/setupAdmin" class="flex flex-col gap-5" in:fade={{ duration: 200 }} use:enhance={() => {
-                            isSubmitting = true;
-                            return async ({ result, update }) => { 
-                                if (result.type === 'success') {
-                                    step = 2; 
-                                } else {
-                                    await update(); 
-                                }
-                                isSubmitting = false; 
-                            };
-                        }}>
-                            <div class="space-y-4">
-                                <h3 class="text-[10px] font-bold uppercase tracking-widest text-base-content/40">1. Create Administrator Account</h3>
-                                <div class="flex flex-col gap-4">
-                                    <FormInput autocomplete="username" icon="bi-person" inputClass="bg-base-200/40 focus:bg-base-100 shadow-inner backdrop-blur-md" name="username" placeholder="Username" required/>
-                                    <FormInput autocomplete="new-password" icon="bi-shield-lock" inputClass="bg-base-200/40 focus:bg-base-100 shadow-inner backdrop-blur-md" name="password" placeholder="Password" required type="password"/>
-                                    <FormInput autocomplete="new-password" icon="bi-shield-check" inputClass="bg-base-200/40 focus:bg-base-100 shadow-inner backdrop-blur-md" name="passwordConfirm" placeholder="Repeat Password" required type="password"/>
+                                isSubmitting = true;
+                                return async ({ result, update }) => { 
+                                    if (result.type === 'success') {
+                                        step = 2; 
+                                    } else {
+                                        await update(); 
+                                    }
+                                    isSubmitting = false; 
+                                };
+                            }}>
+                                <div class="space-y-4">
+                                    <h3 class="text-[10px] font-bold uppercase tracking-widest text-base-content/40">1. Create Administrator Account</h3>
+                                    <div class="flex flex-col gap-4">
+                                        <FormInput autocomplete="username" icon="bi-person" inputClass="bg-base-200/40 focus:bg-base-100 shadow-inner backdrop-blur-md" name="username" placeholder="Username" required/>
+                                        <FormInput autocomplete="new-password" icon="bi-shield-lock" inputClass="bg-base-200/40 focus:bg-base-100 shadow-inner backdrop-blur-md" name="password" placeholder="Password" required type="password"/>
+                                        <FormInput autocomplete="new-password" icon="bi-shield-check" inputClass="bg-base-200/40 focus:bg-base-100 shadow-inner backdrop-blur-md" name="passwordConfirm" placeholder="Repeat Password" required type="password"/>
+                                    </div>
                                 </div>
-                            </div>
 
-                            <button type="submit" class="btn btn-primary w-full rounded-xl shadow-lg shadow-primary/20 text-base h-14 mt-4" disabled={isSubmitting}>
-                                {#if isSubmitting}
-                                    <span class="loading loading-spinner"></span> Securing...
-                                {:else}
-                                    Create Account
-                                {/if}
-                            </button>
-                        </form>
+                                <button type="submit" class="btn btn-primary w-full rounded-xl shadow-lg shadow-primary/20 text-base h-14 mt-4" disabled={isSubmitting}>
+                                    {#if isSubmitting}
+                                        <span class="loading loading-spinner"></span> Securing...
+                                    {:else}
+                                        Create Account
+                                    {/if}
+                                </button>
+                            </form>
                         {:else}
                             <p class="text-sm text-base-content/70 mb-6 font-medium leading-relaxed" in:fade={{ duration: 200 }}>
                                 Overwrite this instance with a previously downloaded backup. All existing users, troves, and settings will be instantly restored.
