@@ -31,7 +31,7 @@ Just snap a picture, or paste in a URL and let the system organize it.
     <td align="center" width="300">
         <i>
           <a href="https://www.youtube.com/shorts/P1S-qs7-n8E">
-            This one is pretty fun for instance
+            ...this one is pretty fun, for instance
           </a>
         </i>
     </td>
@@ -44,7 +44,7 @@ Just snap a picture, or paste in a URL and let the system organize it.
   <tr>
     <td align="center" width="300">
         <i>
-            <i>This demonstrates the <a href="./docs/extensions/04-examples.md">Spotify Extension</a> during bulk import of CDs</i>
+            <i>This demonstrates the <a href="./docs/extensions/04-examples.md">Spotify mod</a> during bulk import of CDs</i>
         </i>
     </td>
   </tr>
@@ -249,6 +249,19 @@ bash bin/setup-https.sh
 ```
 Follow the instructions to install the generated `rootCA.crt` on your phone, generate the local `.pem` files, and your traffic remains fast, unrestricted, and completely offline.
 
+### Uninstalling Docker Troves
+If you want to completely remove Troves and its background microservices, run the included utility:
+```
+bash bin/uninstall.sh
+```
+
+### Deleting Native Troves (not Docker)
+You should save the database and the data in `troves/prisma/dev.db` and `troves/data/`.
+
+... after that:  
+⚠️⚠️ You WILL lose your database and uploaded files if you have not saved them above! ⚠️⚠️  
+*To remove everything including your database and uploaded photos, you can simply delete the directory: `rm -rf troves`.*
+
 
 ## 💻 Development & Under the Hood
 **Stack**  
@@ -256,6 +269,9 @@ Svelte 5, PWA, Prisma, SQLite, Tailwind, TypeScript, LLMs + various ML models.
 
 **A Note on Terminology**  
 While the UI refers to your top-level databases as "Troves", the underlying database schema still calls them "Inventories". Furthermore, the bulk camera feature is called "Multi-Scan" in the UI, but referred to as "Collections" in the code. I mention this because there is bound to be confusion if you start poking around the repo.
+
+**Security Notice on Images**  
+Troves serves uploaded images via a static file server rather than authenticating every single image request through the database. Security is achieved via obscurity using high-entropy UUIDs. This means anyone with the exact URL of an image can view it without logging in, but it is very (VERY!) hard to guess the URLs.
 
 ### Dev Setup
 ```bash

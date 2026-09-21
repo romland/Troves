@@ -389,7 +389,7 @@ success "Troves unpacked into $INSTALL_DIR"
 # ------------------------------------------------------------------------------
 # 7. Local LAN HTTPS & PWA Setup
 # ------------------------------------------------------------------------------
-info "Configuring Local HTTPS for Mobile PWA & Camera access..."
+info "Configuring Local HTTPS for Mobile PWA on LAN..."
 if ! command -v mkcert &> /dev/null; then
     MKARCH="amd64"
     [ "$(uname -m)" = "aarch64" ] || [ "$(uname -m)" = "arm64" ] && MKARCH="arm64"
