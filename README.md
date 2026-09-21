@@ -223,8 +223,10 @@ mkdir troves && \
     cd troves && \
     curl -fsSL https://raw.githubusercontent.com/romland/troves/main/bin/setup-host.sh -o setup.sh && \
     bash setup.sh
-
 ```
+
+**⚠️ Hardware Heads-Up (Memory & SBCs)**  
+If you are planning to run this on a cheaper Single Board Computer (like a Raspberry Pi): the background removal microservice needs RAM. It really wants around 8GB of it to run comfortably. If you try to spin Troves up on a 2GB or 4GB board, it will likely bring the system to its knees. If you are tight on hardware memory, you can simply turn off background removal in the app settings.
 
 **Host Dependencies (Optional)**  
 All external dependencies gracefully fall back if a tool isn't installed.
@@ -301,6 +303,9 @@ P="$(which yt-dlp)" && sudo wget https://github.com/yt-dlp/yt-dlp/releases/lates
 
 
 ## 💡 Hacks & Pro-Tips
+
+* **Add it to your Home Screen**  
+I highly recommend using the "Add to Home Screen" button on your phone. Hiding the browser UI gives you back a ton of vertical space for the camera, and it just makes the whole thing much nicer to use.
 
 * **The Pool Noodle Hack ($2)**  
 When scanning clothes, especially if you use the background removal feature, limp sleeves and hanger-pokes ruin the cutout. Slit a dense foam pool noodle down the side and slide it over the top bar of a standard wooden hanger. It immediately widens the shoulder profile.
