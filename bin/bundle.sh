@@ -37,6 +37,10 @@ cp package.json package-lock.json .env.example server.js dist/
 [ -f Dockerfile.prod ] && cp Dockerfile.prod dist/Dockerfile
 [ -f docker-compose.yml ] && cp docker-compose.yml dist/
 
+echo "🧹 Adding uninstall script to release..."
+# Place it right in the root next to start.sh for easy access
+[ -f bin/uninstall.sh ] && cp bin/uninstall.sh dist/uninstall.sh && chmod +x dist/uninstall.sh
+
 echo "🐳 Copying Docker services (excluding caches & virtualenvs)..."
 rsync -av \
   --exclude='.git' \
