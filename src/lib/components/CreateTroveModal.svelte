@@ -55,7 +55,7 @@
 		<div>
 			<h3 class="font-bold text-xl leading-tight">Create New Trove</h3>
 			<p class="text-xs text-gray-500 mt-1">Select an archetype to automatically configure optimal system defaults.</p>
-            <p class="text-xs font-bold text-warning mt-1">⚠️ Important: Archetype and the "what will be in it" choice fundamentally changes how we extract data and which tools are active. Choose with care!</p>
+            <p class="text-xs font-bold text-warning mt-1">⚠️ Important: Archetype and the "what will be in it" choice fundamentally changes how Troves extract data and which tools are active. Choose with care!</p>
 		</div>
         <button type="button" aria-label="Close" class="btn btn-sm btn-circle btn-ghost" on:click={() => modal.close()}><i class="bi bi-x-lg"></i></button>
 	</div>
