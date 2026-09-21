@@ -14,7 +14,7 @@ I absolutely hate data-entry. Creating an inventory and adding new items should 
 
 Just snap a picture, or paste in a URL and let the system organize it.
 
-[There](https://youtu.be/5B0cxLwS8fo) might [be](https://youtu.be/8WpgqJUO7SQ) a [bunch](https://youtu.be/n4YAiE8Yv5Y) of [demo](https://youtube.com/shorts/qyyXUC3TYlg?feature=share) videos [uploaded](https://youtube.com/shorts/U_juc8A-QqI?feature=share) to [YouTube](https://youtube.com/shorts/JtorL9VRztQ?feature=share). Oh, and there are also [some shorts](https://www.youtube.com/@friya/shorts) (whatever the heck that is). 
+[There](https://youtu.be/5B0cxLwS8fo) might [be](https://youtu.be/8WpgqJUO7SQ) a [bunch](https://youtu.be/n4YAiE8Yv5Y) of [demo](https://youtube.com/shorts/qyyXUC3TYlg?feature=share) videos [uploaded](https://youtube.com/shorts/U_juc8A-QqI?feature=share) to [YouTube](https://youtube.com/shorts/JtorL9VRztQ?feature=share). Oh, and there are also [some here](https://www.youtube.com/@friya/shorts). 
 
 
 <table align="center">
@@ -147,12 +147,15 @@ Search stemming is great for tools, but infuriating when it floods an apparel se
 Search results return the exact container, nested tray, and (visually) grid slot it currently occupies. Or in documents, the exact location of the text.
 
 ## 🔌 Extensions & Modding
+<img src="./.github/screenshots/034-prompt-generator.webp" align="right" width="300" alt="Plugin Prompt Generator" />
 
 Modding is fun. You get to feature-creep and add bloat without consequences.
 
 Troves supports a drop-in, zero-config plugin architecture. If you want to ping a Discord webhook, print physical labels to a custom thermal printer, or look up components from the Mouser API, just drop a `.js` file into the `data/plugins/` directory (or write it directly in the Admin dashboard).
 
 The Extension Engine handles asynchronous routing, offline queuing, and secure environment variable injection, and supports hot-reloading plugins without server restarts.
+
+Can't be bothered to read the docs? The Admin dashboard includes a built-in prompt generator. Just type what you want the plugin to do, and Troves will package your idea along with all the necessary architectural context and API rules into a massive prompt. Just paste it into your favorite LLM and let it write the extension for you.
 
 Check out the [Extensions Documentation](docs/extensions/01-architecture.md) to write your own.
 
