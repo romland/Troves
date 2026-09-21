@@ -386,11 +386,11 @@
                         </td>
 
                         {#if !brief && $page.data.role !== 'VIEWER'}
-                        <td class="whitespace-nowrap relative z-20">
-                            <a href="/{item.id}/edit" title="Edit Item" class="text-gray-500 hover:text-primary">
-                                <i class="bi bi-pencil-square"></i>
-                            </a>
-                        </td>
+                            <td class="whitespace-nowrap relative z-20">
+                                <a href="/{item.id}/edit" title="Edit Item" class="text-gray-500 hover:text-primary">
+                                    <i class="bi bi-pencil-square"></i>
+                                </a>
+                            </td>
                         {/if}                        
                     </tr>
                 {/each}
