@@ -2,11 +2,14 @@ import { fail, redirect, isRedirect } from '@sveltejs/kit';
 import { db } from '$lib/server/database';
 import { createSession, setSessionCookie } from '$lib/server/session';
 import bcrypt from 'bcryptjs';
+import crypto from 'node:crypto';
 import type { PageServerLoad, Actions } from './$types';
 import { getSystemDiagnostics } from '$lib/server/diagnostics';
 import fs from 'fs';
 import path from 'path';
 import { pingTelemetry } from "$lib/server/telemetry";
+
+bcrypt.setRandomFallback((len) => Array.from(crypto.randomBytes(len)));
 
 export const load = (async () => {
     // Re-verify just in case the hook check was bypassed

@@ -4,6 +4,9 @@ import { db } from '$lib/server/database';
 import { checkRateLimit } from '$lib/server/security';
 import { createSession, setSessionCookie } from '$lib/server/session';
 import bcrypt from 'bcryptjs';
+import crypto from 'node:crypto';
+
+bcrypt.setRandomFallback((len) => Array.from(crypto.randomBytes(len)));
 
 export const actions = {
     default: async ({ cookies, request, getClientAddress }) => {
