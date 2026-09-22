@@ -236,7 +236,7 @@
                     {@const mainPhoto = getFirstProductPhoto(item)}
                     {@const cols = mainPhoto.colors?.length > 2 ? Object.keys(JSON.parse(mainPhoto.colors)) : []}
                     {@const serverSrc = mainPhoto.showOriginal ? mainPhoto.orgPath?.replace(/\.[^/.]+(?=\?|$)/, '_org_thumb.webp') : (mainPhoto.thumbPath || mainPhoto.orgPath)}
-                    {@const cb = mainPhoto.updatedAt ? '?v=' + new Date(mainPhoto.updatedAt).getTime() : ''}
+                    {@const cb = mainPhoto.updatedAt ? '?v=' + new Date(mainPhoto.updatedAt).getTime() : (item.updatedAt ? '?v=' + new Date(item.updatedAt).getTime() : '')}
                     {@const localBlob = item.clientId ? ghostUrls.get(item.clientId) : null}
                     {@const isLoaded = serverSrc ? loadedUrls.has(serverSrc) : false}
 
@@ -433,7 +433,7 @@
                 {@const mainPhoto = getFirstProductPhoto(item)}
                 {@const cols = mainPhoto.colors?.length > 2 ? Object.keys(JSON.parse(mainPhoto.colors)) : []}
                 {@const serverSrc = mainPhoto.showOriginal ? mainPhoto.orgPath?.replace(/\.[^/.]+(?=\?|$)/, '_org_thumb.webp') : (mainPhoto.thumbPath || mainPhoto.orgPath)}
-                {@const cb = mainPhoto.updatedAt ? '?v=' + new Date(mainPhoto.updatedAt).getTime() : ''}
+                {@const cb = mainPhoto.updatedAt ? '?v=' + new Date(mainPhoto.updatedAt).getTime() : (item.updatedAt ? '?v=' + new Date(item.updatedAt).getTime() : '')}
                 {@const localBlob = item.clientId ? ghostUrls.get(item.clientId) : null}
                 {@const isLoaded = serverSrc ? loadedUrls.has(serverSrc) : false}
                 

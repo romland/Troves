@@ -19,8 +19,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
     if (!photo) return json({ error: 'Photo not found' }, { status: 404 });
 
-    // We rename the file to naturally bust the browser cache without requiring
-    // ?v= cache-busting parameters spread everywhere in the UI templates.
+    // We apply rotation in-place and bump updatedAt to bust the UI cache natively
     const applyRotation = async (webPath: string | null) => {
         if (!webPath) return null;
         const cleanWebPath = webPath.split('?')[0]; // Strip existing query params
@@ -36,13 +35,10 @@ export const POST: RequestHandler = async ({ request, locals }) => {
         const buffer = fs.readFileSync(localPath);
         const rotatedBuffer = await sharp(buffer).rotate(degrees).toBuffer();
         
-        const newWebPath = cleanWebPath.replace(/\.webp$/, `_r${Date.now()}.webp`);
-        const newLocalPath = `data${newWebPath}`;
-
-        fs.writeFileSync(newLocalPath, rotatedBuffer);
-        try { fs.unlinkSync(localPath); } catch(e) {}
+        // Overwrite in place! No more appending _r timestamps to the filename!
+        fs.writeFileSync(localPath, rotatedBuffer);
         
-        return newWebPath;
+        return cleanWebPath;
     };
 
     try {
@@ -55,14 +51,10 @@ export const POST: RequestHandler = async ({ request, locals }) => {
             const oldOrgThumb = photo.orgPath.split('?')[0].replace(/\.[^/.]+$/, '_org_thumb.webp');
             const localOldOrgThumb = `data${oldOrgThumb}`;
             
-            const newOrgThumb = cleanOrg.replace(/\.[^/.]+$/, '_org_thumb.webp');
-            const localNewOrgThumb = `data${newOrgThumb}`;
-            
             if (fs.existsSync(localOldOrgThumb)) {
                  const buffer = fs.readFileSync(localOldOrgThumb);
                  const rotatedBuffer = await sharp(buffer).rotate(degrees).toBuffer();
-                 fs.writeFileSync(localNewOrgThumb, rotatedBuffer);
-                 try { fs.unlinkSync(localOldOrgThumb); } catch(e) {}
+                 fs.writeFileSync(localOldOrgThumb, rotatedBuffer);
             }
         }
 
@@ -71,7 +63,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
             data: { 
                 orgPath: cleanOrg,
                 thumbPath: cleanThumb,
-                cropPath: cleanCrop
+                cropPath: cleanCrop,
+                updatedAt: new Date(), // Force bump so the client cache busts
+                item: photo.item ? { update: { updatedAt: new Date() } } : undefined
             }
         });
 

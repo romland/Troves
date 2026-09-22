@@ -11,10 +11,9 @@ export function getSafeFilename(filename: string, extra: string = ""): string {
     // Strip directory traversal or null bytes if 'extra' is ever user-controlled
     const safeExtra = extra.replace(/[^a-zA-Z0-9_-]/g, '');
     
-    // Truncate to prevent ENAMETOOLONG errors, and strict-slugify to strip all unicode/path chars
-    const safeName = slugify(filename.substring(0, 30), { lower: true, strict: true });
-    
-    return [date, safeExtra, uuid, safeName].filter(Boolean).join('-');
+    // We drop the original filename completely to prevent runaway stacked strings 
+    // (like -draft-draft-draft). A clean date + extra + UUID is universally unique.
+    return [date, safeExtra, uuid].filter(Boolean).join('-');
 }
 
 export function getImageMimeType(filePath: string): string {
