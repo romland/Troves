@@ -14,7 +14,7 @@ I absolutely hate data-entry. Creating an inventory and adding new items should 
 
 Just snap a picture, or paste in a URL and let the system organize it.
 
-**Troves is VERY VERY much in a BETA phase. It's VERY untested. There be bugs and ghosts and trolls. You were warned. That said, it's under active development and code contributions are more than welcome!**
+**Troves is VERY VERY much in a BETA phase. It's VERY untested. There be bugs and dragons and trolls. You were warned. That said, it's under active development and code contributions are more than welcome!**
 
 [There](https://youtu.be/5B0cxLwS8fo) might [be](https://youtu.be/8WpgqJUO7SQ) a [bunch](https://youtu.be/n4YAiE8Yv5Y) of [demo](https://youtube.com/shorts/qyyXUC3TYlg?feature=share) videos [uploaded](https://youtube.com/shorts/U_juc8A-QqI?feature=share) to [YouTube](https://youtube.com/shorts/JtorL9VRztQ?feature=share). Oh, and there are also [some here](https://www.youtube.com/@friya/shorts). 
 
@@ -74,6 +74,7 @@ Snap a photo of a crate of 40 CDs or books to see what is **✨ New to You** and
 * **Kit Check ($B \setminus A$)**  
 Dump your stuff on a table, scope the comparison to the `#camping-gear` tag, and snap a photo to see exactly what you forgot to pack (a bit of a forced example, but ah, why not...).
 
+**⚠️ The Comparison Lens is VERY much BETA. More than the rest of the system, expect quirks and dragons here!**
 
 ## 🧠 Self-Organizing Taxonomy
 
