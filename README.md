@@ -293,13 +293,15 @@ To update Troves to the latest release, pull updates, and automatically rebuild/
 **CLI Management**  
 You can control the Troves service using the included `troves.sh` utility wrapper:
 ```
-./troves.sh start     # Start all configured services
-./troves.sh stop      # Stop running containers / processes
-./troves.sh restart   # Restart the stack
-./troves.sh update    # Pull latest updates and restart
-./troves.sh logs      # Tail live application logs
+./troves.sh start         # Start all configured services
+./troves.sh stop          # Stop running containers / processes
+./troves.sh restart       # Restart the stack
+./troves.sh update        # Pull latest updates and restart
+./troves.sh update-ytdlp  # Hot-patch video downloader (if video archiving fails, do this)
+./troves.sh logs          # Tail live application logs
 ```
 
+*You don't have to restart anything if you run `update-ytdlp`, it's a hot-patch.*
 
 ## 💻 Development & Under the Hood
 **Stack**  
@@ -346,10 +348,17 @@ npx prisma generate
 ```
 
 **Updating yt-dlp**  
-If video archiving stops working, YouTube likely changed their player. Manually update yt-dlp:
+If video archiving stops working, YouTube (or whomever) likely changed their player. You will want to update yt-dlp, depending on your install type do either of these two:  
+
+* **Troves Docker**  
+See **CLI Management** above.
+
+* **Troves native**  
 ```bash
 P="$(which yt-dlp)" && sudo wget https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -O "$P" && sudo chmod a+rx "$P"
 ```
+
+*If you get a chance, go give some love to the people keeping `yt-dlp` updated.*.
 
 ## 💡 Hacks & Pro-Tips
 

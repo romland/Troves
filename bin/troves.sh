@@ -40,6 +40,18 @@ case "$COMMAND" in
             $0 start
         fi
         ;;
+    update-ytdlp)
+        echo "🔄 Updating yt-dlp to handle latest video player changes..."
+        if grep -q "^DOCKER_MODE=true" .env 2>/dev/null; then
+            echo "🐳 Hot-patching yt-dlp inside the troves-app container..."
+            docker exec -u 0 troves-app yt-dlp -U || docker exec -u 0 troves-app sh -c 'wget -q https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -O /usr/local/bin/yt-dlp && chmod a+rx /usr/local/bin/yt-dlp'
+            echo "✅ Hot-patch complete. (Note: This patch will last until the container is recreated/updated)."
+        else
+            echo "💻 Updating yt-dlp on host..."
+            sudo yt-dlp -U || sudo sh -c 'wget -q https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -O /usr/local/bin/yt-dlp && chmod a+rx /usr/local/bin/yt-dlp'
+            echo "✅ Host update complete."
+        fi
+        ;;
     logs)
         echo "🖨️ Tailing Troves logs (Ctrl+C to exit)..."
         
@@ -60,7 +72,7 @@ case "$COMMAND" in
         ;;
     *)
         echo "Troves Management CLI"
-        echo "Usage: ./troves.sh {start|stop|restart|update|logs}"
+        echo "Usage: ./troves.sh {start|stop|restart|update|update-ytdlp|logs}"
         exit 1
         ;;
 esac
