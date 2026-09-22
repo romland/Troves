@@ -2,6 +2,7 @@
     export let item: any;
     import { createEventDispatcher } from 'svelte';
     import { isSlowConnection } from '$lib/client/utils';
+    import PremiumImage from "$lib/components/PremiumImage.svelte";
     const dispatch = createEventDispatcher();
 
     $: mainPhoto = item?.photos?.find(p => p.type === 'product' && p.isPrimary) || item?.photos?.find(p => p.type === 'product') || item?.photos?.[0] || {};
@@ -21,7 +22,12 @@
                 <div class="absolute inset-0 opacity-30 pointer-events-none print:hidden" style="background: linear-gradient(135deg, {cols[0]}, {cols[1] || cols[0]});"></div>
             {/if}
         {#if srcUrl}
-            <img src="{srcUrl}{cb}" alt={item.title} loading={imgLoadStrategy} class="w-full h-full object-cover mix-blend-multiply dark:mix-blend-normal relative z-10" />
+            <PremiumImage
+                src="{srcUrl}{cb}"
+                alt={item.title}
+                loading={imgLoadStrategy}
+                imgClass="object-cover w-full h-full mix-blend-multiply dark:mix-blend-normal relative z-10"
+            />
         {:else}
             <i class="bi bi-box text-xl text-gray-400 relative z-10"></i>
         {/if}

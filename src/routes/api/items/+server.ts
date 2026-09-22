@@ -108,7 +108,7 @@ export async function GET({ url, setHeaders, locals }) {
             select: {
                 id: true, type: true, isPrimary: true, orgPath: true, cropPath: true, thumbPath: true,
                 showOriginal: true, colors: true, classBlip: true, classTrash: true, llmAnalysis: true,
-                categoryId: true, category: true
+                categoryId: true, category: true, updatedAt: true
             }
         },
         tags: true,

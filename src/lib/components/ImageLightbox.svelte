@@ -1,85 +1,89 @@
 <script lang="ts">
-    import { fade, scale } from 'svelte/transition';
-    import { cubicOut } from 'svelte/easing';
+	import { fade, scale } from 'svelte/transition';
+	import { cubicOut } from 'svelte/easing';
 	import { spring } from 'svelte/motion';
-    import { enhance } from '$app/forms';
-    import { invalidateAll } from '$app/navigation';
-    import { notify } from "$lib/client/notifications";
+	import { enhance } from '$app/forms';
+	import { invalidateAll } from '$app/navigation';
+	import { notify } from "$lib/client/notifications";
 	import PromptModal from "$lib/components/PromptModal.svelte";
-    import { isVideo } from "$lib/shared/fileutils";
-    import { getHighlightStyle } from '$lib/shared/boundingBox';
-
-    export let itemTitle = "";
-    export let categories: any[] = [];
-    export let allowCategoryEdit = false;
-
-    let isOpen = false;
-    let photo: any = null;
-    let showOriginal = false;
+	import { isVideo } from "$lib/shared/fileutils";
+	import { getHighlightStyle } from '$lib/shared/boundingBox';
+	
+	export let itemTitle = "";
+	export let categories: any[] = [];
+	export let allowCategoryEdit = false;
+	
+	let isOpen = false;
+	let photo: any = null;
+	let showOriginal = false;
 	let showMenu = false;
 	let fileDetails = { size: '...', type: '...', dimensions: '...' };
-
-    // Pan & Zoom State
-    // Tuned for an Apple-like physical, responsive feel (critically damped)
-    let scaleVal = spring(1, { stiffness: 0.25, damping: 0.95 });
-    let translateX = spring(0, { stiffness: 0.25, damping: 0.95 });
-    let translateY = spring(0, { stiffness: 0.25, damping: 0.95 });
-
-    // Apple-style rubber banding (overscroll resistance)
-    function rubberBand(offset: number, dimension: number, constant = 0.55) {
-        const absOffset = Math.abs(offset);
-        const pull = (1.0 - (1.0 / ((absOffset * constant / dimension) + 1.0))) * dimension;
-        return offset > 0 ? pull : -pull;
-    }
-    let isDragging = false;
-    let startX = 0;
-    let startY = 0;
-    
-    // Advanced Pinch & Focal State
-    let pinchInitialDistance = 0;
-    let pinchInitialScale = 1;
-    let pinchInitialTx = 0;
-    let pinchInitialTy = 0;
-    let pinchFocalX = 0;
-    let pinchFocalY = 0;
+	
+	// Pan & Zoom State
+	// Tuned for an Apple-like physical, responsive feel (critically damped)
+	let scaleVal = spring(1, { stiffness: 0.25, damping: 0.95 });
+	let translateX = spring(0, { stiffness: 0.25, damping: 0.95 });
+	let translateY = spring(0, { stiffness: 0.25, damping: 0.95 });
+	
+	// Apple-style rubber banding (overscroll resistance)
+	function rubberBand(offset: number, dimension: number, constant = 0.55) {
+		const absOffset = Math.abs(offset);
+		const pull = (1.0 - (1.0 / ((absOffset * constant / dimension) + 1.0))) * dimension;
+		return offset > 0 ? pull : -pull;
+	}
+	let isDragging = false;
+	let startX = 0;
+	let startY = 0;
+	
+	// Advanced Pinch & Focal State
+	let pinchInitialDistance = 0;
+	let pinchInitialScale = 1;
+	let pinchInitialTx = 0;
+	let pinchInitialTy = 0;
+	let pinchFocalX = 0;
+	let pinchFocalY = 0;
 	let dragHasMoved = false;
-
+	
 	let isVideoLoading = true;
 	let showLargeVideoWarning = false;
 	let isMobile = false;
 	let isCheckingVideoSize = false;
-
+	
 	// Momentum (Gliding) Trackers
-    let swipeOffsetY = 0;
+	let swipeOffsetY = 0;
 	let lastDragX = 0;
 	let lastDragY = 0;
 	let lastDragTime = 0;
 	let velocityX = 0;
 	let velocityY = 0;
-
-    // Tap tracking for manual double-tap
-    let lastTapTime = 0;
-
+	
+	// Tap tracking for manual double-tap
+	let lastTapTime = 0;
+	
 	let promptModal: PromptModal;
-
-    export function open(p: any) {
-        photo = p;
-        showOriginal = p.showOriginal || false;
-        resetZoom(true);
-        showMenu = false;
-        isVideoLoading = true;
-        isMobile = typeof window !== 'undefined' && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+	let hasSavedRotation = false;
+    const instanceId = Math.random().toString(36).slice(2, 6);
+	
+	export function open(p: any) {
+		photo = p;
+		showOriginal = p.showOriginal || false;
+		resetZoom(true);
+		showMenu = false;
+		isVideoLoading = true;
+		isMobile = typeof window !== 'undefined' && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
 		isCheckingVideoSize = isMobile && isVideo(p.orgPath);
-        isOpen = true;
-        fetchDetails();
-    }
-
+		isOpen = true;
+		hasSavedRotation = false;
+		fetchDetails();
+	}
+	
 	async function fetchDetails() {
 		if (!photo?.orgPath) return;
 		fileDetails = { size: '...', type: '...', dimensions: '...' };
-
+		
 		try {
-			const res = await fetch(photo.orgPath, { method: 'HEAD' });
+            const cb = photo?.updatedAt ? '?v=' + new Date(photo.updatedAt).getTime() : '';
+            const res = await fetch(photo.orgPath + cb, { method: 'HEAD' });
 			const bytes = res.headers.get('content-length');
 			const type = res.headers.get('content-type');
 			let sizeStr = 'Unknown';
@@ -93,8 +97,8 @@
 			fileDetails = { ...fileDetails, size: sizeStr, type: type || 'Unknown' };
 		} catch (e) {}
 		isCheckingVideoSize = false;
-
-        if (isVideo(photo.orgPath)) {
+		
+		if (isVideo(photo.orgPath)) {
 			const vid = document.createElement('video');
 			vid.onloadedmetadata = () => {
 				fileDetails = { ...fileDetails, dimensions: `${vid.videoWidth} × ${vid.videoHeight}` };
@@ -105,280 +109,290 @@
 			img.onload = () => {
 				fileDetails = { ...fileDetails, dimensions: `${img.naturalWidth} × ${img.naturalHeight}` };
 			};
-			img.src = showOriginal ? photo.orgPath : (photo.cropPath || photo.orgPath);
+            const activePath = showOriginal ? photo.orgPath : (photo.cropPath || photo.orgPath);
+            img.src = activePath + (photo?.updatedAt ? '?v=' + new Date(photo.updatedAt).getTime() : '');
 		}
 	}
+	
+	export function close(force: any = false) {
+		// Fix: Svelte event handlers pass the Event object (which is truthy).
+		// We strictly check if force is exactly the boolean 'true'.
+		const isForce = force === true;
 
-    export function close(force: any = false) {
-        // Fix: Svelte event handlers pass the Event object (which is truthy).
-        // We strictly check if force is exactly the boolean 'true'.
-        const isForce = force === true;
-
-        // Auto-save rotation in the background
-        if (!isForce && photo?.id && rotation % 360 !== 0) {
-            saveRotationBackground(rotation, photo.id);
-        }
-        isOpen = false;
-        setTimeout(() => {
-            photo = null;
-            rotation = 0;
-            resetZoom(true);
-        }, 300); // Matches transition duration
-    }
-
-    function saveRotationBackground(deg: number, pid: number) {
-        const degrees = ((deg % 360) + 360) % 360;
-        notify('info', 'Saving image rotation...');
-        fetch('/api/photo-rotate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ photoId: pid, degrees })
-        }).then(res => {
-            if (res.ok) invalidateAll();
-            else notify('error', 'Failed to save rotation');
-        }).catch(e => notify('error', 'Network error during rotation save'));
-    }
-
-    function resetZoom(hard: boolean | Event = false) {
-        const isHard = hard === true; // Protect against Svelte passing MouseEvents
-        scaleVal.set(1, { hard: isHard });
-        translateX.set(0, { hard: isHard });
-        translateY.set(0, { hard: isHard });
-        rotation = 0;
-        isDragging = false;
-        pinchInitialDistance = 0;
+        // console.log(`[Lightbox-${instanceId}] close() triggered. force:`, force, '| isForce:', isForce, '| rot:', rotation, '| locked:', hasSavedRotation);
+        // console.trace(`[Lightbox-${instanceId}] close() call stack`);
+		
+		// Auto-save rotation in the background
+		if (!isForce && photo?.id && rotation % 360 !== 0 && !hasSavedRotation) {
+            // console.log(`[Lightbox-${instanceId}] 🔄 Lock acquired. Initiating save for photo ${photo.id}...`);
+            hasSavedRotation = true;
+			saveRotationBackground(rotation, photo.id);
+        } else if (!isForce && photo?.id && rotation % 360 !== 0) {
+            // console.log(`[Lightbox-${instanceId}] 🛑 BLOCKED second save attempt! Lock was already active.`);
+		}
+		isOpen = false;
+		setTimeout(() => {
+			photo = null;
+			rotation = 0;
+			hasSavedRotation = false;
+			resetZoom(true);
+		}, 300); // Matches transition duration
+	}
+	
+	function saveRotationBackground(deg: number, pid: number) {
+		const degrees = ((deg % 360) + 360) % 360;
+        // console.log(`[Lightbox-${instanceId}] 🚀 Firing network request: POST /api/photo-rotate (${degrees}deg)`);
+		notify('info', 'Saving image rotation...');
+		fetch('/api/photo-rotate', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ photoId: pid, degrees })
+		}).then(res => {
+			if (res.ok) invalidateAll();
+			else notify('error', 'Failed to save rotation');
+		}).catch(e => notify('error', 'Network error during rotation save'));
+	}
+	
+	function resetZoom(hard: boolean | Event = false) {
+		const isHard = hard === true; // Protect against Svelte passing MouseEvents
+		scaleVal.set(1, { hard: isHard });
+		translateX.set(0, { hard: isHard });
+		translateY.set(0, { hard: isHard });
+		rotation = 0;
+		isDragging = false;
+		pinchInitialDistance = 0;
 		dragHasMoved = false;
 		velocityX = 0;
 		velocityY = 0;
-    }
-
-    // Edge Constraints: Prevents panning out of bounds when zoomed in
-    function applyBounds(tx: number, ty: number, scale: number) {
-        if (scale <= 1) return { x: 0, y: 0 };
-        const maxTx = Math.max(0, (window.innerWidth * (scale - 1)) / 2);
-        const maxTy = Math.max(0, (window.innerHeight * (scale - 1)) / 2);
-        return {
-            x: Math.max(-maxTx, Math.min(maxTx, tx)),
-            y: Math.max(-maxTy, Math.min(maxTy, ty))
-        };
-    }
-
-    // True Focal-Point Zooming: Keeps the pixel under your finger/cursor exactly where it is
-    function zoomTo(newScale: number, focalX: number, focalY: number, hard = false) {
-        let targetScale = newScale;
-        if (targetScale < 1 && hard) targetScale = 1 - rubberBand(1 - targetScale, 1, 0.8); // Smooth Apple resistance
-        else if (targetScale < 1) targetScale = 1; // Snap back instantly
+	}
+	
+	// Edge Constraints: Prevents panning out of bounds when zoomed in
+	function applyBounds(tx: number, ty: number, scale: number) {
+		if (scale <= 1) return { x: 0, y: 0 };
+		const maxTx = Math.max(0, (window.innerWidth * (scale - 1)) / 2);
+		const maxTy = Math.max(0, (window.innerHeight * (scale - 1)) / 2);
+		return {
+			x: Math.max(-maxTx, Math.min(maxTx, tx)),
+			y: Math.max(-maxTy, Math.min(maxTy, ty))
+		};
+	}
+	
+	// True Focal-Point Zooming: Keeps the pixel under your finger/cursor exactly where it is
+	function zoomTo(newScale: number, focalX: number, focalY: number, hard = false) {
+		let targetScale = newScale;
+		if (targetScale < 1 && hard) targetScale = 1 - rubberBand(1 - targetScale, 1, 0.8); // Smooth Apple resistance
+		else if (targetScale < 1) targetScale = 1; // Snap back instantly
 		targetScale = Math.min(targetScale, 15);
-
-        const cx = window.innerWidth / 2;
-        const cy = window.innerHeight / 2;
-
-        // Calculate where the focal point sits on the original un-scaled image
-        const imageX = (focalX - cx - $translateX) / $scaleVal;
-        const imageY = (focalY - cy - $translateY) / $scaleVal;
-
-        // Project the new translation to keep that exact pixel under the focal point
-        let newTx = (focalX - cx) - (imageX * targetScale);
-        let newTy = (focalY - cy) - (imageY * targetScale);
-
-        // Enforce edge gravity
-        const bounded = applyBounds(newTx, newTy, targetScale);
-
-        scaleVal.set(targetScale, { hard });
-        translateX.set(bounded.x, { hard });
-        translateY.set(bounded.y, { hard });
-    }
-
-    function handleWheel(e: WheelEvent) {
-        e.preventDefault();
-        const delta = e.deltaY * -0.005;
-        zoomTo($scaleVal + delta, e.clientX, e.clientY, false);
-    }
-
-    function startDrag(e: MouseEvent | TouchEvent) {
-        isDragging = true;
+		
+		const cx = window.innerWidth / 2;
+		const cy = window.innerHeight / 2;
+		
+		// Calculate where the focal point sits on the original un-scaled image
+		const imageX = (focalX - cx - $translateX) / $scaleVal;
+		const imageY = (focalY - cy - $translateY) / $scaleVal;
+		
+		// Project the new translation to keep that exact pixel under the focal point
+		let newTx = (focalX - cx) - (imageX * targetScale);
+		let newTy = (focalY - cy) - (imageY * targetScale);
+		
+		// Enforce edge gravity
+		const bounded = applyBounds(newTx, newTy, targetScale);
+		
+		scaleVal.set(targetScale, { hard });
+		translateX.set(bounded.x, { hard });
+		translateY.set(bounded.y, { hard });
+	}
+	
+	function handleWheel(e: WheelEvent) {
+		e.preventDefault();
+		const delta = e.deltaY * -0.005;
+		zoomTo($scaleVal + delta, e.clientX, e.clientY, false);
+	}
+	
+	function startDrag(e: MouseEvent | TouchEvent) {
+		isDragging = true;
 		dragHasMoved = false;
-        
-        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-        const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-        
+		
+		const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+		const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+		
 		startX = clientX - $translateX;
 		startY = clientY - $translateY;
-
+		
 		lastDragX = clientX;
 		lastDragY = clientY;
 		lastDragTime = performance.now();
 		velocityX = 0;
 		velocityY = 0;
-    }
-
-    function onDrag(e: MouseEvent | TouchEvent) {
-        if (!isDragging) return;
-        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-        const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-        
+	}
+	
+	function onDrag(e: MouseEvent | TouchEvent) {
+		if (!isDragging) return;
+		const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+		const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+		
 		// Calculate velocity for gliding (pixels per millisecond)
 		const now = performance.now();
 		const dt = now - lastDragTime;
-        
-        // Apple uses a ~10-15ms sample window with a low-pass filter to prevent erratic flick math
-        if (dt > 10) {
-            const instVx = (clientX - lastDragX) / dt;
-            const instVy = (clientY - lastDragY) / dt;
-            velocityX = (velocityX * 0.2) + (instVx * 0.8);
-            velocityY = (velocityY * 0.2) + (instVy * 0.8);
-
-            lastDragX = clientX;
-            lastDragY = clientY;
-            lastDragTime = now;
+		
+		// Apple uses a ~10-15ms sample window with a low-pass filter to prevent erratic flick math
+		if (dt > 10) {
+			const instVx = (clientX - lastDragX) / dt;
+			const instVy = (clientY - lastDragY) / dt;
+			velocityX = (velocityX * 0.2) + (instVx * 0.8);
+			velocityY = (velocityY * 0.2) + (instVy * 0.8);
+			
+			lastDragX = clientX;
+			lastDragY = clientY;
+			lastDragTime = now;
 		}
-
+		
 		let rawX = clientX - startX;
 		let rawY = clientY - startY;
-
-        // If fully zoomed out, track vertical drag for swipe-to-close
-        if ($scaleVal === 1) {
-            swipeOffsetY = rawY;
-            translateY.set(rawY, { hard: true });
-            return;
-        }
-
+		
+		// If fully zoomed out, track vertical drag for swipe-to-close
+		if ($scaleVal === 1) {
+			swipeOffsetY = rawY;
+			translateY.set(rawY, { hard: true });
+			return;
+		}
+		
 		// Determine bounds based on scale
 		const maxTx = Math.max(0, (window.innerWidth * ($scaleVal - 1)) / 2);
 		const maxTy = Math.max(0, (window.innerHeight * ($scaleVal - 1)) / 2);
-
-        // Apply exponential rubber-band resistance if dragging past the edges
-        if (rawX > maxTx) rawX = maxTx + rubberBand(rawX - maxTx, window.innerWidth);
-        else if (rawX < -maxTx) rawX = -maxTx + rubberBand(rawX + maxTx, window.innerWidth);
-
-        if (rawY > maxTy) rawY = maxTy + rubberBand(rawY - maxTy, window.innerHeight);
-        else if (rawY < -maxTy) rawY = -maxTy + rubberBand(rawY + maxTy, window.innerHeight);
-
+		
+		// Apply exponential rubber-band resistance if dragging past the edges
+		if (rawX > maxTx) rawX = maxTx + rubberBand(rawX - maxTx, window.innerWidth);
+		else if (rawX < -maxTx) rawX = -maxTx + rubberBand(rawX + maxTx, window.innerWidth);
+		
+		if (rawY > maxTy) rawY = maxTy + rubberBand(rawY - maxTy, window.innerHeight);
+		else if (rawY < -maxTy) rawY = -maxTy + rubberBand(rawY + maxTy, window.innerHeight);
+		
 		if (Math.abs(rawX - $translateX) > 3 || Math.abs(rawY - $translateY) > 3) dragHasMoved = true;
-
+		
 		translateX.set(rawX, { hard: true });
 		translateY.set(rawY, { hard: true });
-    }
-
-    function endDrag() {
-        isDragging = false;
-        pinchInitialDistance = 0;
+	}
+	
+	function endDrag() {
+		isDragging = false;
+		pinchInitialDistance = 0;
 		
 		if ($scaleVal < 1) {
 			zoomTo(1, window.innerWidth / 2, window.innerHeight / 2, false);
-            swipeOffsetY = 0;
+			swipeOffsetY = 0;
 			return;
 		}
-
-        if ($scaleVal === 1) {
-            // Project where the swipe would end up based on velocity (standard iOS physics trick)
-            const projectedY = swipeOffsetY + (velocityY * 150);
-
-            if (Math.abs(projectedY) > window.innerHeight / 3 || Math.abs(velocityY) > 1.2) {
+		
+		if ($scaleVal === 1) {
+			// Project where the swipe would end up based on velocity (standard iOS physics trick)
+			const projectedY = swipeOffsetY + (velocityY * 150);
+			
+			if (Math.abs(projectedY) > window.innerHeight / 3 || Math.abs(velocityY) > 1.2) {
 				// Fling the image off-screen using your swipe momentum while fading
 				const throwDir = swipeOffsetY > 0 ? 1 : -1;
 				translateY.set(throwDir * (window.innerHeight || 800), { hard: false });
-                close();
-            } else {
-                translateY.set(0);
-            }
-            swipeOffsetY = 0;
-            return;
-        }
-
+				close();
+			} else {
+				translateY.set(0);
+			}
+			swipeOffsetY = 0;
+			return;
+		}
+		
 		const maxTx = Math.max(0, (window.innerWidth * ($scaleVal - 1)) / 2);
 		const maxTy = Math.max(0, (window.innerHeight * ($scaleVal - 1)) / 2);
 		
 		let targetTx = $translateX;
 		let targetTy = $translateY;
-
-        // Momentum Glide: Apply exponential decay projection
+		
+		// Momentum Glide: Apply exponential decay projection
 		if (performance.now() - lastDragTime < 50) {
-            const momentumMultiplier = 100; // Tuned down from 180 for a tighter, less slippery throw
-            
-            // Cap the max physical throw velocity to prevent getting completely lost
-            const throwX = Math.max(-2000, Math.min(2000, velocityX * momentumMultiplier));
-            const throwY = Math.max(-2000, Math.min(2000, velocityY * momentumMultiplier));
-
-            targetTx += throwX;
-            targetTy += throwY;
+			const momentumMultiplier = 100; // Tuned down from 180 for a tighter, less slippery throw
+			
+			// Cap the max physical throw velocity to prevent getting completely lost
+			const throwX = Math.max(-2000, Math.min(2000, velocityX * momentumMultiplier));
+			const throwY = Math.max(-2000, Math.min(2000, velocityY * momentumMultiplier));
+			
+			targetTx += throwX;
+			targetTy += throwY;
 		}
-
+		
 		// Clamp the projected target to the boundaries. 
 		// The spring will naturally decelerate and glide smoothly into these limits.
 		const bounded = applyBounds(targetTx, targetTy, $scaleVal);
 		translateX.set(bounded.x);
 		translateY.set(bounded.y);
-    }
-
-    function handleDoubleTap(clientX: number, clientY: number) {
-        if ($scaleVal > 1) zoomTo(1, clientX, clientY, false);
-        else zoomTo(2.5, clientX, clientY, false);
-    }
-
-    function handleTouchStart(e: TouchEvent) {
-        if (e.touches.length === 2) {
-            pinchInitialDistance = Math.hypot(
-                e.touches[0].clientX - e.touches[1].clientX,
-                e.touches[0].clientY - e.touches[1].clientY
-            );
-            pinchFocalX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-            pinchFocalY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-            pinchInitialScale = $scaleVal;
-            pinchInitialTx = $translateX;
-            pinchInitialTy = $translateY;
-            isDragging = false;
-        } else {
-           const now = Date.now();
-           if (now - lastTapTime < 300) {
-               handleDoubleTap(e.touches[0].clientX, e.touches[0].clientY);
-               lastTapTime = 0;
-               e.preventDefault();
-           } else {
-               lastTapTime = now;
-               startDrag(e);
-           }
-        }
-    }
-
-    function handleTouchMove(e: TouchEvent) {
-        if (e.touches.length === 2 && pinchInitialDistance) {
-            e.preventDefault();
-            const currentDistance = Math.hypot(
-                e.touches[0].clientX - e.touches[1].clientX,
-                e.touches[0].clientY - e.touches[1].clientY
-            );
-            const currentFocalX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-            const currentFocalY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-
-            let targetScale = pinchInitialScale * (currentDistance / pinchInitialDistance);
-            if (targetScale < 1) targetScale = 1 - rubberBand(1 - targetScale, 1, 0.8);
+	}
+	
+	function handleDoubleTap(clientX: number, clientY: number) {
+		if ($scaleVal > 1) zoomTo(1, clientX, clientY, false);
+		else zoomTo(2.5, clientX, clientY, false);
+	}
+	
+	function handleTouchStart(e: TouchEvent) {
+		if (e.touches.length === 2) {
+			pinchInitialDistance = Math.hypot(
+			e.touches[0].clientX - e.touches[1].clientX,
+			e.touches[0].clientY - e.touches[1].clientY
+			);
+			pinchFocalX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+			pinchFocalY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+			pinchInitialScale = $scaleVal;
+			pinchInitialTx = $translateX;
+			pinchInitialTy = $translateY;
+			isDragging = false;
+		} else {
+			const now = Date.now();
+			if (now - lastTapTime < 300) {
+				handleDoubleTap(e.touches[0].clientX, e.touches[0].clientY);
+				lastTapTime = 0;
+				e.preventDefault();
+			} else {
+				lastTapTime = now;
+				startDrag(e);
+			}
+		}
+	}
+	
+	function handleTouchMove(e: TouchEvent) {
+		if (e.touches.length === 2 && pinchInitialDistance) {
+			e.preventDefault();
+			const currentDistance = Math.hypot(
+			e.touches[0].clientX - e.touches[1].clientX,
+			e.touches[0].clientY - e.touches[1].clientY
+			);
+			const currentFocalX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+			const currentFocalY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+			
+			let targetScale = pinchInitialScale * (currentDistance / pinchInitialDistance);
+			if (targetScale < 1) targetScale = 1 - rubberBand(1 - targetScale, 1, 0.8);
 			targetScale = Math.min(targetScale, 15);
-
-            const cx = window.innerWidth / 2;
-            const cy = window.innerHeight / 2;
-
-            // Calculate pan difference + zoom difference
-            const imageX = (pinchFocalX - cx - pinchInitialTx) / pinchInitialScale;
-            const imageY = (pinchFocalY - cy - pinchInitialTy) / pinchInitialScale;
-
-            let newTx = (currentFocalX - cx) - (imageX * targetScale);
-            let newTy = (currentFocalY - cy) - (imageY * targetScale);
-
-            const bounded = applyBounds(newTx, newTy, targetScale);
-
-            scaleVal.set(targetScale, { hard: true });
-            translateX.set(bounded.x, { hard: true });
-            translateY.set(bounded.y, { hard: true });
-        } else {
-            onDrag(e);
-        }
-    }
-    
-    function toggleOriginal() {
-        showOriginal = !showOriginal;
-    }
-
+			
+			const cx = window.innerWidth / 2;
+			const cy = window.innerHeight / 2;
+			
+			// Calculate pan difference + zoom difference
+			const imageX = (pinchFocalX - cx - pinchInitialTx) / pinchInitialScale;
+			const imageY = (pinchFocalY - cy - pinchInitialTy) / pinchInitialScale;
+			
+			let newTx = (currentFocalX - cx) - (imageX * targetScale);
+			let newTy = (currentFocalY - cy) - (imageY * targetScale);
+			
+			const bounded = applyBounds(newTx, newTy, targetScale);
+			
+			scaleVal.set(targetScale, { hard: true });
+			translateX.set(bounded.x, { hard: true });
+			translateY.set(bounded.y, { hard: true });
+		} else {
+			onDrag(e);
+		}
+	}
+	
+	function toggleOriginal() {
+		showOriginal = !showOriginal;
+	}
+	
 	function handleBackgroundClick() {
 		// Prevent closing if the user was simply flicking/dragging the image and let go on the background
 		if (dragHasMoved) {
@@ -387,11 +401,12 @@
 		}
 		close();
 	}
-
+	
 	async function downloadImage() {
 		try {
 			const path = showOriginal ? photo.orgPath : (photo.cropPath || photo.orgPath);
-			const res = await fetch(path);
+            const cb = photo?.updatedAt ? '?v=' + new Date(photo.updatedAt).getTime() : '';
+            const res = await fetch(path + cb);
 			const blob = await res.blob();
 			const url = window.URL.createObjectURL(blob);
 			const a = document.createElement('a');
@@ -404,120 +419,122 @@
 			showMenu = false;
 		} catch (e) { console.error('Download failed', e); }
 	}
-
+	
 	function copyLink() {
 		const path = showOriginal ? photo.orgPath : (photo.cropPath || photo.orgPath);
-		navigator.clipboard.writeText(window.location.origin + path);
+        const cb = photo?.updatedAt ? '?v=' + new Date(photo.updatedAt).getTime() : '';
+        navigator.clipboard.writeText(window.location.origin + path + cb);
 		showMenu = false;
-        notify('success', 'Link copied to clipboard!');
+		notify('success', 'Link copied to clipboard!');
 	}
-
-
-    // Rotation State
+	
+	
+	// Rotation State
 	function copyImageToClipboard(withBackground = false) {
-        try {
-            const path = showOriginal ? photo.orgPath : (photo.cropPath || photo.orgPath);
-            
-            // iOS Safari requires navigator.clipboard.write to be called synchronously.
-            // By passing a Promise into ClipboardItem, we keep the gesture trust window open 
-            // while we fetch and safely transcode the image to PNG.
-            const blobPromise = fetch(path)
-                .then(res => res.blob())
-                .then(blob => new Promise<Blob>((resolve, reject) => {
-                    // Extracting from the pristine Blob prevents DOM CSS properties 
-                    // (like mix-blend-multiply) from corrupting the canvas alpha channel on iOS.
-                    if (blob.type === 'image/webp' || blob.type === 'image/jpeg' || withBackground) {
-                        const img = new Image();
-                        img.onload = () => {
-                            const canvas = document.createElement('canvas');
-                            canvas.width = img.width; 
-                            canvas.height = img.height;
-                            const ctx = canvas.getContext('2d');
-                            
-                            if (withBackground) {
-                                // Draw a sleek dark card background to neutralize WhatsApp's white outline
-                                ctx.fillStyle = '#2a323c';
-                                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                                
-                                if (cols.length > 0) {
-                                    ctx.globalAlpha = 0.3;
-                                    const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-                                    gradient.addColorStop(0, cols[0]);
-                                    gradient.addColorStop(1, cols[1] || cols[0]);
-                                    ctx.fillStyle = gradient;
-                                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                                    ctx.globalAlpha = 1.0;
-                                }
-                            }
-                            
-                            ctx?.drawImage(img, 0, 0);
-                            canvas.toBlob((pngBlob) => {
-                                if (pngBlob) resolve(pngBlob);
-                                else reject(new Error("Canvas toBlob failed"));
-                            }, 'image/png');
-                            URL.revokeObjectURL(img.src);
-                        };
-                        img.onerror = reject;
-                        img.src = URL.createObjectURL(blob);
-                    } else {
-                        resolve(blob);
-                    }
-                }));
-
-            navigator.clipboard.write([new ClipboardItem({ 'image/png': blobPromise })])
-                .then(() => {
-                    showMenu = false;
-                    notify('success', withBackground ? 'Image with gradient copied!' : 'Image copied to clipboard!');
-                })
-                .catch((e) => {
-                    console.error('Clipboard write failed:', e);
-                    notify('error', 'Failed to copy image');
-                });
-        } catch (e) {
-            console.error('Copy image setup failed', e);
-            notify('error', 'Failed to copy image');
-        }
-    }
-
-    async function makePrimary() {
-        try {
-            const res = await fetch('/api/photo-primary', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ photoId: photo.id, itemId: photo.itemId })
-            });
-            if (res.ok) {
-                photo.isPrimary = true;
-                notify('success', 'Set as key photo!');
-                invalidateAll();
-                showMenu = false;
-            } else {
-                notify('error', 'Failed to set key photo');
-            }
-        } catch (e) { notify('error', 'Network error'); }
-    }
-
-    let rotation = 0;
-    function rotateLeft() { rotation -= 90; }
-    function rotateRight() { rotation += 90; }
-
-    $: ai = (() => {
-        if (!photo?.llmAnalysis) return null;
-        try {
-            const cleanJson = photo.llmAnalysis.replace(/```json/gi, '').replace(/```/g, '').trim();
-            return JSON.parse(cleanJson);
-        } catch (e) {
-            return null;
-        }
-    })();
-
-    $: parsedColors = (() => {
-        if (!photo?.colors || photo.colors.length <= 2) return null;
-        try { return JSON.parse(photo.colors); } catch(e) { return null; }
-    })();
-    
-    $: cols = parsedColors ? Object.keys(parsedColors) : [];
-    $: colNames = parsedColors ? Object.values(parsedColors) : [];
+		try {
+			const path = showOriginal ? photo.orgPath : (photo.cropPath || photo.orgPath);
+            const cb = photo?.updatedAt ? '?v=' + new Date(photo.updatedAt).getTime() : '';
+			
+			// iOS Safari requires navigator.clipboard.write to be called synchronously.
+			// By passing a Promise into ClipboardItem, we keep the gesture trust window open 
+			// while we fetch and safely transcode the image to PNG.
+            const blobPromise = fetch(path + cb)
+			.then(res => res.blob())
+			.then(blob => new Promise<Blob>((resolve, reject) => {
+				// Extracting from the pristine Blob prevents DOM CSS properties 
+				// (like mix-blend-multiply) from corrupting the canvas alpha channel on iOS.
+				if (blob.type === 'image/webp' || blob.type === 'image/jpeg' || withBackground) {
+					const img = new Image();
+					img.onload = () => {
+						const canvas = document.createElement('canvas');
+						canvas.width = img.width; 
+						canvas.height = img.height;
+						const ctx = canvas.getContext('2d');
+						
+						if (withBackground) {
+							// Draw a sleek dark card background to neutralize WhatsApp's white outline
+							ctx.fillStyle = '#2a323c';
+							ctx.fillRect(0, 0, canvas.width, canvas.height);
+							
+							if (cols.length > 0) {
+								ctx.globalAlpha = 0.3;
+								const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+								gradient.addColorStop(0, cols[0]);
+								gradient.addColorStop(1, cols[1] || cols[0]);
+								ctx.fillStyle = gradient;
+								ctx.fillRect(0, 0, canvas.width, canvas.height);
+								ctx.globalAlpha = 1.0;
+							}
+						}
+						
+						ctx?.drawImage(img, 0, 0);
+						canvas.toBlob((pngBlob) => {
+							if (pngBlob) resolve(pngBlob);
+							else reject(new Error("Canvas toBlob failed"));
+						}, 'image/png');
+						URL.revokeObjectURL(img.src);
+					};
+					img.onerror = reject;
+					img.src = URL.createObjectURL(blob);
+				} else {
+					resolve(blob);
+				}
+			}));
+			
+			navigator.clipboard.write([new ClipboardItem({ 'image/png': blobPromise })])
+			.then(() => {
+				showMenu = false;
+				notify('success', withBackground ? 'Image with gradient copied!' : 'Image copied to clipboard!');
+			})
+			.catch((e) => {
+				console.error('Clipboard write failed:', e);
+				notify('error', 'Failed to copy image');
+			});
+		} catch (e) {
+			console.error('Copy image setup failed', e);
+			notify('error', 'Failed to copy image');
+		}
+	}
+	
+	async function makePrimary() {
+		try {
+			const res = await fetch('/api/photo-primary', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ photoId: photo.id, itemId: photo.itemId })
+			});
+			if (res.ok) {
+				photo.isPrimary = true;
+				notify('success', 'Set as key photo!');
+				invalidateAll();
+				showMenu = false;
+			} else {
+				notify('error', 'Failed to set key photo');
+			}
+		} catch (e) { notify('error', 'Network error'); }
+	}
+	
+	let rotation = 0;
+	function rotateLeft() { rotation -= 90; }
+	function rotateRight() { rotation += 90; }
+	
+	$: ai = (() => {
+		if (!photo?.llmAnalysis) return null;
+		try {
+			const cleanJson = photo.llmAnalysis.replace(/```json/gi, '').replace(/```/g, '').trim();
+			return JSON.parse(cleanJson);
+		} catch (e) {
+			return null;
+		}
+	})();
+	
+	$: parsedColors = (() => {
+		if (!photo?.colors || photo.colors.length <= 2) return null;
+		try { return JSON.parse(photo.colors); } catch(e) { return null; }
+	})();
+	
+	$: cols = parsedColors ? Object.keys(parsedColors) : [];
+	$: colNames = parsedColors ? Object.values(parsedColors) : [];
 </script>
 
 <svelte:window on:keydown={(e) => {

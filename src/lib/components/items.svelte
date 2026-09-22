@@ -19,6 +19,7 @@
     import ContentUnavailable from "$lib/components/ContentUnavailable.svelte";
     import { isSlowConnection } from '$lib/client/utils';
     import Badge from "$lib/components/Badge.svelte";
+    import PremiumImage from "$lib/components/PremiumImage.svelte";
     import { getHumanLocationText } from '$lib/client/utils';
 
     export let items: any[] = [];
@@ -123,12 +124,6 @@
     onDestroy(() => {
         ghostUrls.forEach(url => URL.revokeObjectURL(url));
     });
-
-    let loadedUrls = new Set<string>();
-    function markLoaded(url: string) {
-        loadedUrls.add(url);
-        loadedUrls = loadedUrls; // trigger Svelte reactivity
-    }
 
     $: serverClientIds = new Set(items.map(i => i.clientId).filter(Boolean));
     
@@ -238,7 +233,6 @@
                     {@const serverSrc = mainPhoto.showOriginal ? mainPhoto.orgPath?.replace(/\.[^/.]+(?=\?|$)/, '_org_thumb.webp') : (mainPhoto.thumbPath || mainPhoto.orgPath)}
                     {@const cb = mainPhoto.updatedAt ? '?v=' + new Date(mainPhoto.updatedAt).getTime() : (item.updatedAt ? '?v=' + new Date(item.updatedAt).getTime() : '')}
                     {@const localBlob = item.clientId ? ghostUrls.get(item.clientId) : null}
-                    {@const isLoaded = serverSrc ? loadedUrls.has(serverSrc) : false}
 
                     {@const loc = item.locations?.[0]}
                     {@const spatialMapParsed = loc?.spatialMap ? JSON.parse(loc.spatialMap) : null}
@@ -256,21 +250,17 @@
                                        {/if}
                                        <a href="/{item.id}/{item.slug}" class="w-full h-full flex items-center justify-center bg-transparent relative z-10">
                                            <div class="relative w-full h-full flex items-center justify-center transition-opacity duration-300 {brief && hoverItemData === item && polyMap ? 'opacity-0' : 'opacity-100'}">
-                                               {#if localBlob && !isLoaded}
-													<img src={localBlob} class="absolute inset-0 object-contain w-full h-full p-1 rounded-xl z-0 opacity-80 animate-pulse transition-opacity duration-700" alt="Preview"/>
-                                                    {#if serverSrc}
-                                                        <img src="{serverSrc}{cb}" class="hidden" on:load={() => markLoaded(serverSrc)} alt="preload" />
-                                                    {/if}
-                                               {/if}
-                                               {#if serverSrc}
-                                                    <img class="object-contain w-full h-full p-1 rounded-xl drop-shadow-md relative z-10 transition-opacity duration-700 {localBlob && !isLoaded ? 'opacity-0' : 'opacity-100'}"
-                                                        src="{serverSrc}{cb}"
-                                                        loading={imgLoadStrategy}
-                                                        on:load={() => markLoaded(serverSrc)}
-                                                        on:error={(e) => { const target = e.currentTarget as HTMLImageElement; if (!target.dataset.fb) { target.dataset.fb = '1'; target.src = mainPhoto.orgPath || ''; } }} 
-                                                        alt="{item.title || 'Item image'}"/>
-                                               {:else if !localBlob}
+                                               {#if !serverSrc && !localBlob}
                                                     <i class="bi bi-box text-2xl text-gray-300 relative z-10"></i>
+                                               {:else}
+                                                    <PremiumImage
+                                                        src={serverSrc ? `${serverSrc}${cb}` : ''}
+                                                        fallbackSrc={mainPhoto.orgPath || ''}
+                                                        placeholder={localBlob}
+                                                        alt={item.title || 'Item image'}
+                                                        loading={imgLoadStrategy}
+                                                        imgClass="object-contain w-full h-full p-1 rounded-xl drop-shadow-md z-10"
+                                                    />
                                                {/if}
                                            </div>
 
@@ -435,7 +425,6 @@
                 {@const serverSrc = mainPhoto.showOriginal ? mainPhoto.orgPath?.replace(/\.[^/.]+(?=\?|$)/, '_org_thumb.webp') : (mainPhoto.thumbPath || mainPhoto.orgPath)}
                 {@const cb = mainPhoto.updatedAt ? '?v=' + new Date(mainPhoto.updatedAt).getTime() : (item.updatedAt ? '?v=' + new Date(item.updatedAt).getTime() : '')}
                 {@const localBlob = item.clientId ? ghostUrls.get(item.clientId) : null}
-                {@const isLoaded = serverSrc ? loadedUrls.has(serverSrc) : false}
                 
                 <div animate:flip={{ duration: 300 }} in:fade={{ duration: 200 }} class="card group bg-base-100 shadow-sm border border-base-200 hover:border-primary/50 transition-all duration-200 relative flex flex-col h-full {isNavigatingToThis ? 'opacity-50 pointer-events-none scale-[0.98]' : ''} {item.isGhost ? 'opacity-80 grayscale-[50%] pointer-events-none animate-pulse duration-1000' : ''}">
                     <!-- Overlay Link: Restores right-click / middle-click while letting SvelteKit intercept normal clicks -->
@@ -458,18 +447,17 @@
                             {#if cols.length > 0}
                                 <div class="absolute inset-0 opacity-30 pointer-events-none print:hidden" style="background: linear-gradient(135deg, {cols[0]}, {cols[1] || cols[0]});"></div>
                             {/if}
-                            {#if localBlob && !isLoaded}
-                                <img src={localBlob} class="absolute inset-0 object-contain w-full h-full rounded-lg mix-blend-multiply dark:mix-blend-normal z-0 opacity-80 animate-pulse transition-opacity duration-700" alt="Preview"/>
-                            {/if}
-                            {#if serverSrc}
-                                <img class="absolute inset-0 object-contain w-full h-full rounded-lg mix-blend-multiply dark:mix-blend-normal z-10 drop-shadow-md transition-opacity duration-700 {localBlob && !isLoaded ? 'opacity-0' : 'opacity-100'}"
-                                    src="{serverSrc}{cb}"
-                                    loading={imgLoadStrategy}
-                                    on:load={() => markLoaded(serverSrc)}
-                                    on:error={(e) => { const target = e.currentTarget as HTMLImageElement; if (!target.dataset.fb) { target.dataset.fb = '1'; target.src = mainPhoto.orgPath || ''; } }} 
-                                    alt="{item.title || 'Item image'}"/>
-                            {:else if !localBlob}
+                            {#if !serverSrc && !localBlob}
                                 <i class="bi bi-box text-4xl text-gray-300 relative z-10"></i>
+                            {:else}
+                                <PremiumImage
+                                    src={serverSrc ? `${serverSrc}${cb}` : ''}
+                                    fallbackSrc={mainPhoto.orgPath || ''}
+                                    placeholder={localBlob}
+                                    alt={item.title || 'Item image'}
+                                    loading={imgLoadStrategy}
+                                    imgClass="object-contain w-full h-full rounded-lg mix-blend-multiply dark:mix-blend-normal z-10 drop-shadow-md"
+                                />
                             {/if}
                         </div>
                         {#if isNavigatingToThis}
