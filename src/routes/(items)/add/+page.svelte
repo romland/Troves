@@ -40,6 +40,7 @@
     let rapidFileInput: HTMLInputElement;
     let isRapidSaving = false;
     let wakeLock: any = null;
+    let bootSeconds = 0;
 
     async function handleRapidFileSelect(e: Event) {
         const file = (e.target as HTMLInputElement).files?.[0];
@@ -89,6 +90,7 @@
     }
 
     onMount(() => {
+        let interval: ReturnType<typeof setInterval>;
         // FIX: Bypass SvelteKit layout caching staleness by reading the real browser cookie.
         const match = document.cookie.match(/(?:^|;\s*)troves_add_mode=([^;]*)/);
         if (match && match[1] && ['single', 'collection', 'rapid'].includes(match[1])) {
@@ -99,6 +101,13 @@
         // Request screen wake lock to prevent phone from sleeping while scanning
         if ('wakeLock' in navigator) {
             (navigator as any).wakeLock.request('screen').then((lock: any) => wakeLock = lock).catch(() => console.warn("WakeLock not supported or denied."));
+        }
+
+        if (data.isBootstrapping) {
+            interval = setInterval(() => {
+                bootSeconds += 1;
+                if (bootSeconds % 3 === 0) invalidateAll();
+            }, 1000);
         }
 
 		const handleShortcutMode = async (e: CustomEvent) => {
@@ -115,6 +124,7 @@
         };
         window.addEventListener('shortcut:addMode', handleShortcutMode as unknown as EventListener);
         return () => {
+            if (interval) clearInterval(interval);
             window.removeEventListener('shortcut:addMode', handleShortcutMode as unknown as EventListener);
             if (wakeLock) wakeLock.release().catch(() => {});
         };
@@ -165,6 +175,9 @@ on:processingComplete={(ev) => {
         <button type="button" class="btn btn-outline" on:click={() => window.location.reload()}>
             <i class="bi bi-arrow-clockwise"></i> Refresh Status
         </button>
+        {#if bootSeconds > 12}
+            <p class="text-error mt-6 text-sm font-semibold animate-pulse">This is taking longer than usual... The AI might be struggling.</p>
+        {/if}
     </div>
 {:else}
     <div class="bg-base-200 p-1 rounded-2xl flex w-full max-w-md mx-auto mb-6 mt-2 relative z-10 border border-base-300">

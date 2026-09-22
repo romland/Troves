@@ -228,6 +228,9 @@ console.log("formData:", orgData);
             }
         });
 
+        const { takeSnapshot } = await import('$lib/server/itemHistory');
+        await takeSnapshot(item.id, 'User Save');
+
         // Store all image IDs belonging to this item, including ones just created.
         const allExistingPhotoIds = item.photos.map(p=>p.id);
         const allExistingDocumentIds = item.documents.map(p=>p.id);

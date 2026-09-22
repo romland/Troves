@@ -111,14 +111,15 @@
 
             <div class="flex flex-col gap-6">
                 {#each $page.data.allInventories || [] as v}
-                    <div class="bg-base-200 p-4 rounded-xl border border-base-300">
-                        <div class="flex justify-between items-start mb-4">
+                    <details class="collapse collapse-arrow bg-base-200 border border-base-300 rounded-xl overflow-visible shadow-sm">
+                        <summary class="collapse-title p-4 pb-2 hover:bg-base-300/50 transition-colors">
                             <div>
                                 <div class="font-bold text-lg {deleteConfirmId === v.id ? 'text-error' : ''}">{v.name}</div>
                                 <div class="text-[10px] text-gray-500 mt-0.5 capitalize">{v.archetype} trove &bull; {v._count?.items || 0} items &bull; {v._count?.notes || 0} notes &bull; {v._count?.containers || 0} containers</div>
                             </div>
-                            
-                            <div class="text-right">
+                        </summary>
+                        <div class="collapse-content px-4 pb-4">
+                            <div class="flex justify-end mt-2 mb-4 border-b border-base-300 pb-4">
                                 {#if deleteConfirmId === v.id}
                                     <form method="POST" action="?/deleteInventory" use:enhance={() => { return async ({ result, update }) => { if(result.type === 'success') notify('success', 'Trove deleted'); deleteConfirmId = null; deleteConfirmText = ''; update(); }; }} class="flex items-center gap-2 justify-end">
                                         <input type="hidden" name="id" value={v.id}>
@@ -127,12 +128,11 @@
                                         <button type="button" class="btn btn-ghost btn-xs" on:click={() => {deleteConfirmId = null; deleteConfirmText = '';}}>Cancel</button>
                                     </form>
                                 {:else}
-                                    <button type="button" class="btn btn-ghost btn-xs text-error" on:click={() => {deleteConfirmId = v.id; deleteConfirmText = '';}}>
+                                    <button type="button" class="btn btn-ghost btn-xs text-error" on:click|preventDefault|stopPropagation={() => {deleteConfirmId = v.id; deleteConfirmText = '';}}>
                                         <i class="bi bi-trash"></i> Delete
                                     </button>
                                 {/if}
                             </div>
-                        </div>
 
                         <SettingToggle enhanceFn={createEnhancer} id={v.id} action="?/toggleAutoCategories" name="allowNewCategories" checked={v.allowNewCategories} label="Allow automated creation of categories" />
                         <SettingToggle enhanceFn={createEnhancer} id={v.id} action="?/toggleAutoTaxonomy" name="allowAutoTaxonomy" checked={v.allowAutoTaxonomy} label="Enable Smart Taxonomy & Attribute Extractions" />
@@ -264,7 +264,7 @@
                                 </form>
                             </div>
                         </details>
-                    </div>
+                    </details>
                 {/each}
             </div>
         </div>

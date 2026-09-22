@@ -730,6 +730,9 @@
                 >
                     <!-- Tightly wrapped container ensures absolute percentage math perfectly matches the image -->
                     <div class="relative inline-flex max-w-full max-h-full shadow-2xl duration-300 ease-out {photo?.box ? 'overflow-hidden rounded-xl' : ''}" style="transform: rotate({rotation}deg);">
+                        {#if cols.length > 0}
+                            <div class="absolute inset-0 opacity-40 pointer-events-none rounded-xl mix-blend-multiply" style="background: linear-gradient(135deg, {cols[0]}, {cols[1] || cols[0]});"></div>
+                        {/if}
                         <img 
                             src="{(showOriginal ? photo?.orgPath : (photo?.cropPath || photo?.orgPath)) + (photo?.updatedAt ? '?v=' + new Date(photo.updatedAt).getTime() : '')}"
                             alt="Product preview" 

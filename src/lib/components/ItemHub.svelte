@@ -363,7 +363,7 @@
                 {#if isAnalyzing}
                     <span class="loading loading-spinner loading-xs text-primary align-middle mr-1"></span> Analyzing...
                 {:else}
-                    {item ? 'Update sections below' : 'Tap camera to start, or select a section below'}
+                    {item ? 'Update sections below' : 'Tap camera, select a section, or paste (Ctrl+V)'}
                 {/if}
             </p>
         </div>

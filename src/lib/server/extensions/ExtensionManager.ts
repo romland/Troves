@@ -150,7 +150,7 @@ class ExtensionManager {
     private async executeWithRetryAndLimits(pluginName: string, config: HookOptions, fn: () => Promise<any>) {
 		const maxRetries = config.maxRetries || 1;
 		const retryDelayMs = config.retryDelayMs || 2000;
-		const rateLimitRpm = config.rateLimitRpm || 0;
+        const rateLimitRpm = config.rateLimitRpm ?? 30; // Protect 3rd party APIs with 30 RPM default limit
 		
 		let attempt = 0;
 		while (true) {

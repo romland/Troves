@@ -84,7 +84,7 @@ export async function GET({ url, setHeaders, locals }) {
     // Fetch inventory settings for search logic
     const inventory = await db.inventory.findUnique({
         where: { id: locals.activeInventoryId },
-        select: { enableFuzzySearch: true }
+        select: { enableFuzzySearch: true, enableDocuments: true }
     });
 
     let orderBy: any = [{ id: 'desc' }];
@@ -158,7 +158,7 @@ export async function GET({ url, setHeaders, locals }) {
 
     // Prevent FTS5 index explosions on 1-character prefix queries (like "t*") which take 5+ seconds
     const ftsTerms = parsedTerms.map(t => t.text).filter(text => text.length > 1);
-    if (ftsTerms.length > 0 && fetchDocs) {
+    if (ftsTerms.length > 0 && fetchDocs && inventory?.enableDocuments) {
         const matchQuery = ftsTerms.map(word => `"${word}"*`).join(' AND ');
         try {
             documentResults = await db.$queryRawUnsafe(`
@@ -178,7 +178,7 @@ export async function GET({ url, setHeaders, locals }) {
                 LIMIT ?;
             `, matchQuery, locals.activeInventoryId, locals.activeInventoryId, docLimit) as any[];
         } catch (e) { console.error("FTS search failed", e); }
-    } else if (fetchDocs) {
+    } else if (fetchDocs && inventory?.enableDocuments) {
         // Requested documents explicitly (e.g. search page default state)
         try {
             documentResults = await db.$queryRawUnsafe(`
@@ -362,7 +362,7 @@ export async function GET({ url, setHeaders, locals }) {
     const nextPage = items.length < count ? 0 : page + 1;
     
     const totalTime = (performance.now() - tStart).toFixed(2);
-    console.log(`[Search Telemetry] Total: ${totalTime}ms | ${fetchDocs ? `FTS: ${(tFtsEnd-tFtsStart).toFixed(2)}ms | ` : ''}Prisma DB: ${(tDbEnd-tDbStart).toFixed(2)}ms | JS Sort: ${(tSortEnd-tSortStart).toFixed(2)}ms | Query: "${q}"`);
+    console.log(`[Search Cost] Total: ${totalTime}ms | ${fetchDocs ? `FTS: ${(tFtsEnd-tFtsStart).toFixed(2)}ms | ` : ''}Prisma DB: ${(tDbEnd-tDbStart).toFixed(2)}ms | JS Sort: ${(tSortEnd-tSortStart).toFixed(2)}ms | Query: "${q}"`);
 
     return new Response(JSON.stringify({ q, items, documentResults, totalCount, prevPage, nextPage }));
 }

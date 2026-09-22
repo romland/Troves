@@ -106,10 +106,10 @@ if [ -z "$USE_DOCKER" ]; then
             *) USE_DOCKER=true ;;
         esac
     else
-        read -p "Choice [1-2] (Default: 1): " CHOICE
+        read -p "Choice [1-2] (Default: 2): " CHOICE
         case "$CHOICE" in
-            2) USE_DOCKER=true ;;
-            *) USE_DOCKER=false ;;
+            1) USE_DOCKER=false ;;
+            *) USE_DOCKER=true ;;
         esac
     fi
 fi

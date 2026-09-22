@@ -15,11 +15,13 @@
     import { outboxStore, completedOutboxStore } from "$lib/client/offlineQueue";
     import { flip } from 'svelte/animate';
     import { fade } from 'svelte/transition';
+    import { scale } from 'svelte/transition';
     import { browser } from '$app/environment';
     import ContentUnavailable from "$lib/components/ContentUnavailable.svelte";
     import { isSlowConnection } from '$lib/client/utils';
     import Badge from "$lib/components/Badge.svelte";
     import { getHumanLocationText } from '$lib/client/utils';
+    import { backOut } from 'svelte/easing';
 
     export let items: any[] = [];
     export let brief: boolean = false;
@@ -258,15 +260,21 @@
                                            <div class="relative w-full h-full flex items-center justify-center transition-opacity duration-300 {brief && hoverItemData === item && polyMap ? 'opacity-0' : 'opacity-100'}">
                                                {#if localBlob && !isLoaded}
 													<img src={localBlob} class="absolute inset-0 object-contain w-full h-full p-1 rounded-xl z-0 opacity-80 animate-pulse transition-opacity duration-700" alt="Preview"/>
+                                                    {#if serverSrc}
+                                                        <img src="{serverSrc}{cb}" class="hidden" on:load={() => markLoaded(serverSrc)} alt="preload" />
+                                                    {/if}
                                                {/if}
-                                               {#if serverSrc}
-                                                   <img class="object-contain w-full h-full p-1 rounded-xl drop-shadow-md relative z-10 transition-opacity duration-700 {localBlob && !isLoaded ? 'opacity-0' : 'opacity-100'}"
-                                                        src="{serverSrc}{cb}"
-                                                        loading={imgLoadStrategy}
-                                                        on:load={() => markLoaded(serverSrc)}
-                                                        on:error={(e) => { const target = e.currentTarget as HTMLImageElement; if (!target.dataset.fb) { target.dataset.fb = '1'; target.src = mainPhoto.orgPath || ''; } }} 
-                                                        alt="{item.title || 'Item image'}"/>
-                                               {:else if !localBlob}
+                                                {#if serverSrc && (!localBlob || isLoaded)}
+                                                    {#key serverSrc + cb}
+                                                        <img class="absolute inset-0 object-contain w-full h-full p-1 rounded-xl drop-shadow-md z-10 transition-opacity duration-700"
+                                                             src="{serverSrc}{cb}"
+                                                             loading={imgLoadStrategy}
+                                                             in:scale={{ start: 0.4, duration: 700, easing: backOut }}
+                                                             on:load={() => markLoaded(serverSrc)}
+                                                             on:error={(e) => { const target = e.currentTarget as HTMLImageElement; if (!target.dataset.fb) { target.dataset.fb = '1'; target.src = mainPhoto.orgPath || ''; } }} 
+                                                             alt="{item.title || 'Item image'}"/>
+                                                    {/key}
+                                                {:else if !localBlob && !serverSrc}
                                                    <i class="bi bi-box text-2xl text-gray-300 relative z-10"></i>
                                                {/if}
                                            </div>
@@ -457,15 +465,21 @@
                             {/if}
                             {#if localBlob && !isLoaded}
                                 <img src={localBlob} class="absolute inset-0 object-contain w-full h-full rounded-lg mix-blend-multiply dark:mix-blend-normal z-0 opacity-80 animate-pulse transition-opacity duration-700" alt="Preview"/>
+                                {#if serverSrc}
+                                    <img src="{serverSrc}{cb}" class="hidden" on:load={() => markLoaded(serverSrc)} alt="preload" />
+                                {/if}
                             {/if}
-                            {#if serverSrc}
-                                <img class="absolute inset-0 object-contain w-full h-full rounded-lg mix-blend-multiply dark:mix-blend-normal z-10 drop-shadow-md transition-opacity duration-700 {localBlob && !isLoaded ? 'opacity-0' : 'opacity-100'}"
-                                     src="{serverSrc}{cb}"
-                                     loading={imgLoadStrategy}
-                                     on:load={() => markLoaded(serverSrc)}
-                                     on:error={(e) => { const target = e.currentTarget as HTMLImageElement; if (!target.dataset.fb) { target.dataset.fb = '1'; target.src = mainPhoto.orgPath || ''; } }} 
-                                     alt="{item.title || 'Item image'}"/>
-                            {:else if !localBlob}
+                            {#if serverSrc && (!localBlob || isLoaded)}
+                                {#key serverSrc + cb}
+                                    <img class="absolute inset-0 object-contain w-full h-full rounded-lg mix-blend-multiply dark:mix-blend-normal z-10 drop-shadow-md transition-opacity duration-700"
+                                         src="{serverSrc}{cb}"
+                                         loading={imgLoadStrategy}
+                                         in:scale={{ start: 0.4, duration: 700, easing: backOut }}
+                                         on:load={() => markLoaded(serverSrc)}
+                                         on:error={(e) => { const target = e.currentTarget as HTMLImageElement; if (!target.dataset.fb) { target.dataset.fb = '1'; target.src = mainPhoto.orgPath || ''; } }} 
+                                         alt="{item.title || 'Item image'}"/>
+                                {/key}
+                            {:else if !localBlob && !serverSrc}
                                 <i class="bi bi-box text-4xl text-gray-300 relative z-10"></i>
                             {/if}
                         </div>

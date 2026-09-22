@@ -115,8 +115,17 @@ export const actions = {
             return fail(400, { error: true, message: "You cannot delete yourself." });
         }
 
-        const userToDelete = await db.user.findUnique({ where: { id } });
+        const userToDelete = await db.user.findUnique({ 
+            where: { id },
+            include: {
+                _count: { select: { items: true, timelineNotes: true } }
+            }
+        });
         if (!userToDelete) return fail(404, { error: true, message: "User not found." });
+
+        if (userToDelete._count.items > 0 || userToDelete._count.timelineNotes > 0) {
+            return fail(400, { error: true, message: `Cannot delete user. They own ${userToDelete._count.items} items and ${userToDelete._count.timelineNotes} notes. Please reassign or delete their data first.` });
+        }
 
         await db.user.delete({ where: { id } });
 

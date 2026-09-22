@@ -19,6 +19,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
         await logActivity(photo.itemId, 'Image Refinement', `Starting background processing for photo ${photo.id}...`);
         
         generatePhotoDerivatives(photo, photo.orgPath, extractColors ?? true, tracking, null, removeBackground ?? true).then(async (updates) => {
+            updates.updatedAt = new Date(); // Force Prisma to bump timestamp so frontend caches bust
             if (Object.keys(updates).length > 0) {
                 await db.photo.update({ where: { id: Number(photoId) }, data: updates });
                 await logActivity(photo.itemId, 'Image Refinement', `Successfully processed photo ${photo.id}`, 'success');

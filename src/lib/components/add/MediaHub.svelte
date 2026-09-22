@@ -79,7 +79,7 @@
                     <i class="bi bi-cloud-arrow-up text-2xl text-gray-500"></i>
                 </div>
                 <h3 class="font-semibold text-lg">Upload Images</h3>
-                <p class="text-sm text-gray-400">Snap an image or browse files</p>
+                <p class="text-sm text-gray-400">Snap an image, browse files, or paste (Ctrl+V)</p>
             </div>
             {/if}
             
@@ -114,10 +114,11 @@
             <h3 class="font-semibold text-sm text-gray-500 mb-3 flex items-center gap-2"><i class="bi bi-images"></i> Existing Photos</h3>
             <div class="flex flex-col gap-2">
                 {#each displayValues as photo}
+                    {@const cb = photo.updatedAt ? '?v=' + new Date(photo.updatedAt).getTime() : ''}
                     <div class="flex items-center p-2 sm:p-3 bg-base-100 border border-base-200 shadow-sm rounded-xl gap-3 transition-all {deletedImageIds.includes(photo.id) ? 'opacity-50 grayscale scale-[0.98]' : ''}">
                         <div class="w-12 h-12 sm:w-16 sm:h-16 shrink-0 rounded-lg overflow-hidden border border-base-200 bg-base-50 flex items-center justify-center">
                             {#if photo.thumbPath || photo.orgPath}
-                                <img src={photo.thumbPath || photo.orgPath} alt="Item" class="w-full h-full object-cover" />
+                                <img src="{(photo.thumbPath || photo.orgPath)}{cb}" alt="Item" class="w-full h-full object-cover" />
                             {:else}
                                 <i class="bi bi-image text-2xl text-gray-400"></i>
                             {/if}

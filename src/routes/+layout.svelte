@@ -47,6 +47,11 @@
     let confirmModal: ConfirmModal;
     let safeInvalidate = () => { invalidateAll(); };
     
+    // Auto-switch ambient context when navigating between troves
+    $: if ($page.data.activeInventoryId && typeof window !== 'undefined') {
+        ambientLocation.switchTrove($page.data.activeInventoryId);
+    }
+
     onMount(async () => {
         mounted = true;
         // Service worker is managed reliably by <ReloadPrompt />.
@@ -215,9 +220,16 @@
     let ambientContainerModal: Modal;
     let loadingContainers = false;
     let globalContainers: any[] = [];
+    let globalContainersTroveId: number | null = null;
 
     async function openAmbientModal() {
         ambientContainerModal.showModal();
+        
+        if (globalContainersTroveId !== $page.data.activeInventoryId) {
+            globalContainers = [];
+            globalContainersTroveId = $page.data.activeInventoryId;
+        }
+
         if (globalContainers.length === 0) {
             loadingContainers = true;
             try {
@@ -447,7 +459,7 @@
             </svg>
         </button>
         
-        <div class="hidden lg:flex items-center ml-1">
+        <div class="hidden md:flex items-center ml-1">
             <a href="/" class="btn btn-ghost normal-case text-xl flex items-center gap-3 px-2 hover:bg-base-200 transition-colors rounded-xl">
                 <Logo size="sm" />
                 <span class="font-bold tracking-tight">Troves</span>
@@ -455,22 +467,24 @@
             </a>
             
             {#if $page.data.inventories && $page.data.inventories.length > 0}
-                <DropdownSelect
-                    dropdownClass="dropdown-bottom ml-4"
-                    options={
-                        $page.data.inventories.slice()
-                            .sort((a,b) => a.name.localeCompare(b.name))
-                            .map(inv => ({ value: inv.id, label: inv.name }))
-                    }
-                    value={$page.data.activeInventoryId}
-                    formAction="/?/switchInventory"
-                    name="inventoryId"
-                    reload={false}
-                    on:submit={() => mobileMenuModal.close()}
-                >
-                    <div slot="header" class="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400">Switch Trove</div>
-                    <svelte:fragment slot="footer"></svelte:fragment>
-                </DropdownSelect>
+                <div class="hidden lg:block">
+                    <DropdownSelect
+                        dropdownClass="dropdown-bottom ml-4"
+                        options={
+                            $page.data.inventories.slice()
+                                .sort((a,b) => a.name.localeCompare(b.name))
+                                .map(inv => ({ value: inv.id, label: inv.name }))
+                        }
+                        value={$page.data.activeInventoryId}
+                        formAction="/?/switchInventory"
+                        name="inventoryId"
+                        reload={false}
+                        on:submit={() => mobileMenuModal.close()}
+                    >
+                        <div slot="header" class="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400">Switch Trove</div>
+                        <svelte:fragment slot="footer"></svelte:fragment>
+                    </DropdownSelect>
+                </div>
             {:else if $page.data.user && ($page.data.user.isAdmin || $page.data.user.canCreateInventories)}
                 <button class="btn btn-sm btn-primary ml-4 rounded-xl shadow-sm" on:click={() => createInventoryModal.showModal()}>
                     <i class="bi bi-plus-lg"></i> Create Trove
