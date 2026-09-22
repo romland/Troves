@@ -383,6 +383,9 @@ Long-tap the Notebook button to add a quick note without leaving your current co
 * **Count the items**  
 So, we all know generative models can be a bit ... excited. If you are doing large multi-cans (dozens of items), a good way to make sure you and the model are on the same page is to count the items before scanning. It'll give you an idea during triage if you had a good enough picture.
 
+* **BTW, regarding that IKEA Mittzon**  
+It's actually a damn fine desk! It took a while to assemble, but I am quite happy with it! ... or well, I lost the battle, so my better half is.
+
 
 ## 📌 My Personal Setup (TODO, flesh this out)
 *Document how I actually use this day-to-day:*
