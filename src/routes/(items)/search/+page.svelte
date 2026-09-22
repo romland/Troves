@@ -156,9 +156,21 @@
         } else if (type === 'unassigned') {
             const el = filterForm.elements.namedItem('unassigned') as HTMLInputElement;
             if (el) el.checked = false;
+        } else if (type === 'color') {
+            data.color = '[]';
+            const el = filterForm.elements.namedItem('color') as HTMLInputElement;
+            if (el) el.value = '[]';
         }
         setTimeout(() => filterForm.requestSubmit(), 0);
     }
+
+    $: activeColors = (() => {
+        try {
+            if (!data.color || data.color === '[]') return [];
+            const parsed = JSON.parse(data.color);
+            return Array.isArray(parsed) ? parsed.map(c => typeof c === 'string' ? c : (c.color || '')).filter(Boolean) : [];
+        } catch(e) { return []; }
+    })();
 
     async function downloadCSV() {
         isExporting = true;
@@ -233,7 +245,7 @@
 </div>
 
 <!-- Active Filter Chips -->
-{#if data.tag || data.container || data.cat || data.unassigned || data.docType || data.docStr || data.reasonStr || Object.keys(filterAttrs).length > 0}
+{#if data.tag || data.container || data.cat || data.unassigned || data.docType || data.docStr || data.reasonStr || activeColors.length > 0 || Object.keys(filterAttrs).length > 0}
 <div class="flex flex-wrap gap-2 px-2 mb-6 print:hidden">
     {#if data.tag}<Badge color="primary" class="p-3 font-semibold shadow-sm" icon="bi-hash" removable on:click={() => removeFilter('tag')}>{data.tag}</Badge>{/if}
     {#if data.container}<Badge color="primary" class="p-3 font-semibold shadow-sm" icon="bi-box-seam" removable on:click={() => removeFilter('container')}>{data.container}</Badge>{/if}
@@ -242,6 +254,16 @@
     {#if data.docStr}<Badge color="primary" class="p-3 font-semibold shadow-sm" icon="bi-file-text" removable on:click={() => removeFilter('doc')}>{data.docStr}</Badge>{/if}
     {#if data.docType}<Badge color="primary" class="p-3 font-semibold shadow-sm" icon="bi-file-earmark" removable on:click={() => removeFilter('docType')}>{data.docType.toUpperCase()}</Badge>{/if}
     {#if data.reasonStr}<Badge color="primary" class="p-3 font-semibold shadow-sm" icon="bi-question-circle" removable on:click={() => removeFilter('reason')}>{data.reasonStr}</Badge>{/if}
+    {#if activeColors.length > 0}
+        <Badge color="primary" class="p-3 font-semibold shadow-sm capitalize" icon="bi-palette" removable on:click={() => removeFilter('color')}>
+            <span class="flex items-center gap-1.5">
+                {#each activeColors as col, i}
+                    <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full border border-base-100 shadow-sm" style="background-color: {col};"></span>{col}</span>
+                    {#if i < activeColors.length - 1}<span class="text-base-content/40">&</span>{/if}
+                {/each}
+            </span>
+        </Badge>
+    {/if}
     {#each Object.entries(filterAttrs) as [k,v]}
         {@const schemaField = (data.activeSchema || []).find(f => f.name === k)}
         {@const friendlyKey = schemaField?.uiLabel || k.replace(/_/g, ' ')}
