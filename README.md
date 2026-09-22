@@ -80,7 +80,7 @@ Dump your stuff on a table, scope the comparison to the `#camping-gear` tag, and
 Because Troves has to handle a bit of everything, from winter coats to spark plugs to whiskey to trollbeads to ESP32 boards, it can't be pre-programmed with rigid spreadsheet columns like "Brand" or "Shoe Size." Instead, it creates, destroys (and updates) its own structure on the fly using an Entity-Attribute-Value taxonomy. There's a bit more to it, but that is the idea.
 
 **Keeping the language consistent**  
-Image-recognition tools are naturally messy. If you feed the system photos of three different t-shirts, it might label one with "short sleeves," another with "arm style," and a third with "sleeve length." You can't build a useful search tool out of that. To fix this, the first time the app sees a new category, it locks in a specific set of labels and forces the software to reuse those exact terms for all future items. It turns messy, fluid text into a clean, predictable database. Mildly related, but not quite: Empty categories vaporize if you move the last item out of them, keeping your database clean.
+Image-recognition tools are naturally messy. If you feed the system photos of three different t-shirts, it might label one with "short sleeves," another with "arm style," and a third with "sleeve length." You can't build a useful search tool out of that. To fix this, the first time Troves sees a new category, it locks in a specific set of labels and forces the software to reuse those exact terms for all future items. It turns messy, fluid text into a clean, predictable database. Mildly related, but not quite: Empty categories vaporize if you move the last item out of them, keeping your database clean.
 
 **Spotting duplicates from photos**  
 If you take a picture of a jacket on your bed today, the lighting and folds will look completely different than when you first logged it hanging in a closet months ago. To handle this, Troves cross-references the visual details and the text to figure out if it's the same item, ensuring it doesn't log a duplicate or confuse two completely different blue shirts.
@@ -100,11 +100,11 @@ Tweaking the data manually is normal. The whole workflow is built around making 
 When assigning a location to an item, Troves gives you a fork in the road depending on what you are storing.
 
 **Option A: Semantic Tagging (Text/QR)**  
-You type or scan a name (e.g., "Garage Shelf 2" or "Moving Box A"). When you search for the item later, the app just prints the text.
+You type or scan a name (e.g., "Garage Shelf 2" or "Moving Box A"). When you search for the item later, Troves just prints the text.
 *Best for: Macro items. Coats, circular saws, book boxes. You don't need a treasure map to find a chainsaw on a shelf.*
 
 **Option B: Spatial Mapping (Visual Grid)**  
-You snap an overhead photo of an open drawer, Gridfinity layout, or wine rack. You define the grid in the UI. Then, the app asks, "Tap where it goes."
+You snap an overhead photo of an open drawer, Gridfinity layout, or wine rack. You define the grid in the UI. Then, Troves asks, "Tap where it goes."
 *Best for: Micro items. Resistors, screws, Lego parts. It bypasses the need to read tiny labels on 40 identical hardware trays.*
 
 **Deep Scan Grid**  
@@ -189,7 +189,7 @@ Troves offers full transparency over what is being sent to external APIs. In the
 **📡 The "Feel-Good" Telemetry**  
 I added a tiny ping to the backend that reaches out to my personal server (via CF proxy) when Troves boots up or gets installed. It’s only for my own sanity, it is incredibly motivating to know that other people are actually out there using your stuff. Whoever they might be.  
 
-It sends the app version and a scrambled instance ID (to make sure it's not the same Troves restarting 50 times). It absolutely does not send your IP (and your server's IP is dropped), inventory data, photos, or keys or anything else.  
+It sends the version and a scrambled instance ID (to make sure it's not the same Troves restarting 50 times). It absolutely does not send your IP (and your server's IP is dropped), inventory data, photos, or keys or anything else.  
 
 *Verify it: The code for the ping is in `src/lib/server/telemetry.ts`, you can grep for `pingTelemetry` to see how and where it's called.*
 
@@ -230,7 +230,7 @@ mkdir troves && \
 ```
 
 **⚠️ Hardware Heads-Up (Memory & SBCs)**  
-If you are planning to run this on a cheaper Single Board Computer (like a Raspberry Pi): the background removal microservice needs RAM. It really wants around 8GB of it to run comfortably. If you try to spin Troves up on a 2GB or 4GB board, it will likely bring the system to its knees. If you are tight on hardware memory, you can simply turn off background removal in the app settings.
+If you are planning to run this on a cheaper Single Board Computer (like a Raspberry Pi): the background removal microservice needs RAM. It really wants around 8GB of it to run comfortably. If you try to spin Troves up on a 2GB or 4GB board, it will likely bring the system to its knees. If you are tight on hardware memory, you can simply turn off background removal in settings.
 
 **Host Dependencies (Optional)**  
 All external dependencies gracefully fall back if a tool isn't installed.
