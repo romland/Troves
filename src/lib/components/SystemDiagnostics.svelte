@@ -24,6 +24,8 @@
                 <li class="flex items-start gap-3">
                     {#if ms.running}
                         <i class="bi bi-check-circle-fill text-success text-lg mt-0.5"></i>
+                    {:else if diagnostics.uptime < 120}
+                        <i class="bi bi-hourglass-split text-info text-lg mt-0.5 animate-pulse" title="Still starting up..."></i>
                     {:else if diagnostics.totalRamGB >= ms.ram}
                         <i class="bi bi-dash-circle-fill text-warning text-lg mt-0.5" title="Not running, but host has enough RAM"></i>
                     {:else}
@@ -35,6 +37,8 @@
                         <div class="text-xs mt-0.5 {ms.running ? 'text-gray-500' : (diagnostics.totalRamGB >= ms.ram ? 'text-gray-500' : 'text-error')}">
                             {#if ms.running}
                                 {ms.desc}.
+                            {:else if diagnostics.uptime < 120}
+                                Offline. Still waiting for service to respond...
                             {:else if diagnostics.totalRamGB >= ms.ram}
                                 Offline. Host meets memory requirement.
                             {:else}

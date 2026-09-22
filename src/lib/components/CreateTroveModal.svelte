@@ -78,6 +78,9 @@
 								<div class="w-10 h-10 rounded-xl bg-base-200 flex items-center justify-center text-xl shrink-0 text-base-content peer-checked:bg-primary peer-checked:text-primary-content transition-colors"><i class="bi {type.icon}"></i></div>
 								<div class="flex flex-col flex-1 min-w-0 pr-6 h-full">
 									<span class="font-bold text-lg leading-tight mb-1">{type.name}</span>
+                                    {#if type.pluginSource}
+                                        <span class="badge badge-outline badge-primary text-[9px] uppercase tracking-wider mb-2 max-w-full truncate block w-fit" title="Provided by extension: {type.pluginSource}"><i class="bi bi-plugin"></i> {type.pluginSource}</span>
+                                    {/if}
 									<span class="text-xs text-gray-500 leading-snug mb-3">{type.examples || 'Custom collection archetype.'}</span>
 									<div class="mt-auto pt-3 border-t border-base-200/60 flex flex-wrap gap-1.5 w-full min-w-0">
 										{#each (type.defaults || []) as def}

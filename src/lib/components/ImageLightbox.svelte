@@ -8,6 +8,7 @@
 	import PromptModal from "$lib/components/PromptModal.svelte";
 	import { isVideo } from "$lib/shared/fileutils";
 	import { getHighlightStyle } from '$lib/shared/boundingBox';
+	import { page } from "$app/stores";
 	
 	export let itemTitle = "";
 	export let categories: any[] = [];
@@ -535,6 +536,8 @@
 	
 	$: cols = parsedColors ? Object.keys(parsedColors) : [];
 	$: colNames = parsedColors ? Object.values(parsedColors) : [];
+	$: lightboxGradient = $page.data.inventories?.find(i => i.id === $page.data.activeInventoryId)?.lightboxGradient ?? true;
+	$: lightboxPhotoGradient = $page.data.inventories?.find(i => i.id === $page.data.activeInventoryId)?.lightboxPhotoGradient ?? true;
 </script>
 
 <svelte:window on:keydown={(e) => {
@@ -554,6 +557,9 @@
         transition:fade={{ duration: 250, easing: cubicOut }}
 		on:click|self={handleBackgroundClick}
     >
+        {#if lightboxGradient && cols.length > 0}
+            <div class="absolute inset-0 pointer-events-none transition-opacity duration-500" style="opacity: {Math.max(0, 0.4 - Math.abs($translateY) / 1000)}; background: linear-gradient(135deg, {cols[0]}, {cols[1] || cols[0]});"></div>
+        {/if}
         <!-- Header (Glassmorphic) -->
         <div class="absolute top-0 inset-x-0 p-4 sm:p-6 flex justify-between items-start bg-gradient-to-b from-black/60 to-transparent z-50 pointer-events-none">
             <div class="text-white drop-shadow-md pr-4 pointer-events-auto max-w-[80%]">
@@ -747,7 +753,7 @@
                 >
                     <!-- Tightly wrapped container ensures absolute percentage math perfectly matches the image -->
                     <div class="relative inline-flex max-w-full max-h-full shadow-2xl duration-300 ease-out {photo?.box ? 'overflow-hidden rounded-xl' : ''}" style="transform: rotate({rotation}deg);">
-                        {#if cols.length > 0}
+                        {#if lightboxPhotoGradient && cols.length > 0}
                             <div class="absolute inset-0 opacity-40 pointer-events-none rounded-xl mix-blend-multiply" style="background: linear-gradient(135deg, {cols[0]}, {cols[1] || cols[0]});"></div>
                         {/if}
                         <img 

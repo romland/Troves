@@ -59,7 +59,7 @@ export async function getSystemDiagnostics() {
 		mapEngine('AUDIO', 'Voice Dictation', 'DICTATION'),
 	];
 
-	return { totalRamGB, deps, microservices, engines };
+	return { totalRamGB, deps, microservices, engines, uptime: process.uptime() };
 }
 
 export async function checkEngineHealth() {

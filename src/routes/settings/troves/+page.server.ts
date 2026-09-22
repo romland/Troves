@@ -17,7 +17,7 @@ export const load = (async ({ locals }) => {
             bgRemovalModel: true, bgRemovalPreCrop: true, enablePaddleOCR: true,
             duplicateStrategy: true, containerMode: true, defaultView: true,
             archiveSingleScans: true, trackQuantity: true, showExif: true,
-            showColors: true, showOcr: true, enableAskAi: true, enableNotebook: true,
+            showColors: true, lightboxGradient: true, showOcr: true, enableAskAi: true, enableNotebook: true,
             showNoteContextUrl: true, enableDocuments: true, notebookCategories: true,
             enableFuzzySearch: true, showRelatedItems: true, enabledPlugins: true,
             templateFields: true,
@@ -42,7 +42,7 @@ export const load = (async ({ locals }) => {
         });
     }
 
-    const availablePlugins = extensionManager.getLoadedPlugins();
+    const availablePlugins = extensionManager.getPluginDetails();
 
     return { allInventories, accessMap, allUsers, availablePlugins };
 }) satisfies PageServerLoad;
@@ -252,7 +252,7 @@ export const actions = {
         const id = Number(data.get('id'));
         const field = data.get('field') as string;
         const value = data.get('value') === 'true';
-        if (['showExif', 'showColors', 'showOcr', 'enableAskAi', 'enableNotebook', 'enableDocuments', 'enableFuzzySearch', 'showNoteContextUrl', 'showRelatedItems'].includes(field)) {
+        if (['showExif', 'showColors', 'lightboxGradient', 'lightboxPhotoGradient', 'showOcr', 'enableAskAi', 'enableNotebook', 'enableDocuments', 'enableFuzzySearch', 'showNoteContextUrl', 'showRelatedItems'].includes(field)) {
             await db.inventory.update({ where: { id }, data: { [field]: value } });
         }
         return { success: true, message: "UI settings updated." };
@@ -272,6 +272,32 @@ export const actions = {
         const plugins = data.getAll('plugins') as string[];
         await db.inventory.update({ where: { id }, data: { enabledPlugins: JSON.stringify(plugins) } });
         return { success: true, message: "Plugin whitelist updated." };
+    },
+    savePluginConfig: async ({ request, locals }) => {
+        if (!locals.user?.isAdmin && !locals.user?.canCreateInventories) return fail(403);
+        const data = await request.formData();
+        const id = Number(data.get('id'));
+        const pluginName = data.get('pluginName') as string;
+        const isActive = data.get('active') === 'true';
+        const configStr = data.get('config') as string;
+
+        if (!id || !pluginName) return fail(400, { error: true, message: "Invalid request." });
+
+        const inventory = await db.inventory.findUnique({ where: { id }, select: { enabledPlugins: true } });
+        if (!inventory) return fail(404, { error: true, message: "Inventory not found." });
+
+        let current: any = {};
+        try {
+            const parsed = JSON.parse(inventory.enabledPlugins || '{}');
+            if (Array.isArray(parsed)) parsed.forEach((p: string) => { current[p] = { active: true, hooks: ['*'], actions: ['*'], modifiers: ['*'] }; });
+            else current = parsed;
+        } catch (e) {}
+
+        if (!isActive) delete current[pluginName];
+        else current[pluginName] = { active: true, ...JSON.parse(configStr) };
+
+        await db.inventory.update({ where: { id }, data: { enabledPlugins: JSON.stringify(current) } });
+        return { success: true, message: isActive ? `Configuration saved for ${pluginName}` : `Disabled ${pluginName}` };
     },
     retrySchemaBootstrap: async ({ request, locals }) => {
         const data = await request.formData();

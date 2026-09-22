@@ -90,6 +90,8 @@ model Inventory {
   trackQuantity       Boolean @default(true) // Whether this trove uses quantities/stock
   showExif            Boolean @default(false) // Show EXIF data in item details
   showColors          Boolean @default(false) // Show extracted colors in item details
+  lightboxGradient    Boolean @default(true) // Show full-screen color wash in lightbox
+  lightboxPhotoGradient Boolean @default(true) // Show gradient behind photo card in lightbox
   showOcr             Boolean @default(true) // Show OCR text blocks in item details
   enableAskAi         Boolean @default(true) // Whether the Ask Troves is enabled
   enableNotebook      Boolean @default(true) // Whether the Notebook/Timeline is enabled

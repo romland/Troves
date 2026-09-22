@@ -39,6 +39,19 @@ class ExtensionManager {
 	private isLoaded = false;
 	private pluginRateLimits: Map<string, { requests: number, minuteResetTime: number }> = new Map();
 	
+	private parseConfig(enabledPluginsStr: string | null): Record<string, { active: boolean, hooks: string[], actions: string[], modifiers: string[] }> {
+		if (!enabledPluginsStr) return {};
+		try {
+			const parsed = JSON.parse(enabledPluginsStr);
+			if (Array.isArray(parsed)) {
+				const config: any = {};
+				parsed.forEach(p => { config[p] = { active: true, hooks: ['*'], actions: ['*'], modifiers: ['*'] }; });
+				return config;
+			}
+			return parsed;
+		} catch (e) { return {}; }
+	}
+	
 	private registerHook(pluginName: string, event: EventName, handler: EventHandler, options?: HookOptions) {
 		if (!this.listeners.has(event)) this.listeners.set(event, []);
 		this.listeners.get(event)!.push({ pluginName, handler, options });
@@ -61,7 +74,7 @@ class ExtensionManager {
 	}
 	
     private registerArchetype(pluginName: string, def: any) {
-        this.archetypes.set(def.id, def);
+        this.archetypes.set(def.id, { ...def, pluginSource: pluginName });
         
         if (!this.pluginRegisteredArchetypes.has(pluginName)) this.pluginRegisteredArchetypes.set(pluginName, []);
         this.pluginRegisteredArchetypes.get(pluginName)!.push(def.id);
@@ -85,8 +98,19 @@ class ExtensionManager {
 
     async applyModifiers(name: ModifierName, value: any, context: any = {}): Promise<any> {
         const mods = this.modifiers.get(name) || [];
+        let config: any = null;
+        if (context.inventoryId) {
+            try {
+                const inventory = await db.inventory.findUnique({ where: { id: context.inventoryId }, select: { enabledPlugins: true } });
+                config = this.parseConfig(inventory?.enabledPlugins);
+            } catch (err) {}
+        }
+
         let result = value;
         for (const mod of mods) {
+            if (config && (!config[mod.pluginName]?.active || (!config[mod.pluginName].modifiers.includes('*') && !config[mod.pluginName].modifiers.includes(name)))) {
+                continue;
+            }
             try {
                 const modified = await mod.handler(result, context);
                 if (modified !== undefined) {
@@ -121,9 +145,9 @@ class ExtensionManager {
 	 */
 	async getEnabledItemActions(inventoryId: number): Promise<ItemActionDef[]> {
 		const inventory = await db.inventory.findUnique({ where: { id: inventoryId }, select: { enabledPlugins: true } });
-		const whitelist = JSON.parse(inventory?.enabledPlugins || '[]');
+		const config = this.parseConfig(inventory?.enabledPlugins);
 		return Array.from(this.itemActions.values())
-			.filter(action => whitelist.includes(action.pluginName))
+			.filter(action => config[action.pluginName]?.active && (config[action.pluginName].actions.includes('*') || config[action.pluginName].actions.includes(action.id)))
 			.map(({ id, label, icon, urlTemplate, mode }) => ({ id, label, icon, urlTemplate, mode }));
 	}
 	
@@ -136,10 +160,10 @@ class ExtensionManager {
 		if (hooks.length === 0) return false;
 		
 		const inventory = await db.inventory.findUnique({ where: { id: inventoryId }, select: { enabledPlugins: true } });
-		const whitelist = JSON.parse(inventory?.enabledPlugins || '[]');
+		const config = this.parseConfig(inventory?.enabledPlugins);
 		
-		// Return true if at least one hook belongs to an enabled plugin
-		return hooks.some(hook => whitelist.includes(hook.pluginName));
+		// Return true if at least one hook is active and permitted
+		return hooks.some(hook => config[hook.pluginName]?.active && (config[hook.pluginName].hooks.includes('*') || config[hook.pluginName].hooks.includes(event)));
 	}
 	
     /**
@@ -228,16 +252,16 @@ class ExtensionManager {
 		if (hooks.length === 0) return;
 		
         (async () => {
-            let whitelist: string[] | null = null;
+            let config: any = null;
             const inventoryId = payload?.context?.inventoryId;
             if (inventoryId) {
                 try {
                     const inventory = await db.inventory.findUnique({ where: { id: inventoryId }, select: { enabledPlugins: true } });
-                    whitelist = JSON.parse(inventory?.enabledPlugins || '[]');
+                    config = this.parseConfig(inventory?.enabledPlugins);
                 } catch (err) {}
             }
 
-            const activeHooks = whitelist ? hooks.filter(hook => whitelist.includes(hook.pluginName)) : hooks;
+            const activeHooks = config ? hooks.filter(hook => config[hook.pluginName]?.active && (config[hook.pluginName].hooks.includes('*') || config[hook.pluginName].hooks.includes(event))) : hooks;
             if (activeHooks.length === 0) return;
 
             sysLog.info(`[ExtensionManager] Event '${event}' fired. Queuing ${activeHooks.length} plugin hook(s).`);

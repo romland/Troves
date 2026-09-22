@@ -6,6 +6,7 @@
     import ConfirmModal from "$lib/components/ConfirmModal.svelte";
     import CreateInventoryModal from "$lib/components/CreateTroveModal.svelte";
     import pageTitle from '$lib/stores';
+    import PluginConfigModal from "$lib/components/admin/PluginConfigModal.svelte";
 
     pageTitle.set("Manage Troves");
 
@@ -13,6 +14,7 @@
     let deleteConfirmText: string = "";
     let confirmModal: ConfirmModal;
     let createInventoryModal: CreateInventoryModal;
+    let pluginConfigModal: PluginConfigModal;
 
     function createEnhancer() {
         return async ({ result, update }: any) => {
@@ -159,7 +161,7 @@
                         <div class="mt-3 p-3 bg-base-300 rounded-lg border border-base-200">
                             <div class="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-2">Inventory Features & UI</div>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                {#each [['showExif', 'Show EXIF Data'], ['showColors', 'Show Colors'], ['showOcr', 'Show Raw OCR Text'], ['enableAskAi', 'Enable Ask Troves'], ['enableNotebook', 'Enable Notebook'], ['showNoteContextUrl', 'Show Page Context on Quick Notes'], ['enableDocuments', 'Enable Documents'], ['enableFuzzySearch', 'Fuzzy Word Search'], ['showRelatedItems', 'Show Related Items']] as [field, label]}
+                                {#each [['showExif', 'Show EXIF Data'], ['showColors', 'Show Colors'], ['lightboxGradient', 'Full Ambient Lightbox Wash'], ['lightboxPhotoGradient', 'Photo Card Gradient in Lightbox'], ['showOcr', 'Show Raw OCR Text'], ['enableAskAi', 'Enable Ask Troves'], ['enableNotebook', 'Enable Notebook'], ['showNoteContextUrl', 'Show Page Context on Quick Notes'], ['enableDocuments', 'Enable Documents'], ['enableFuzzySearch', 'Fuzzy Word Search'], ['showRelatedItems', 'Show Related Items']] as [field, label]}
                                     <SettingToggle enhanceFn={createEnhancer} id={v.id} action="?/toggleUiFlag" name={field} checked={v[field]} label={label} type="checkbox" payloadType="field" formClass="flex items-center gap-2" />
                                 {/each}
                             </div>
@@ -186,17 +188,38 @@
                         {#if $page.data.availablePlugins?.length > 0}
                             <div class="mt-3 p-3 bg-base-300 rounded-lg border border-base-200">
                                 <span class="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-2 block">Extensions & Plugins</span>
-                                <form method="POST" action="?/updateEnabledPlugins" use:enhance={createEnhancer} class="flex flex-col gap-2">
-                                    <input type="hidden" name="id" value={v.id}>
+                                <div class="flex flex-col gap-2">
                                     <div class="flex flex-wrap gap-2">
                                         {#each $page.data.availablePlugins as plugin}
-                                            <label class="cursor-pointer label p-0 flex gap-2 items-center justify-start bg-base-100 border border-base-200 rounded-lg px-3 py-1.5 shadow-sm hover:border-primary transition-colors">
-                                                <input type="checkbox" name="plugins" value={plugin} class="checkbox checkbox-xs checkbox-primary" checked={JSON.parse(v.enabledPlugins || '[]').includes(plugin)} on:change={(e) => e.currentTarget.form?.requestSubmit()} />
-                                                <span class="label-text text-xs font-medium">{plugin}</span>
-                                            </label>
+                                            {@const currentConfigStr = v.enabledPlugins || '{}'}
+                                            {@const parsedConfig = (Array.isArray(JSON.parse(currentConfigStr)) ? JSON.parse(currentConfigStr).reduce((acc, p) => ({...acc, [p]: {active: true, hooks:['*'], actions:['*'], modifiers:['*']}}), {}) : JSON.parse(currentConfigStr))}
+                                            {@const isActive = !!parsedConfig[plugin.name]?.active}
+                                            <div class="flex items-center justify-between bg-base-100 border border-base-200 rounded-lg pl-3 pr-1 py-1 shadow-sm hover:border-primary transition-colors">
+                                                <form method="POST" action="?/savePluginConfig" use:enhance={createEnhancer} class="flex items-center gap-2 m-0 flex-1">
+                                                    <input type="hidden" name="id" value={v.id}>
+                                                    <input type="hidden" name="pluginName" value={plugin.name}>
+                                                    <input type="hidden" name="active" value="false">
+                                                    
+                                                    <label class="cursor-pointer flex gap-2 items-center flex-1 py-0.5">
+                                                        <input type="checkbox" class="checkbox checkbox-xs checkbox-primary" checked={isActive} on:click|preventDefault={(e) => {
+                                                            if (!isActive) {
+                                                                pluginConfigModal.show(plugin, v, null);
+                                                            } else {
+                                                                e.currentTarget.form.requestSubmit();
+                                                            }
+                                                        }} />
+                                                        <span class="label-text text-xs font-medium truncate max-w-[140px]" title={plugin.name}>{plugin.name}</span>
+                                                    </label>
+                                                </form>
+                                                {#if isActive}
+                                                    <button type="button" class="btn btn-ghost btn-xs px-1 text-gray-500 hover:text-primary ml-1" on:click={() => pluginConfigModal.show(plugin, v, parsedConfig[plugin.name])}>
+                                                        <i class="bi bi-gear-fill"></i>
+                                                    </button>
+                                                {/if}
+                                            </div>
                                         {/each}
                                     </div>
-                                </form>
+                                </div>
                             </div>
                         {/if}
 
@@ -273,3 +296,4 @@
 
 <ConfirmModal bind:this={confirmModal} />
 <CreateInventoryModal bind:this={createInventoryModal} on:success={(e) => notify('success', e.detail)} on:error={(e) => notify('error', e.detail)} />
+<PluginConfigModal bind:this={pluginConfigModal} />
