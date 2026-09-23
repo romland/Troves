@@ -222,6 +222,9 @@ Inventory management (for at home). There are many like it, but this one is mine
       <sub><b>An extension's meta data</b></sub>
     </td>
     <td width="33%" width="33%" align="center">
+      <img src="../.github/screenshots/038-extensions-with-meta.webp" alt="" />
+      <br />
+      <sub><b>All extensions metadata</b></sub>
     </td>
   </tr>
 </table>
