@@ -196,7 +196,7 @@ I added a tiny ping to the backend that reaches out to my personal server (via C
 
 It sends the current Troves version and a random instance ID (to make sure it's not the same Troves restarting 50 times). It absolutely does not send your IP (and your server's IP is dropped), inventory data, photos, or keys or anything else.  
 
-*Verify it: The code for this is in* [src/lib/server/telemetry.ts](./src/lib/server/telemetry.ts), *you can also grep for `pingTelemetry` to see how and where it's called (first setup and boot4).*
+*Verify it: The code for this is in [`src/lib/server/telemetry.ts`](./src/lib/server/telemetry.ts). To see how it's used, grep for `pingTelemetry` (first setup and boot).*
 
 That said, I totally get wanting your self-hosted software to stay completely quiet. If you want to opt out, just add `DISABLE_FEELGOOD_TELEMETRY="true"` to your `.env` file. It won't make a peep, no hard feelings!
 
