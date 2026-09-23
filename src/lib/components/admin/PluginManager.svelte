@@ -28,6 +28,17 @@
             await update({ reset: false });
         };
     }
+
+    function createEditEnhancer() {
+        return async ({ result, update }: any) => {
+            if (result.type === 'success' || result.type === 'redirect') {
+                notify('success', result.data?.message || 'Saved successfully');
+            } else if (result.type === 'failure' || result.type === 'error') {
+                notify('error', result.data?.message || 'An error occurred');
+            }
+            await update({ reset: false });
+        };
+    }
 </script>
 
 <div class="bg-base-100 border border-error/20 shadow-sm rounded-xl p-6 relative overflow-hidden">
@@ -42,7 +53,7 @@
     <div class="flex flex-col gap-3 mb-4">
         {#each plugins || [] as p}
             {#if editPluginName === p.name}
-                <PluginEditForm plugin={p} enhanceFn={createEnhancer} on:cancel={() => editPluginName = null} />
+                <PluginEditForm plugin={p} {confirmModal} enhanceFn={createEditEnhancer} on:cancel={() => editPluginName = null} />
             {:else}
                 <PluginListItem plugin={p} {confirmModal} enhanceFn={createEnhancer} on:edit={(e) => editPluginName = e.detail.name} on:askLlm={(e) => promptModal.show(e.detail.content, e.detail.name)} />
             {/if}
