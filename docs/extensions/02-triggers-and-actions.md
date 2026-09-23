@@ -5,7 +5,7 @@ Events are fired unconditionally by the system. Extensions listen to these event
 
 ### `onContainerCreated`
 Fires when a new spatial container or nested tray is saved to the database.
-**Payload Structure:**
+**Payload Structure:**  
 - `entity` (Object): The Prisma Container entity.
 - `context.user` (Object): The user who created the container.
 - `context.inventoryId` (Number): The active Trove ID.
@@ -14,25 +14,27 @@ Fires when a new spatial container or nested tray is saved to the database.
 
 ### `onPrintLabelRequested`
 Fires when a user manually requests a label reprint from the UI.
-**Payload Structure:**
+**Payload Structure:**  
 - `entity` (Object): The Prisma Container entity.
 - `context.user` (Object): The user who requested the print.
 - `context.inventoryId` (Number): The active Trove ID.
 - `intent.labelSize` ('small' | 'large'): Enum for the requested format.
 
 ### `onItemAdded` & `onItemUpdated`
-**Instant Hooks.** These fire the millisecond an item is saved to the database. They are perfect for chat notifications (Discord/Slack webhooks) or pushing audit logs to external tools. **Warning:** Heavy ML extraction (OCR, background removal, category guessing) has not completed yet when these fire.
-**Payload Structure:**
+**Instant Hooks.**  
+These fire the millisecond an item is saved to the database. They are perfect for chat notifications (Discord/Slack webhooks) or pushing audit logs to external tools. **Warning:** Heavy ML extraction (OCR, background removal, category guessing) has not completed yet when these fire.
+**Payload Structure:**  
 - `entity` (Object): The Prisma Item entity.
 - `context.user` (Object): The user acting upon the item.
 - `context.inventoryId` (Number): The active Trove ID.
 - `intent.isNew` (boolean): `true` for `onItemAdded`, `false` for `onItemUpdated`.
 
 ### `onItemProcessed`
-**The Late-Stage Hook.** This fires *after* all heavy async background processing (LLM Classification, OCR, background removal, duplicate sweeps) has fully completed for an item. 
-**Use Cases:**
+**The Late-Stage Hook.**  
+This fires *after* all heavy async background processing (LLM Classification, OCR, background removal, duplicate sweeps) has fully completed for an item. 
+**Use Cases:**  
 This is the hook you want for **Data Enrichment** (e.g., fetching book covers, ISBN, etc from Google APIs, scraping technical PDFs based on the identified model number, or getting vinyl album art or checking eBay prices). 
-**Payload Structure:**
+**Payload Structure:**  
 - `entity` (Object): The *fully hydrated* Prisma Item entity (includes the newly extracted `.attributes`, `.photos`, and `.tags` arrays).
 - `context.user` (Object): The user who initiated the save.
 - `context.inventoryId` (Number): The active Trove ID.
@@ -45,7 +47,7 @@ Instead of listening to system events, plugins can inject explicit buttons into 
 
 ### `registerItemAction(definition, handler?)`
 Adds a button to the "..." menu of an Item.
-**Definition Structure:**
+**Definition Structure:**  
 - `id` (String): Unique identifier for the action.
 - `label` (String): The text displayed on the button.
 - `icon` (String): Optional Bootstrap Icon class (e.g., `bi-google`).
@@ -60,14 +62,15 @@ The default behavior. The UI button triggers an asynchronous background job in t
 #### 2. Synchronous Link Resolvers (`mode: 'resolve'`)
 When a plugin action requires dynamic data manipulation to construct a URL, but the user expects a new browser tab to open immediately, use `mode: 'resolve'`.
 
-**How it works:**
+**How it works:**  
 1. The UI renders a standard HTML anchor tag (`<a target="_blank" href="/api/ext/actionId/itemId">`). This ensures mobile and desktop browsers do not trigger popup blockers.
 2. Clicking the link hits a secure SvelteKit proxy endpoint.
 3. The proxy invokes the plugin's `handler` synchronously.
 4. The plugin performs its logic, constructs the target URL, and returns it as a string.
 5. The proxy issues an HTTP `302 Found` redirect to the browser.
 
-**Return Type Requirement:** Handlers running in `resolve` mode MUST return a valid `string` URL.
+**Return Type Requirement:**  
+Handlers running in `resolve` mode MUST return a valid `string` URL.
 
 **Common Use Cases for Resolvers:**
 
