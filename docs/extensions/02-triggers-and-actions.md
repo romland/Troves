@@ -4,7 +4,8 @@
 Events are fired unconditionally by the system. Extensions listen to these events and decide whether or not to act based on the `intent` or `context` provided.
 
 ### `onContainerCreated`
-Fires when a new spatial container or nested tray is saved to the database.
+Fires when a new spatial container or nested tray is saved to the database.  
+
 **Payload Structure:**  
 - `entity` (Object): The Prisma Container entity.
 - `context.user` (Object): The user who created the container.
@@ -13,7 +14,8 @@ Fires when a new spatial container or nested tray is saved to the database.
 - `intent.labelSize` ('small' | 'large'): Enum for the requested format.
 
 ### `onPrintLabelRequested`
-Fires when a user manually requests a label reprint from the UI.
+Fires when a user manually requests a label reprint from the UI.  
+
 **Payload Structure:**  
 - `entity` (Object): The Prisma Container entity.
 - `context.user` (Object): The user who requested the print.
@@ -22,7 +24,8 @@ Fires when a user manually requests a label reprint from the UI.
 
 ### `onItemAdded` & `onItemUpdated`
 **Instant Hooks.**  
-These fire the millisecond an item is saved to the database. They are perfect for chat notifications (Discord/Slack webhooks) or pushing audit logs to external tools. **Warning:** Heavy ML extraction (OCR, background removal, category guessing) has not completed yet when these fire.
+These fire the millisecond an item is saved to the database. They are perfect for chat notifications (Discord/Slack webhooks) or pushing audit logs to external tools. **Warning:** Heavy ML extraction (OCR, background removal, category guessing) has not completed yet when these fire.  
+
 **Payload Structure:**  
 - `entity` (Object): The Prisma Item entity.
 - `context.user` (Object): The user acting upon the item.
@@ -31,9 +34,11 @@ These fire the millisecond an item is saved to the database. They are perfect fo
 
 ### `onItemProcessed`
 **The Late-Stage Hook.**  
-This fires *after* all heavy async background processing (LLM Classification, OCR, background removal, duplicate sweeps) has fully completed for an item. 
+This fires *after* all heavy async background processing (LLM Classification, OCR, background removal, duplicate sweeps) has fully completed for an item.  
+
 **Use Cases:**  
-This is the hook you want for **Data Enrichment** (e.g., fetching book covers, ISBN, etc from Google APIs, scraping technical PDFs based on the identified model number, or getting vinyl album art or checking eBay prices). 
+This is the hook you want for **Data Enrichment** (e.g., fetching book covers, ISBN, etc from Google APIs, scraping technical PDFs based on the identified model number, or getting vinyl album art or checking eBay prices).  
+
 **Payload Structure:**  
 - `entity` (Object): The *fully hydrated* Prisma Item entity (includes the newly extracted `.attributes`, `.photos`, and `.tags` arrays).
 - `context.user` (Object): The user who initiated the save.
