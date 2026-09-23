@@ -5,9 +5,9 @@
  * @version 1.0.0
  * @updated 2026-09-23
  * @github https://github.com/romland/troves
+ * @archetype horology
  */
 export default function register({ registerArchetype, addModifier, registerVoiceVocabulary }) {
-    
     // Lock down the Schema with a comprehensive watch collector's taxonomy
     registerArchetype({
         id: 'watches',

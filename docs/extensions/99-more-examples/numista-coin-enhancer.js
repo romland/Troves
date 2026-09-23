@@ -5,17 +5,11 @@
  * @version 0.0.1
  * @updated 2026-09-18
  * @github https://github.com/romland/troves
- */
-/*
- * ============================================================================
- * TROVES PLUGIN: NUMISTA COIN METADATA
- * ============================================================================
  * 
  * Automatically fetches and enriches coin metadata from the Numista catalog.
  * 
  * REQUIRED SETUP:
  * You must add the following key to your Troves `.env` file:
- * 
  * NUMISTA_API_KEY="your_numista_api_key_here"
  * 
  * How to get one (Free):

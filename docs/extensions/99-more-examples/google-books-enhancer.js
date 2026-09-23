@@ -5,34 +5,37 @@
  * @version 0.0.1
  * @updated 2026-09-18
  * @github https://github.com/romland/troves
- */
-/*
-You might need Google Books API key for this!
-
-Google allows *some* unauthenticated requests to the Books API for browsers.
-But essentially, it seems very low. It requires an API key to track your usage.
-
-But I swear, the absolutely hardest part about this and anything Google is to
-navigate their effing Cloud panel. It's funny how they can make you feel so 
-goddamn stupid.
-
-# How to get a free Google Books API Key
-It takes about 60 seconds and doesn't require a credit card:
-1. Go to: https://console.cloud.google.com/apis/library/books.googleapis.com
-    - If you don't have a project yet, it will pop up a window forcing you to create 
-      one (just call it "Troves"). Once the page loads, just click the blue Enable 
-      button.
-2. Create the Key
-    - Click this direct link: Google Cloud Credentials Page
-      Click + CREATE CREDENTIALS at the top.
-      Select API Key.
-      Select "Books API"
-      Copy the string it gives you.
-3. Finally, open your Troves `.env` file and add:
-    GOOGLE_BOOKS_API_KEY="AIzaSyYourGeneratedKeyHere..."
-
-Because you added a new \`.env\` key, you must restart Troves (\`docker compose restart app\`). 
-If you are only editing the plugin code itself, you can just use the "Hot Reload Plugins" button in the Admin interface!
+ * @archetype any
+ * 
+ * You might/will need Google Books API key for this!
+ * 
+ * Google allows *some* unauthenticated requests to the Books API for browsers.
+ * But essentially, it seems very low. It requires an API key to track your usage.
+ * 
+ * But I swear, the absolutely hardest part about this and anything Google is to
+ * navigate their effing Cloud panel. It's funny how they can make you feel so 
+ * goddamn stupid.
+ * 
+ * How to get that free Google Books API Key
+ * 
+ * It takes about 60 seconds and doesn't require a credit card:
+ * 1. Go to: https://console.cloud.google.com/apis/library/books.googleapis.com
+ *     - If you don't have a project yet, it will pop up a window forcing you to create 
+ *       one (just call it "Troves"). Once the page loads, just click the blue Enable 
+ *       button.
+ * 2. Create the Key
+ *     - Click this direct link: Google Cloud Credentials Page
+ *       Click + CREATE CREDENTIALS at the top.
+ *       Select API Key.
+ *       Select "Books API"
+ *       Copy the string it gives you.
+ * 3. Finally, open your Troves `.env` file and add:
+ *     GOOGLE_BOOKS_API_KEY="AIzaSyYourGeneratedKeyHere..."
+ * 
+ * Because you added a new \`.env\` key, you must restart Troves (\`./troves restart\`). 
+ * 
+ * If you are only editing the plugin code itself, you can just use the "Hot Reload Plugins"
+ * button in the Admin interface!
 */
 import fs from 'fs';
 import path from 'path';

@@ -5,17 +5,7 @@
  * @version 0.0.1
  * @updated 2026-09-18
  * @github https://github.com/romland/troves
- */
-/**
- * TROVES PLUGIN: FETCH USER MANUAL (the IMPROVED example)
- * 
- * Improvements made based on the documentation:
- * 1. Replaced raw `db.document.create` with idempotent `itemOps.attachDocument` 
- *    to prevent duplicate entries if a user clicks the button multiple times.
- * 2. Wrapped all logic in extreme transparency using `logActivity`.
- * 3. Configured `maxRetries`, `retryDelayMs`, and `rateLimitRpm` on the action.
- * 4. Extracted the logic into a shared function and added an `onItemProcessed` 
- *    listener so manuals are fetched automatically for newly created items.
+ * @archetype any
  */
 export default function register({ on, registerItemAction, sysLog, logActivity, fetch, db, env, itemOps }) {
     

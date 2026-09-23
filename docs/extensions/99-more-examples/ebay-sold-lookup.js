@@ -5,10 +5,10 @@
  * @version 0.0.1
  * @updated 2026-09-18
  * @github https://github.com/romland/troves
- */
-/**
- * Troves Plugin generated for: "Instant eBay Sold/Completed listings lookup"
+ * @archetype any
+ * @generatedBy gemini-3.1-flash-lite
  * 
+ * Troves Plugin generated for: "eBay Sold/Completed listings lookup"
  * ...ugh, you need to have an Ebay account for this.
  */
 export default function register({ on, registerItemAction, sysLog, logActivity, fetch, db, env, itemOps }) {

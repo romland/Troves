@@ -5,11 +5,7 @@
  * @version 0.0.1
  * @updated 2026-09-15
  * @github https://github.com/romland/troves
- */
-/**
- * ============================================================================
- * TROVES PLUGIN: BOARD GAME & TABLETOP LOOKUP (BGG)
- * ============================================================================
+ * 
  * Features:
  * - Queries the BoardGameGeek XML API2 using the item's title.
  * - Parses XML responses securely using Cheerio.

@@ -235,6 +235,9 @@ Inventory management (for at home). There are many like it, but this one is mine
       <sub><b>More extension meta!</b></sub>
     </td>
     <td width="33%" width="33%" align="center">
+      <img src="../.github/screenshots/040-extensions-syntax.webp" alt="" />
+      <br />
+      <sub><b>Syntax highlighting (easier on eyes)</b></sub>
     </td>
     <td width="33%" width="33%" align="center">
     </td>

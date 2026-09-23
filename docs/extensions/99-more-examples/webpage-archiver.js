@@ -5,19 +5,14 @@
  * @version 0.0.1
  * @updated 2026-09-18
  * @github https://github.com/romland/troves
- */
-/**
- * ============================================================================
- * TROVES PLUGIN: WEBPAGE ARCHIVER
- * ============================================================================
- * How to use this plugin:
+ *
+ * How to use this plugin/example:
  * 1. Click the "Archive Webpages from Attributes" button in the item's "..." menu.
  * 2. The plugin will scan all of the item's Key-Value Pair attributes. 
  * 3. Any attribute value that is a single-line HTTP/HTTPS URL will be sent to 
  *    Troves' background worker to be safely downloaded, parsed, summarized, 
  *    download, parse, summarize, and permanently archive the document so 
  *    you never lose it to link-rot.
- * ============================================================================
  */
 export default function register({ on, registerItemAction, sysLog, logActivity, fetch, db, env, itemOps }) {
     registerItemAction({

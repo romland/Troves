@@ -5,18 +5,11 @@
  * @version 0.0.1
  * @updated 2026-09-18
  * @github https://github.com/romland/troves
- */
-/**
- * ============================================================================
- * TROVES PLUGIN: GOOGLE IMAGE SEARCH
- * ============================================================================
+ * @archetype any
+ * 
  * User Request: "Give me an extension that does what google search one does but for google images"
- * Target Trove Archetype: any
- * Generated At: 2026-09-18T17:06:08Z
  * Model: gemini-3.1-flash-lite
- * ============================================================================
  */
-
 export default function register({ registerItemAction }) {
     registerItemAction({
         id: 'google-image-search',

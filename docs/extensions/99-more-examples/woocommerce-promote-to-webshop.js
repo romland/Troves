@@ -1,24 +1,10 @@
 /**
- * @name Promote Item to Woocommerce
+ * @name Sync Items with Woocommerce
  * @description Title says it all, but beware that this is completely untested as I do not have a Woocommerce site to test on at the momoent.
  * @author Troves Community
  * @version 0.0.1
  * @updated 2026-09-18
  * @github https://github.com/romland/troves
- */
-/**
- * ============================================================================
- * TROVES PLUGIN: WOOCOMMERCE SYNC
- * ============================================================================
- * Features:
- * - Pushes Troves items to a WooCommerce storefront via REST API v3.
- * - Leaves Pricing completely blank for safe manual management in WordPress.
- * - Maps Troves dynamic taxonomy directly to WooCommerce product attributes.
- * - Extracts Troves documents/links and generates a clean HTML "Related Resources" block.
- * - Uploads Troves local images to the WP Media Library and assigns them to the product.
- * - Tracks uploaded WP Media IDs to prevent duplicate image uploads on subsequent syncs.
- * - Idempotency: Stores the WooCommerce Product ID locally to perform PUT updates.
- * ============================================================================
  * 
  * REQUIRED SETUP:
  * Add these to your .env file:
@@ -32,8 +18,17 @@
  * // For WordPress Media Uploads (Users > Profile > Application Passwords)
  * WP_USERNAME="admin_username"
  * WP_APP_PASSWORD="xxxx xxxx xxxx xxxx xxxx xxxx"
+ * 
+ * Features:
+ * - Pushes Troves items to a WooCommerce storefront via REST API v3.
+ * - Leaves Pricing completely blank for safe manual management in WordPress.
+ * - Maps Troves dynamic taxonomy directly to WooCommerce product attributes.
+ * - Extracts Troves documents/links and generates a clean HTML "Related Resources" block.
+ * - Uploads Troves local images to the WP Media Library and assigns them to the product.
+ * - Tracks uploaded WP Media IDs to prevent duplicate image uploads on subsequent syncs.
+ * - Idempotency: Stores the WooCommerce Product ID locally to perform PUT updates.
+ * 
  */
-
 import fs from 'fs';
 import path from 'path';
 

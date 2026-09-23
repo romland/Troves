@@ -5,8 +5,7 @@
  * @version 0.0.1
  * @updated 2026-09-18
  * @github https://github.com/romland/troves
- */
-/**
+ *
  * Troves Plugin generated for: "Vinted market pricing and similar item lookup based on dynamic taxonomy"
  */
 export default function register({ on, registerItemAction, sysLog, logActivity, fetch, db, env, itemOps }) {

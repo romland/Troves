@@ -5,9 +5,6 @@
  * @version 0.0.1
  * @updated 2026-09-18
  * @github https://github.com/romland/troves
- */
-/**
- * TROVES PLUGIN: TROLLBEADS EXPERT & RESELLER SUITE
  *
  * At the moment this is just an example plugin to hook into archetypes.
  * 

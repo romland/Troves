@@ -5,22 +5,16 @@
  * @version 0.0.1
  * @updated 2026-09-18
  * @github https://github.com/romland/troves
- */
-/**
- * ============================================================================
- * TROVES PLUGIN: MOUSER COMPONENT LOOKUP
- * ============================================================================
+ * 
  * Features:
  * - Queries the Mouser Search API using the item's title (sanitized for symbols).
  * - Performs hardware-aware fuzzy matching to reject incorrect spec variants.
  * - Idempotently attaches: Datasheets, Store Links, Pricing, Lead Times, Manufacturer, MPN, and Category.
  * - Uses regex to salvage hidden specs (Voltage, Current, Power, Frequency) from generic descriptions.
  * - Fully logs API requests and errors to the Troves Activity Monitor.
- * ============================================================================
  * 
  * REQUIRED SETUP:
  * You must add the following key to your Troves `.env` file:
- * 
  * MOUSER_API_KEY="your_mouser_search_api_key_here"
  * 
  * How to get one (Free):

@@ -7,11 +7,23 @@
  * @github https://github.com/romland/troves
  * @donate https://github.com/romland
  * @website https://llemming.com/
- */
-/**
- * ============================================================================
- * TROVES PLUGIN: SPOTIFY CD METADATA MATCHER
- * ============================================================================
+ *
+ *
+ * REQUIRED SETUP:
+ * You must add the following keys to your Troves `.env` file:
+ * 
+ * SPOTIFY_CLIENT_ID="your_spotify_client_id"
+ * SPOTIFY_CLIENT_SECRET="your_spotify_client_secret"
+ * 
+ * How to get them (Free):
+ * 1. Go to https://developer.spotify.com/dashboard
+ * 2. Log in with your standard Spotify account.
+ * 3. Click "Create app". Name it "Troves", put "http://localhost" as Redirect URI.
+ * 4. Once created, click "Settings" to view your Client ID and Client Secret.
+ * 5. Add them to your `.env` file and restart your Troves Docker container.
+ *
+ * FEATURES:
+ *
  * 1. SMART METADATA SEARCH
  * When a CD is processed, the plugin takes the Troves `title` (and the `Artist` 
  * attribute if the ML found one) and queries Spotify. 
@@ -51,21 +63,6 @@
  * -> Manual: Injects a "Fetch Album & Tracks" button into the item UI.
  * Both are wrapped in Troves' built-in rate limiting (30 requests/min) and 
  * auto-retries to ensure we never get IP-banned by Spotify.
- *
- * ============================================================================
- * REQUIRED SETUP:
- * You must add the following keys to your Troves `.env` file:
- * 
- * SPOTIFY_CLIENT_ID="your_spotify_client_id"
- * SPOTIFY_CLIENT_SECRET="your_spotify_client_secret"
- * 
- * How to get them (Free):
- * 1. Go to https://developer.spotify.com/dashboard
- * 2. Log in with your standard Spotify account.
- * 3. Click "Create app". Name it "Troves", put "http://localhost" as Redirect URI.
- * 4. Once created, click "Settings" to view your Client ID and Client Secret.
- * 5. Add them to your `.env` file and restart your Troves Docker container.
- * ============================================================================
  */
 import fs from 'fs';
 import path from 'path';
