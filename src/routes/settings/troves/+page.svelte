@@ -136,162 +136,163 @@
                                 {/if}
                             </div>
 
-                        <SettingToggle enhanceFn={createEnhancer} id={v.id} action="?/toggleAutoCategories" name="allowNewCategories" checked={v.allowNewCategories} label="Allow automated creation of categories" />
-                        <SettingToggle enhanceFn={createEnhancer} id={v.id} action="?/toggleAutoTaxonomy" name="allowAutoTaxonomy" checked={v.allowAutoTaxonomy} label="Enable Smart Taxonomy & Attribute Extractions" />
-                        <SettingToggle enhanceFn={createEnhancer} id={v.id} action="?/toggleExtractExif" name="extractExif" checked={v.extractExif} label="Extract EXIF data (including GPS) from photos" />
-                        <SettingToggle enhanceFn={createEnhancer} id={v.id} action="?/toggleDeepScan" name="deepScan" checked={v.deepScanCollections} label="Deep-scan: extract detailed attributes for all items in multi-scans" />
-                        <SettingToggle enhanceFn={createEnhancer} id={v.id} action="?/toggleBgRemoval" name="bgRemovalEnabled" checked={v.bgRemovalEnabled} label="Remove image backgrounds" />
+                            <SettingToggle enhanceFn={createEnhancer} id={v.id} action="?/toggleAutoCategories" name="allowNewCategories" checked={v.allowNewCategories} label="Allow automated creation of categories" />
+                            <SettingToggle enhanceFn={createEnhancer} id={v.id} action="?/toggleAutoTaxonomy" name="allowAutoTaxonomy" checked={v.allowAutoTaxonomy} label="Enable Smart Taxonomy & Attribute Extractions" />
+                            <SettingToggle enhanceFn={createEnhancer} id={v.id} action="?/toggleExtractExif" name="extractExif" checked={v.extractExif} label="Extract EXIF data (including GPS) from photos" />
+                            <SettingToggle enhanceFn={createEnhancer} id={v.id} action="?/toggleDeepScan" name="deepScan" checked={v.deepScanCollections} label="Deep-scan: extract detailed attributes for all items in multi-scans" />
+                            <SettingToggle enhanceFn={createEnhancer} id={v.id} action="?/toggleBgRemoval" name="bgRemovalEnabled" checked={v.bgRemovalEnabled} label="Remove image backgrounds" />
 
-                        <form method="POST" action="?/toggleBgRemovalModel" use:enhance={createEnhancer} class="mt-2 flex flex-col sm:flex-row sm:items-center items-start gap-1 sm:gap-2">
-                            <input type="hidden" name="id" value={v.id}>
-                            <select name="bgRemovalModel" class="select select-bordered select-xs font-medium w-full sm:w-auto bg-base-100" disabled={!v.bgRemovalEnabled} on:change={(e) => e.currentTarget.form?.requestSubmit()} value={v.bgRemovalModel || 'bria-rmbg'}>
-                                <option value="bria-rmbg">BRIA v2.0 (Slow / Best Quality)</option>
-                                <option value="isnet-general-use">ISNet (Balanced)</option>
-                                <option value="u2net">U2Net (Fast / Moderate)</option>
-                            </select>
-                            <span class="text-xs text-gray-500 font-medium" class:opacity-50={!v.bgRemovalEnabled}>Background removal model</span>
-                        </form>
+                            <form method="POST" action="?/toggleBgRemovalModel" use:enhance={createEnhancer} class="mt-2 flex flex-col sm:flex-row sm:items-center items-start gap-1 sm:gap-2">
+                                <input type="hidden" name="id" value={v.id}>
+                                <select name="bgRemovalModel" class="select select-bordered select-xs font-medium w-full sm:w-auto bg-base-100" disabled={!v.bgRemovalEnabled} on:change={(e) => e.currentTarget.form?.requestSubmit()} value={v.bgRemovalModel || 'bria-rmbg'}>
+                                    <option value="bria-rmbg">BRIA v2.0 (Slow / Best Quality)</option>
+                                    <option value="isnet-general-use">ISNet (Balanced)</option>
+                                    <option value="u2net">U2Net (Fast / Moderate)</option>
+                                </select>
+                                <span class="text-xs text-gray-500 font-medium" class:opacity-50={!v.bgRemovalEnabled}>Background removal model</span>
+                            </form>
 
-                        <SettingToggle enhanceFn={createEnhancer} id={v.id} action="?/toggleBgPreCrop" name="bgRemovalPreCrop" checked={v.bgRemovalPreCrop} disabled={!v.bgRemovalEnabled} label="Pre-crop image before background removal (good for some item-types)" />
-                        <SettingToggle enhanceFn={createEnhancer} id={v.id} action="?/togglePaddleOCR" name="enablePaddleOCR" checked={v.enablePaddleOCR} label="Enable local PaddleOCR text extraction" />
-                        <SettingToggle enhanceFn={createEnhancer} id={v.id} action="?/toggleArchiveSingle" name="archiveSingleScans" checked={v.archiveSingleScans} label="Save backup pictures of single item scans to Notebook" />
-                        <SettingToggle enhanceFn={createEnhancer} id={v.id} action="?/toggleTrackQuantity" name="trackQuantity" checked={v.trackQuantity} label="Track Quantity / Stock for items" />
+                            <SettingToggle enhanceFn={createEnhancer} id={v.id} action="?/toggleBgPreCrop" name="bgRemovalPreCrop" checked={v.bgRemovalPreCrop} disabled={!v.bgRemovalEnabled} label="Pre-crop image before background removal (good for some item-types)" />
+                            <SettingToggle enhanceFn={createEnhancer} id={v.id} action="?/togglePaddleOCR" name="enablePaddleOCR" checked={v.enablePaddleOCR} label="Enable local PaddleOCR text extraction" />
+                            <SettingToggle enhanceFn={createEnhancer} id={v.id} action="?/toggleArchiveSingle" name="archiveSingleScans" checked={v.archiveSingleScans} label="Save backup pictures of single item scans to Notebook" />
+                            <SettingToggle enhanceFn={createEnhancer} id={v.id} action="?/toggleTrackQuantity" name="trackQuantity" checked={v.trackQuantity} label="Track Quantity / Stock for items" />
 
-                        <!-- UI View Toggles -->
-                        <div class="mt-3 p-3 bg-base-300 rounded-lg border border-base-200">
-                            <div class="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-2">Inventory Features & UI</div>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                {#each [['showExif', 'Show EXIF Data'], ['showColors', 'Show Colors'], ['lightboxGradient', 'Full Ambient Lightbox Wash'], ['lightboxPhotoGradient', 'Photo Card Gradient in Lightbox'], ['showOcr', 'Show Raw OCR Text'], ['enableAskAi', 'Enable Ask Troves'], ['enableNotebook', 'Enable Notebook'], ['showNoteContextUrl', 'Show Page Context on Quick Notes'], ['enableDocuments', 'Enable Documents'], ['enableFuzzySearch', 'Fuzzy Word Search'], ['showRelatedItems', 'Show Related Items']] as [field, label]}
-                                    <SettingToggle enhanceFn={createEnhancer} id={v.id} action="?/toggleUiFlag" name={field} checked={v[field]} label={label} type="checkbox" payloadType="field" formClass="flex items-center gap-2" />
-                                {/each}
-                            </div>
-                            {#if v.showRelatedItems && !v.allowAutoTaxonomy}
-                                <div class="mt-3 text-[10px] text-warning flex items-start gap-1.5 font-bold bg-warning/10 p-2 rounded-lg">
-                                    <i class="bi bi-exclamation-triangle-fill mt-0.5"></i> <span>Related items rely heavily on attributes and semantic tokens. Enable 'Smart Taxonomy & Extractions' above for accurate results.</span>
-                                </div>
-                            {/if}
-                            {#if v.enableNotebook}
-                                <div class="mt-3 pt-3 border-t border-base-200/50">
-                                    <span class="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1 block">Notebook Tabs</span>
-                                    <form method="POST" action="?/updateNotebookCategories" use:enhance={createEnhancer} class="flex gap-2">
-                                        <input type="hidden" name="id" value={v.id}>
-                                        <div class="flex-1">
-                                            <input type="text" name="notebookCategories" class="input input-xs input-bordered w-full bg-base-100" value={JSON.parse(v.notebookCategories || '[]').join(', ')} />
-                                            <div class="text-[9px] text-gray-400 mt-1 leading-tight">Comma separated. Removing a category hides the tab, but existing notes remain accessible under "All".</div>
-                                        </div>
-                                        <button type="submit" class="btn btn-xs btn-primary shrink-0">Save</button>
-                                    </form>
-                                </div>
-                            {/if}
-                        </div>
-
-                        {#if $page.data.availablePlugins?.length > 0}
+                            <!-- UI View Toggles -->
                             <div class="mt-3 p-3 bg-base-300 rounded-lg border border-base-200">
-                                <span class="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-2 block">Extensions & Plugins</span>
-                                <div class="flex flex-col gap-2">
-                                    <div class="flex flex-wrap gap-2">
-                                        {#each $page.data.availablePlugins as plugin}
-                                            {@const currentConfigStr = v.enabledPlugins || '{}'}
-                                            {@const parsedConfig = (Array.isArray(JSON.parse(currentConfigStr)) ? JSON.parse(currentConfigStr).reduce((acc, p) => ({...acc, [p]: {active: true, hooks:['*'], actions:['*'], modifiers:['*']}}), {}) : JSON.parse(currentConfigStr))}
-                                            {@const isActive = !!parsedConfig[plugin.name]?.active}
-                                            <div class="flex items-center justify-between bg-base-100 border border-base-200 rounded-lg pl-3 pr-1 py-1 shadow-sm hover:border-primary transition-colors">
-                                                <form method="POST" action="?/savePluginConfig" use:enhance={createEnhancer} class="flex items-center gap-2 m-0 flex-1">
-                                                    <input type="hidden" name="id" value={v.id}>
-                                                    <input type="hidden" name="pluginName" value={plugin.name}>
-                                                    <input type="hidden" name="active" value="false">
-                                                    
-                                                    <label class="cursor-pointer flex gap-2 items-center flex-1 py-0.5">
-                                                        <input type="checkbox" class="checkbox checkbox-xs checkbox-primary" checked={isActive} on:click|preventDefault={(e) => {
-                                                            if (!isActive) {
-                                                                pluginConfigModal.show(plugin, v, null);
-                                                            } else {
-                                                                e.currentTarget.form.requestSubmit();
-                                                            }
-                                                        }} />
-                                                        <div class="flex flex-col min-w-0">
-                                                                                        <span class="label-text text-xs font-medium truncate max-w-[140px]" title={plugin.meta?.name || plugin.name}>{plugin.meta?.name || plugin.name}</span>
-                                                            {#if plugin.meta?.description}
-                                                                <span class="text-[9px] text-gray-500 truncate max-w-[140px] leading-tight mt-0.5">{plugin.meta.description}</span>
-                                                            {/if}
-                                                        </div>
-                                                    </label>
-                                                </form>
-                                                {#if isActive}
-                                                    <button type="button" class="btn btn-ghost btn-xs px-1 text-gray-500 hover:text-primary ml-1" on:click={() => pluginConfigModal.show(plugin, v, parsedConfig[plugin.name])}>
-                                                        <i class="bi bi-gear-fill"></i>
-                                                    </button>
-                                                {/if}
+                                <div class="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-2">Inventory Features & UI</div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    {#each [['showExif', 'Show EXIF Data'], ['showColors', 'Show Colors'], ['lightboxGradient', 'Full Ambient Lightbox Wash'], ['lightboxPhotoGradient', 'Photo Card Gradient in Lightbox'], ['showOcr', 'Show Raw OCR Text'], ['enableAskAi', 'Enable Ask Troves'], ['enableNotebook', 'Enable Notebook'], ['showNoteContextUrl', 'Show Page Context on Quick Notes'], ['enableDocuments', 'Enable Documents'], ['enableFuzzySearch', 'Fuzzy Word Search'], ['showRelatedItems', 'Show Related Items']] as [field, label]}
+                                        <SettingToggle enhanceFn={createEnhancer} id={v.id} action="?/toggleUiFlag" name={field} checked={v[field]} label={label} type="checkbox" payloadType="field" formClass="flex items-center gap-2" />
+                                    {/each}
+                                </div>
+                                {#if v.showRelatedItems && !v.allowAutoTaxonomy}
+                                    <div class="mt-3 text-[10px] text-warning flex items-start gap-1.5 font-bold bg-warning/10 p-2 rounded-lg">
+                                        <i class="bi bi-exclamation-triangle-fill mt-0.5"></i> <span>Related items rely heavily on attributes and semantic tokens. Enable 'Smart Taxonomy & Extractions' above for accurate results.</span>
+                                    </div>
+                                {/if}
+                                {#if v.enableNotebook}
+                                    <div class="mt-3 pt-3 border-t border-base-200/50">
+                                        <span class="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1 block">Notebook Tabs</span>
+                                        <form method="POST" action="?/updateNotebookCategories" use:enhance={createEnhancer} class="flex gap-2">
+                                            <input type="hidden" name="id" value={v.id}>
+                                            <div class="flex-1">
+                                                <input type="text" name="notebookCategories" class="input input-xs input-bordered w-full bg-base-100" value={JSON.parse(v.notebookCategories || '[]').join(', ')} />
+                                                <div class="text-[9px] text-gray-400 mt-1 leading-tight">Comma separated. Removing a category hides the tab, but existing notes remain accessible under "All".</div>
                                             </div>
-                                        {/each}
+                                            <button type="submit" class="btn btn-xs btn-primary shrink-0">Save</button>
+                                        </form>
+                                    </div>
+                                {/if}
+                            </div>
+
+                            {#if $page.data.availablePlugins?.length > 0}
+                                <div class="mt-3 p-3 bg-base-300 rounded-lg border border-base-200">
+                                    <span class="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-2 block">Extensions & Plugins</span>
+                                    <div class="flex flex-col gap-2">
+                                        <div class="flex flex-wrap gap-2">
+                                            {#each $page.data.availablePlugins as plugin}
+                                                {@const currentConfigStr = v.enabledPlugins || '{}'}
+                                                {@const parsedConfig = (Array.isArray(JSON.parse(currentConfigStr)) ? JSON.parse(currentConfigStr).reduce((acc, p) => ({...acc, [p]: {active: true, hooks:['*'], actions:['*'], modifiers:['*']}}), {}) : JSON.parse(currentConfigStr))}
+                                                {@const isActive = !!parsedConfig[plugin.name]?.active}
+                                                <div class="flex items-center justify-between bg-base-100 border border-base-200 rounded-lg pl-3 pr-1 py-1 shadow-sm hover:border-primary transition-colors">
+                                                    <form method="POST" action="?/savePluginConfig" use:enhance={createEnhancer} class="flex items-center gap-2 m-0 flex-1">
+                                                        <input type="hidden" name="id" value={v.id}>
+                                                        <input type="hidden" name="pluginName" value={plugin.name}>
+                                                        <input type="hidden" name="active" value="false">
+                                                        
+                                                        <label class="cursor-pointer flex gap-2 items-center flex-1 py-0.5">
+                                                            <input type="checkbox" class="checkbox checkbox-xs checkbox-primary" checked={isActive} on:click|preventDefault={(e) => {
+                                                                if (!isActive) {
+                                                                    pluginConfigModal.show(plugin, v, null);
+                                                                } else {
+                                                                    e.currentTarget.form.requestSubmit();
+                                                                }
+                                                            }} />
+                                                            <div class="flex flex-col min-w-0">
+                                                                <span class="label-text text-xs font-medium truncate max-w-[140px]" title={plugin.meta?.name || plugin.name}>{plugin.meta?.name || plugin.name}</span>
+                                                                {#if plugin.meta?.description}
+                                                                    <span class="text-[9px] text-gray-500 truncate max-w-[140px] leading-tight mt-0.5">{plugin.meta.description}</span>
+                                                                {/if}
+                                                            </div>
+                                                        </label>
+                                                    </form>
+                                                    {#if isActive}
+                                                        <button type="button" title="" class="btn btn-ghost btn-xs px-1 text-gray-500 hover:text-primary ml-1" on:click={() => pluginConfigModal.show(plugin, v, parsedConfig[plugin.name])}>
+                                                            <i class="bi bi-gear-fill"></i>
+                                                        </button>
+                                                    {/if}
+                                                </div>
+                                            {/each}
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        {/if}
+                            {/if}
 
-                        <form method="POST" action="?/updateInventoryStrategy" use:enhance={createEnhancer} class="mt-3 flex flex-col sm:flex-row sm:items-center items-start gap-1 sm:gap-2">
-                            <input type="hidden" name="id" value={v.id}>
-                            <select name="strategy" class="select select-bordered select-xs font-medium w-full sm:w-auto bg-base-100" on:change={(e) => e.currentTarget.form?.requestSubmit()} value={v.duplicateStrategy || 'PROMPT'}>
-                                <option value="PROMPT">Ask Me</option>
-                                <option value="AUTO_BUMP">Auto-Merge (+1)</option>
-                                <option value="AUTO_IGNORE">Auto-Ignore</option>
-                            </select>
-                            <span class="text-xs text-gray-500 font-medium">is the default duplicate resolution</span>
-                        </form>
-
-                        <form method="POST" action="?/updateContainerMode" use:enhance={createEnhancer} class="mt-2 flex flex-col sm:flex-row sm:items-center items-start gap-1 sm:gap-2">
-                            <input type="hidden" name="id" value={v.id}>
-                            <select name="containerMode" class="select select-bordered select-xs font-medium w-full sm:w-auto bg-base-100" on:change={(e) => e.currentTarget.form?.requestSubmit()} value={v.containerMode || 'scan'}>
-                                <option value="scan">Scan QR</option>
-                                <option value="select">Manual List</option>
-                            </select>
-                            <span class="text-xs text-gray-500 font-medium">is default container selector mode</span>
-                        </form>
-
-                        <form method="POST" action="?/updateDefaultView" use:enhance={createEnhancer} class="mt-2 flex flex-col sm:flex-row sm:items-center items-start gap-1 sm:gap-2">
-                            <input type="hidden" name="id" value={v.id}>
-                            <select name="defaultView" class="select select-bordered select-xs font-medium w-full sm:w-auto bg-base-100" on:change={(e) => e.currentTarget.form?.requestSubmit()} value={v.defaultView || 'grid'}>
-                                <option value="grid">Grid</option>
-                                <option value="list">List</option>
-                            </select>
-                            <span class="text-xs text-gray-500 font-medium">is default item view</span>
-                        </form>
-
-                        <div class="flex flex-wrap gap-2 mt-3">
-                            <form method="POST" action="?/beautifyTaxonomy" use:enhance={createEnhancer} on:submit={() => notify('info', 'Beautifying labels... This may take a few seconds.')}>
-                                <input type="hidden" name="inventoryId" value={v.id}>
-                                <button type="submit" class="btn btn-xs btn-outline btn-primary gap-1 text-[10px] bg-base-100"><i class="bi bi-magic"></i> Beautify Taxonomy Labels</button>
+                            <form method="POST" action="?/updateInventoryStrategy" use:enhance={createEnhancer} class="mt-3 flex flex-col sm:flex-row sm:items-center items-start gap-1 sm:gap-2">
+                                <input type="hidden" name="id" value={v.id}>
+                                <select name="strategy" class="select select-bordered select-xs font-medium w-full sm:w-auto bg-base-100" on:change={(e) => e.currentTarget.form?.requestSubmit()} value={v.duplicateStrategy || 'PROMPT'}>
+                                    <option value="PROMPT">Ask Me</option>
+                                    <option value="AUTO_BUMP">Auto-Merge (+1)</option>
+                                    <option value="AUTO_IGNORE">Auto-Ignore</option>
+                                </select>
+                                <span class="text-xs text-gray-500 font-medium">is the default duplicate resolution</span>
                             </form>
 
-                            <form method="POST" action="?/retrySchemaBootstrap" use:enhance={async ({ cancel }) => {
-                                const res = await confirmModal.ask('Regenerate Rules?', 'Are you sure you want to regenerate Taxonomy Rules? This will overwrite the current global schema.', 'Regenerate', 'Cancel', true);
-                                if (!res) { cancel(); return; }
-                                return createEnhancer();
-                            }}>
-                                <input type="hidden" name="inventoryId" value={v.id}>
-                                <input type="hidden" name="name" value={v.name}>
-                                <button type="submit" class="btn btn-xs btn-outline btn-ghost gap-1 text-[10px] bg-base-100"><i class="bi bi-arrow-repeat"></i> Regenerate Taxonomy Rules</button>
+                            <form method="POST" action="?/updateContainerMode" use:enhance={createEnhancer} class="mt-2 flex flex-col sm:flex-row sm:items-center items-start gap-1 sm:gap-2">
+                                <input type="hidden" name="id" value={v.id}>
+                                <select name="containerMode" class="select select-bordered select-xs font-medium w-full sm:w-auto bg-base-100" on:change={(e) => e.currentTarget.form?.requestSubmit()} value={v.containerMode || 'scan'}>
+                                    <option value="scan">Scan QR</option>
+                                    <option value="select">Manual List</option>
+                                </select>
+                                <span class="text-xs text-gray-500 font-medium">is default container selector mode</span>
                             </form>
 
-                            <form method="POST" action="?/rebuildDuplicates" use:enhance={async ({ cancel }) => {
-                                const res = await confirmModal.ask('Re-scan Duplicates?', 'Re-scan the entire trove for duplicates? This runs in the background and may take a few moments.', 'Re-scan', 'Cancel');
-                                if (!res) { cancel(); return; }
-                                return createEnhancer();
-                            }}>
-                                <input type="hidden" name="inventoryId" value={v.id}>
-                                <button type="submit" class="btn btn-xs btn-outline btn-warning gap-1 text-[10px] bg-base-100"><i class="bi bi-intersect"></i> Re-scan Duplicates</button>
+                            <form method="POST" action="?/updateDefaultView" use:enhance={createEnhancer} class="mt-2 flex flex-col sm:flex-row sm:items-center items-start gap-1 sm:gap-2">
+                                <input type="hidden" name="id" value={v.id}>
+                                <select name="defaultView" class="select select-bordered select-xs font-medium w-full sm:w-auto bg-base-100" on:change={(e) => e.currentTarget.form?.requestSubmit()} value={v.defaultView || 'grid'}>
+                                    <option value="grid">Grid</option>
+                                    <option value="list">List</option>
+                                </select>
+                                <span class="text-xs text-gray-500 font-medium">is default item view</span>
                             </form>
-                        </div>
-                        
-                        <details class="collapse bg-base-300 mt-3 rounded-xl border border-base-200">
-                            <summary class="collapse-title text-[10px] font-bold px-3 py-2 min-h-0">Raw Taxonomy (JSON)</summary>
-                            <div class="collapse-content px-3 pb-3">
-                                <form method="POST" action="?/updateTaxonomy" use:enhance={createEnhancer} class="flex flex-col gap-2 mt-2">
-                                    <input type="hidden" name="id" value={v.id}>
-                                    <textarea name="taxonomyJson" class="textarea textarea-bordered font-mono text-[10px] h-64 whitespace-pre leading-tight bg-base-100" spellcheck="false">{JSON.stringify(v.templateFields, null, 2)}</textarea>
-                                    <button type="submit" class="btn btn-primary btn-xs self-end shadow-sm">Save JSON</button>
+
+                            <div class="flex flex-wrap gap-2 mt-3">
+                                <form method="POST" action="?/beautifyTaxonomy" use:enhance={createEnhancer} on:submit={() => notify('info', 'Beautifying labels... This may take a few seconds.')}>
+                                    <input type="hidden" name="inventoryId" value={v.id}>
+                                    <button type="submit" class="btn btn-xs btn-outline btn-primary gap-1 text-[10px] bg-base-100"><i class="bi bi-magic"></i> Beautify Taxonomy Labels</button>
+                                </form>
+
+                                <form method="POST" action="?/retrySchemaBootstrap" use:enhance={async ({ cancel }) => {
+                                    const res = await confirmModal.ask('Regenerate Rules?', 'Are you sure you want to regenerate Taxonomy Rules? This will overwrite the current global schema.', 'Regenerate', 'Cancel', true);
+                                    if (!res) { cancel(); return; }
+                                    return createEnhancer();
+                                }}>
+                                    <input type="hidden" name="inventoryId" value={v.id}>
+                                    <input type="hidden" name="name" value={v.name}>
+                                    <button type="submit" class="btn btn-xs btn-outline btn-ghost gap-1 text-[10px] bg-base-100"><i class="bi bi-arrow-repeat"></i> Regenerate Taxonomy Rules</button>
+                                </form>
+
+                                <form method="POST" action="?/rebuildDuplicates" use:enhance={async ({ cancel }) => {
+                                    const res = await confirmModal.ask('Re-scan Duplicates?', 'Re-scan the entire trove for duplicates? This runs in the background and may take a few moments.', 'Re-scan', 'Cancel');
+                                    if (!res) { cancel(); return; }
+                                    return createEnhancer();
+                                }}>
+                                    <input type="hidden" name="inventoryId" value={v.id}>
+                                    <button type="submit" class="btn btn-xs btn-outline btn-warning gap-1 text-[10px] bg-base-100"><i class="bi bi-intersect"></i> Re-scan Duplicates</button>
                                 </form>
                             </div>
-                        </details>
+                            
+                            <details class="collapse bg-base-300 mt-3 rounded-xl border border-base-200">
+                                <summary class="collapse-title text-[10px] font-bold px-3 py-2 min-h-0">Raw Taxonomy (JSON)</summary>
+                                <div class="collapse-content px-3 pb-3">
+                                    <form method="POST" action="?/updateTaxonomy" use:enhance={createEnhancer} class="flex flex-col gap-2 mt-2">
+                                        <input type="hidden" name="id" value={v.id}>
+                                        <textarea name="taxonomyJson" class="textarea textarea-bordered font-mono text-[10px] h-64 whitespace-pre leading-tight bg-base-100" spellcheck="false">{JSON.stringify(v.templateFields, null, 2)}</textarea>
+                                        <button type="submit" class="btn btn-primary btn-xs self-end shadow-sm">Save JSON</button>
+                                    </form>
+                                </div>
+                            </details>
+                        </div>
                     </details>
                 {/each}
             </div>
