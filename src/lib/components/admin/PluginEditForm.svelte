@@ -14,6 +14,7 @@
     let originalContent = plugin.content;
     
     $: isDirty = plugin.content !== originalContent;
+    let isFullscreen = false;
 
     beforeNavigate((navigation) => {
         if (isDirty) {
@@ -35,12 +36,6 @@
         }
         plugin.content = originalContent;
         dispatch('cancel');
-    }
-
-    function insertSnippet(snippet: string) {
-        if (!editor || !editor.textarea) return;
-        editor.textarea.focus();
-        document.execCommand('insertText', false, snippet);
     }
 
     function onEditorKeydown(e: KeyboardEvent) {
@@ -298,7 +293,9 @@
     });
 </script>
 
-<div class="bg-base-200 rounded-xl border border-base-300 p-4 shadow-sm">
+<svelte:window on:keydown={(e) => { if (e.key === 'Escape' && isFullscreen) { e.preventDefault(); isFullscreen = false; } }} />
+
+<div class="{isFullscreen ? 'fixed inset-0 z-[100] bg-base-200/90 backdrop-blur-2xl p-4 sm:p-8 flex flex-col animate-fade-in' : 'bg-base-200 rounded-xl border border-base-300 p-4 shadow-sm'} transition-colors duration-300">
     <form method="POST" action="?/savePlugin" use:enhance={() => {
         const innerEnhance = enhanceFn();
         return async (opts) => {
@@ -307,25 +304,15 @@
                 originalContent = plugin.content;
             }
         };
-    }} class="flex flex-col gap-3">
+    }} class="flex flex-col gap-3 {isFullscreen ? 'w-full max-w-6xl mx-auto h-full relative' : ''}">
         <div class="flex items-center justify-between">
             <span class="font-bold font-mono text-sm">{plugin.name}</span>
-            <input type="hidden" name="name" value={plugin.name}>
-        </div>
-        
-        <div class="flex flex-wrap gap-2 p-2 bg-base-100 rounded-lg text-xs font-mono border border-base-300">
-            <span class="text-[10px] uppercase font-bold text-base-content/50 w-full mb-1">Toolkit Auto-Complete</span>
-            {#each [
-                { label: 'sysLog.info', snippet: "sysLog.info('message');" },
-                { label: 'on()', snippet: "on('onItemProcessed', async (payload) => {\n  \n});" },
-                { label: 'registerItemAction', snippet: "registerItemAction({\n  id: 'my-action',\n  label: 'Action Label',\n  icon: 'bi-lightning'\n}, async (payload) => {\n  \n});" },
-                { label: 'itemOps.setAttribute', snippet: "itemOps.setAttribute(payload.entity.id, 'Key', 'Value');" },
-                { label: 'itemOps.compareTitles', snippet: "itemOps.compareTitles(scannedTitle, dbTitle);" },
-                { label: 'fetch()', snippet: "await fetch('https://api.example.com');" },
-                { label: 'env', snippet: "env.API_KEY" }
-            ] as item}
-                <button type="button" class="btn btn-xs btn-ghost border border-base-300 hover:bg-primary hover:text-primary-content hover:border-primary transition-colors rounded-md px-2 shadow-sm bg-base-200" on:click={() => insertSnippet(item.snippet)}>{item.label}</button>
-            {/each}
+            <div class="flex items-center gap-2">
+                <button type="button" class="btn btn-xs btn-ghost text-base-content/50 hover:text-base-content" on:click={() => isFullscreen = !isFullscreen} title="Toggle Fullscreen">
+                    <i class="bi {isFullscreen ? 'bi-fullscreen-exit' : 'bi-arrows-fullscreen'}"></i>
+                </button>
+                <input type="hidden" name="name" value={plugin.name}>
+            </div>
         </div>
 
         <!-- Hidden input to pass the code back to the SvelteKit form action -->
@@ -334,12 +321,12 @@
         <!-- The editor container -->
         <div 
             bind:this={containerEl} 
-            class="w-full h-[450px] flex flex-col bg-base-100 rounded-xl border border-base-300 overflow-hidden focus-within:ring-2 focus-within:ring-primary/50 transition-shadow text-[13px] font-mono shadow-inner"
+            class="w-full flex flex-col bg-base-100 rounded-xl border border-base-300 overflow-hidden focus-within:ring-2 focus-within:ring-primary/50 transition-all text-[13px] font-mono {isFullscreen ? 'flex-1 min-h-0 shadow-2xl' : 'h-[450px] shadow-inner'}"
         ></div>
         
-        <div class="flex gap-2 justify-end mt-2">
-            <button type="button" class="btn btn-sm btn-ghost" on:click={handleCancel}>Cancel</button>
-            <button type="submit" class="btn btn-sm btn-primary" disabled={!isDirty}>Save & Reload</button>
+        <div class="{isFullscreen ? 'mt-4 flex-none bg-base-100/80 backdrop-blur-xl border border-base-300 shadow-xl rounded-full p-2 flex justify-center gap-2 self-center animate-fade-in' : 'flex gap-2 justify-end mt-2'}">
+            <button type="button" class="btn {isFullscreen ? 'btn-ghost rounded-full px-6' : 'btn-sm btn-ghost'}" on:click={handleCancel}>Cancel</button>
+            <button type="submit" class="btn {isFullscreen ? 'btn-primary rounded-full shadow-md px-8' : 'btn-sm btn-primary'}" disabled={!isDirty}>Save & Reload</button>
         </div>
     </form>
 </div>
