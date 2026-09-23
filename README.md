@@ -10,14 +10,7 @@ My primary use-cases are:
 
 There is also that primal satisfaction in simply admiring my stuff; swimming through a hoard of tools, books, and components like Scrooge McDuck. This is a digital equivalent: inspect and appreciate your sh*t without having to drag 20 boxes out of the attic.
 
-I hate data-entry. Creating an inventory and adding new items should be as automated as humanly possible. Most of the effort in Troves went into creating a pleasant, frictionless workflow so you actually use it. Under the hood, it uses object classification, OCR, background removal, color extraction, vision, audio, and language models to do the heavy lifting.
-
-Just snap a picture, or paste in a URL and let the system organize it.
-
-**Troves is VERY much in a BETA phase. It's VERY untested. There be bugs and dragons and trolls. You were warned. That said, it's under active development and code contributions are more than welcome!**
-
 [There](https://youtu.be/5B0cxLwS8fo) might [be](https://youtu.be/8WpgqJUO7SQ) a [bunch](https://youtu.be/n4YAiE8Yv5Y) of [demo](https://youtube.com/shorts/qyyXUC3TYlg?feature=share) videos [uploaded](https://youtube.com/shorts/U_juc8A-QqI?feature=share) to [YouTube](https://youtube.com/shorts/JtorL9VRztQ?feature=share). Oh, and there are also [some here](https://www.youtube.com/@friya/shorts). 
-
 
 <table align="center">
   <tr>
@@ -37,6 +30,14 @@ Just snap a picture, or paste in a URL and let the system organize it.
     </td>
   </tr>
 </table>
+
+
+
+I hate data-entry. Creating an inventory and adding new items should be as automated as humanly possible. Most of the effort in Troves went into creating a pleasant, frictionless workflow so you actually use it. Under the hood, it uses object classification, OCR, background removal, color extraction, vision, audio, and language models to do the heavy lifting.
+
+Just snap a picture, or paste in a URL and let the system organize it.
+
+**Troves is VERY much in a BETA phase. It's VERY untested. There be bugs and dragons and trolls. You were warned. That said, it's under active development and code contributions are more than welcome!**
 
 
 ## 📸 The Core Workflow
