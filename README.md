@@ -10,11 +10,11 @@ My primary use-cases are:
 
 There is also that primal satisfaction in simply admiring my stuff; swimming through a hoard of tools, books, and components like Scrooge McDuck. This is a digital equivalent: inspect and appreciate your sh*t without having to drag 20 boxes out of the attic.
 
-I absolutely hate data-entry. Creating an inventory and adding new items should be as automated as humanly possible. Most of the effort in Troves went into creating a pleasant, frictionless workflow so you actually use it. Under the hood, it uses tools like object classification, OCR, background removal, color extraction, vision, audio, and language models to do the heavy lifting, but the interface gets out of your way.
+I hate data-entry. Creating an inventory and adding new items should be as automated as humanly possible. Most of the effort in Troves went into creating a pleasant, frictionless workflow so you actually use it. Under the hood, it uses object classification, OCR, background removal, color extraction, vision, audio, and language models to do the heavy lifting.
 
 Just snap a picture, or paste in a URL and let the system organize it.
 
-**Troves is VERY VERY much in a BETA phase. It's VERY untested. There be bugs and dragons and trolls. You were warned. That said, it's under active development and code contributions are more than welcome!**
+**Troves is VERY much in a BETA phase. It's VERY untested. There be bugs and dragons and trolls. You were warned. That said, it's under active development and code contributions are more than welcome!**
 
 [There](https://youtu.be/5B0cxLwS8fo) might [be](https://youtu.be/8WpgqJUO7SQ) a [bunch](https://youtu.be/n4YAiE8Yv5Y) of [demo](https://youtube.com/shorts/qyyXUC3TYlg?feature=share) videos [uploaded](https://youtube.com/shorts/U_juc8A-QqI?feature=share) to [YouTube](https://youtube.com/shorts/JtorL9VRztQ?feature=share). Oh, and there are also [some here](https://www.youtube.com/@friya/shorts). 
 
@@ -55,7 +55,7 @@ Just snap a picture, or paste in a URL and let the system organize it.
   </tr>
 </table>
 
-To add a product, grab your phone, take a picture, and scan the QR-code on the container you want to place it in. That's it.  
+To add an item, grab your phone, take a picture, and scan the QR-code on the container you want to place it in. That's it.  
 
 That said, if you're feeling ambitious, you can:
 * Take a picture of an invoice or receipt (Troves will figure out the juicy bits).
@@ -66,25 +66,27 @@ That said, if you're feeling ambitious, you can:
 * **Fire-and-Forget Outbox:** `Never` wait for a progress bar. Tapping 'Save' pushes the item to an offline-tolerant IndexedDB queue and resets the UI. You can scan items in a deep basement with no signal, and the app will sync whenever your Wi-Fi reconnects. ... Okay, okay, I will backpedal on `never` since we sometimes have to verify bulk stuff.
 
 **Bulk Import & The Comparison Lens**  
-If bulk import is how you ingest a mountain of data into Troves, the Comparison Lens is how you audit reality against your database using set math. *(Tip: Count the physical items before snapping a multi-scan photo. It gives you a quick sanity check to know if your picture was clear enough for the model to catch everything).*
+If bulk import is how you ingest a mountain of data into Troves, the Comparison Lens is how you compare reality against your database. *(Tip: Count the physical items before snapping a multi-scan photo. It gives you a quick sanity check to know if your picture was clear enough for the model to catch everything).*
 
 * **Flea Market Scan ($A \setminus B$)**  
 Snap a photo of a crate of 40 CDs or books to see what is **✨ New to You** and what is already **✓ In Your Trove**.
 
 * **Kit Check ($B \setminus A$)**  
-Dump your stuff on a table, scope the comparison to the `#camping-gear` tag, and snap a photo to see exactly what you forgot to pack (a bit of a forced example, but ah, why not...).
+Dump your stuff on a table, scope the comparison to the `#camping-gear` tag, and snap a photo to see exactly what you forgot to pack (a bit of a contrived example, but ah...).
 
 **⚠️ The Comparison Lens is VERY much BETA. More than the rest of the system, expect quirks and dragons here!**
 
 ## 🧠 Self-Organizing Taxonomy
 
-Because Troves has to handle a bit of everything, from winter coats to spark plugs to whiskey to trollbeads to ESP32 boards, it can't be pre-programmed with rigid spreadsheet columns like "Brand" or "Shoe Size." Instead, it creates, destroys (and updates) its own structure on the fly using an Entity-Attribute-Value taxonomy. There's a bit more to it, but that is the idea.
+Because Troves has to handle everything, from winter coats to spark plugs to whiskey to trollbeads to ESP32 boards, it can't be pre-programmed with rigid spreadsheet columns like "Brand" or "Shoe Size." Instead, it creates, destroys (and updates) its own structure on the fly using an Entity-Attribute-Value taxonomy. There's a bit more to it, but that is the idea.
 
 **Keeping the language consistent**  
-Image-recognition tools are naturally messy. If you feed the system photos of three different t-shirts, it might label one with "short sleeves," another with "arm style," and a third with "sleeve length." You can't build a useful search tool out of that. To fix this, the first time Troves sees a new category, it locks in a specific set of labels and forces the software to reuse those exact terms for all future items. It turns messy, fluid text into a clean, predictable database. Mildly related, but not quite: Empty categories vaporize if you move the last item out of them, keeping your database clean.
+Image-recognition tools are messy. If you feed the system photos of three different t-shirts, they get labelled "short sleeves", "arm style", and "sleeve length". You can't build a useful search tool out of that. To fix this, Troves maintains a dynamic baseline. Once it learns the concept of "sleeve length" for a category, it reuses that term for future items instead of inventing synonyms. The schema still evolves naturally as new features appear, but it stops the model from having different names for the same thing. This is the idea, anyway. There's still some work to do here. (Mildly related: empty categories just vaporize to keep things tidy).
 
 **Spotting duplicates from photos**  
-If you take a picture of a jacket on your bed today, the lighting and folds will look completely different than when you first logged it hanging in a closet months ago. To handle this, Troves cross-references the visual details and the text to figure out if it's the same item, ensuring it doesn't log a duplicate or confuse two completely different blue shirts.
+A jacket dumped on a bed today looks completely different from the same jacket hanging in a closet months ago. Without barcodes to fall back on, Troves cross-references the visual traits and the parsed text to figure out if you already own it. It catches the duplicates, without confusing two completely different blue shirts. 
+
+Clothes are used in these examples mostly because everyone can relate to it, but this works for whatever type of item you throw at it. Maybe.
 
 ### Expect the classification to fail
 A quick warning: go into this assuming the automatic classification will just get your items wrong.  
@@ -142,8 +144,9 @@ Paste a link to YouTube, Twitter, Reddit, or TikTok, and Troves uses `yt-dlp` in
 
 Search in most local apps is an afterthought. Troves uses SQLite Full Text Search (FTS) across the entire database, going far beyond standard title and tag matching.
 
-* **Deep Document Indexing**  
-If you attach a PDF manual, EPUB, or webpage to an item, Troves parses and indexes the text. You aren't just searching your physical inventory; you are searching your documentation.
+* **Document Indexing**  
+If you attach a PDF manual, EPUB, or webpage to an item, Troves parses and indexes the text. It means you're searching through the actual contents of your documents, not just item titles and tags.
+
 * **Fuzzy Search Toggles**  
 Search stemming is great for tools, but infuriating when it floods an apparel search with false positives. You can toggle "Fuzzy Word Search" off per-trove for strict, exact-match queries.
 * **Spatial Context**  
