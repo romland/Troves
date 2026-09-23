@@ -83,7 +83,7 @@ Inventory management (for at home). There are many like it, but this one is mine
     <td width="33%" align="center">
       <img src="../.github/screenshots/013-preferences.webp" alt="Preferences" />
       <br />
-      <sub><b>Parts of user oreferences</b></sub>
+      <sub><b>Parts of user preferences</b></sub>
     </td>
     <td width="33%" align="center">
       <img src="../.github/screenshots/014-trove-settings.webp" alt="Trove Settings" />
