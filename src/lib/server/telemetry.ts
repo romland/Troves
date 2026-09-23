@@ -1,19 +1,18 @@
 /**
  * This is the "Feel-Good" Telemetry.
  * 
- * It's a tiny ping when Troves boots up or gets installed. It’s only for my own 
- * sanity, it is incredibly motivating to know that other people are actually out 
- * there using your stuff. Whoever they might be.  
+ * It's a tiny ping when Troves boots up or gets installed. It’s only to keep me
+ * motivated.
  * 
- * It sends the app version and a scrambled instance ID (to make sure it's not the
- * same Troves restarting 50 times). It absolutely does not send your IP (and your 
- * server's IP is dropped), inventory data, photos, or keys or anything else.  
+ * It sends the app version and an randomly generated instance ID. It absolutely
+ * does not send your IP (and your server's IP is dropped), inventory data, 
+ * photos, or keys or anything else.  
  * 
  * Verify it: The code is below. 
  * 
  * You can grep for `pingTelemetry` to see how and where it's called.
  * 
- * On my end the data looks like this:
+ * On my end, the data looks like this:
  * > SELECT * FROM pings;
  *      id  event   version         instance_id                           created_at
  *      1   boot    v0.9.1-c959adc  a2bbced5-1860-47a8-920f-307a3d6aef6c  2026-09-21 09:20:40

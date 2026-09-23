@@ -191,12 +191,12 @@ Your entire database runs from a single, portable SQLite file, and all photos/do
 Troves offers full transparency over what is being sent to external APIs. In the `/activity` dashboard, you can view the exact data sent to the Vision model, its raw JSON responses, execution times, and possible token usage limits.
 
 
-**📡 The "Feel-Good" Telemetry**  
-I added a tiny ping to the backend that reaches out to my personal server (via CF proxy) when Troves boots up or gets installed. It’s only for my own sanity, it is incredibly motivating to know that other people are actually out there using your stuff. Whoever they might be.  
+**📡 "Feel-Good" Telemetry**  
+I added a tiny ping to the backend that reaches out to my personal server (via CF proxy) when Troves boots up or gets installed. It’s only for my own sanity, it keeps you motivated when you know other people are actually out there using your stuff. Whoever they might be.  
 
-It sends the version and a scrambled instance ID (to make sure it's not the same Troves restarting 50 times). It absolutely does not send your IP (and your server's IP is dropped), inventory data, photos, or keys or anything else.  
+It sends the current Troves version and a random instance ID (to make sure it's not the same Troves restarting 50 times). It absolutely does not send your IP (and your server's IP is dropped), inventory data, photos, or keys or anything else.  
 
-*Verify it: The code for the ping is in `src/lib/server/telemetry.ts`, you can grep for `pingTelemetry` to see how and where it's called.*
+*Verify it: The code for this is in* [src/lib/server/telemetry.ts](./src/lib/server/telemetry.ts), *you can also grep for `pingTelemetry` to see how and where it's called (first setup and boot4).*
 
 That said, I totally get wanting your self-hosted software to stay completely quiet. If you want to opt out, just add `DISABLE_FEELGOOD_TELEMETRY="true"` to your `.env` file. It won't make a peep, no hard feelings!
 
