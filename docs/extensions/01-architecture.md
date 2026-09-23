@@ -28,3 +28,6 @@ To prevent plugins from constantly pinging the database to figure out *who* trig
   };
   intent: any;  // Transient UI requests or metadata (e.g., { printLabel: true })
 }
+```
+
+### Next [Extension Triggers & Actions >>](02-triggers-and-actions.md)

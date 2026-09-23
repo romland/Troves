@@ -284,3 +284,5 @@ See [vinted-detailed-search-scout.js](99-more-examples/vinted-detailed-search-sc
 
 **Get the Extension:**  
 See [webpage-archiver.js](99-more-examples/webpage-archiver.js)
+
+### Next [Core Development >>](05-core-development.md)

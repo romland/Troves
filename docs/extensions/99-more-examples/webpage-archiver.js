@@ -1,4 +1,12 @@
 /**
+ * @name Website Archiver
+ * @description It looks in attributes of items and archives any link mentioned. This is mostly written as an example on how to use Troves' archiver.
+ * @author Troves Community
+ * @version 0.0.1
+ * @updated 2026-09-18
+ * @github https://github.com/romland/troves
+ */
+/**
  * ============================================================================
  * TROVES PLUGIN: WEBPAGE ARCHIVER
  * ============================================================================

@@ -99,3 +99,5 @@ To bypass Node's strict ES module cache, Troves creates timestamped shadow copie
 - **Memory Accumulation:** V8 does not garbage-collect imported ES modules. Reloading a plugin hundreds of times in a single session will gradually increase memory usage until the next full server restart.
 - **Statelessness:** Global variables defined outside your `export default` function are wiped and reset on every reload.
 - **Dangling Connections:** If your plugin opens persistent local connections (like WebSockets or hardware ports), the old instance of your code will keep them alive in the background after a reload unless explicitly closed.
+
+### Next [Examples >>](04-examples.md)

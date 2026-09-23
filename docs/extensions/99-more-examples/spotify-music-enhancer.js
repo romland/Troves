@@ -3,7 +3,7 @@
  * @description Connects to Spotify's API to download high-resolution album art and extract tracklists when a CD is scanned.
  * @author Troves Community
  * @version 1.0.0
- * @updated 2026-09-23
+ * @updated 2026-09-15
  * @github https://github.com/romland/troves
  * @donate https://github.com/romland
  * @website https://llemming.com/

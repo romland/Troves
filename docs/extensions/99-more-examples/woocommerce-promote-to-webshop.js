@@ -1,4 +1,12 @@
 /**
+ * @name Promote Item to Woocommerce
+ * @description Title says it all, but beware that this is completely untested as I do not have a Woocommerce site to test on at the momoent.
+ * @author Troves Community
+ * @version 0.0.1
+ * @updated 2026-09-18
+ * @github https://github.com/romland/troves
+ */
+/**
  * ============================================================================
  * TROVES PLUGIN: WOOCOMMERCE SYNC
  * ============================================================================

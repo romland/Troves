@@ -1,4 +1,12 @@
 /**
+ * @name Board game & Tabletop lookup
+ * @description Fetches board game information (very untested)
+ * @author Troves Community
+ * @version 0.0.1
+ * @updated 2026-09-15
+ * @github https://github.com/romland/troves
+ */
+/**
  * ============================================================================
  * TROVES PLUGIN: BOARD GAME & TABLETOP LOOKUP (BGG)
  * ============================================================================

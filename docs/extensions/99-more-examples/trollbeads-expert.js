@@ -1,4 +1,12 @@
 /**
+ * @name Trollbeads Expert
+ * @description Attempts to figure out Trollbeads (very untested), it also adds a new Trove archetype
+ * @author Troves Community
+ * @version 0.0.1
+ * @updated 2026-09-18
+ * @github https://github.com/romland/troves
+ */
+/**
  * TROVES PLUGIN: TROLLBEADS EXPERT & RESELLER SUITE
  *
  * At the moment this is just an example plugin to hook into archetypes.

@@ -1,4 +1,12 @@
 /**
+ * @name Providi Label Studio
+ * @description You need a Brother QL-700 labelprinter (or similar) for this
+ * @author Troves Community
+ * @version 0.0.1
+ * @updated 2026-09-18
+ * @github https://github.com/romland/troves
+ */
+/**
  * This plugin depend on two .env keys:
  *      EXT_PRINTER_URL="http://192.168.178.194:8080"
  *      EXT_PRINTER_API_KEY="xxx"

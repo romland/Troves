@@ -1,4 +1,12 @@
 /**
+ * @name Example Dummy Plugin
+ * @description Does nothing useful
+ * @author Troves Community
+ * @version 0.0.1
+ * @updated 2026-09-18
+ * @github https://github.com/romland/troves
+ */
+/**
  * TROVES PLUGIN: FETCH USER MANUAL (the IMPROVED example)
  * 
  * Improvements made based on the documentation:

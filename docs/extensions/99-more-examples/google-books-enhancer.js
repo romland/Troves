@@ -1,3 +1,11 @@
+/**
+ * @name Book Information Enhancer
+ * @description Enriches books with cover, ISBN, plot, etc from Google Books 
+ * @author Troves Community
+ * @version 0.0.1
+ * @updated 2026-09-18
+ * @github https://github.com/romland/troves
+ */
 /*
 You might need Google Books API key for this!
 

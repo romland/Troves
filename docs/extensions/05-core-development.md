@@ -55,3 +55,5 @@ Whenever you add a new trigger to the core system, immediately document its exac
 
 * **Never `await` the trigger:** `extensionManager.trigger` pushes the execution to the background `ioQueue`. Do not `await` it in your route handlers, or you will accidentally block the UI waiting for plugins to finish.
 * **Always fire unconditionally:** Even if `intent.someAction` is false, fire the event anyway. Another plugin might be listening to the same event for a completely different reason (e.g., auditing or webhooks). Let the plugins evaluate the intent.
+
+### Next [Archetypes & Modifiers >>](06-archetypes-and-modifiers.md)

@@ -1,4 +1,12 @@
 /**
+ * @name Ebay Item Lookup
+ * @description Look up similar items on Ebay
+ * @author Troves Community
+ * @version 0.0.1
+ * @updated 2026-09-18
+ * @github https://github.com/romland/troves
+ */
+/**
  * ============================================================================
  * TROVES PLUGIN: EBAY SEARCH
  * ============================================================================

@@ -1,4 +1,12 @@
 /**
+ * @name Mouser Spec Fetcher
+ * @description Fetches specs from Mouser (very untested)
+ * @author Troves Community
+ * @version 0.0.1
+ * @updated 2026-09-18
+ * @github https://github.com/romland/troves
+ */
+/**
  * ============================================================================
  * TROVES PLUGIN: MOUSER COMPONENT LOOKUP
  * ============================================================================

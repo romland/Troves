@@ -116,8 +116,7 @@ Handlers running in `resolve` mode MUST return a valid `string` URL.
   });
   ```
 
-* **LLM wrote an ELI5 of the above**  
-Here is why a "magic link" that thinks before it opens is better than a normal link:
+**I asked an LLM to write an ELI5 of the above:**  
 
 * **Finding moving targets (Smart Devices):** If you have a 3D printer or a smart camera, your home internet router sometimes changes its internal web address. A normal link would just break. A magic link asks the router "where is the printer today?" right as you click it, and sends you to the right place.
 * **Smart Shopping:** Let's say you click "Buy Replacement." If Troves knows the exact barcode of the item, the link drops you directly on the store's checkout page. If Troves only knows it's a generic "red shirt," the link sends you to a general search page instead. The link makes a decision based on what it knows.
@@ -132,3 +131,4 @@ Basically: A normal link is a dumb signpost. A magic link acts like a concierge 
 
 - **`onDeepScanCompleted`**: Will fire after a spatial map deep scan finishes processing.
 
+### Next [Writing Plugins >>](03-writing-plugins.md)

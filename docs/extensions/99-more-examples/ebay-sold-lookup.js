@@ -1,4 +1,12 @@
 /**
+ * @name Ebay Sold Items Lookup
+ * @description Look up similar solid items on Ebay
+ * @author Troves Community
+ * @version 0.0.1
+ * @updated 2026-09-18
+ * @github https://github.com/romland/troves
+ */
+/**
  * Troves Plugin generated for: "Instant eBay Sold/Completed listings lookup"
  * 
  * ...ugh, you need to have an Ebay account for this.

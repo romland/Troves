@@ -21,9 +21,6 @@
         <div class="flex flex-col gap-2 flex-1 min-w-0">
         <div class="flex items-center gap-3">
                 <span class="font-bold text-sm truncate">{displayName}</span>
-                {#if displayName !== plugin.name}
-                <span class="font-mono text-[10px] text-base-content/50 truncate" title={plugin.name}>{plugin.name}</span>
-                {/if}
             {#if plugin.isLoaded}
                 <span class="badge badge-success badge-sm text-white">Active</span>
             {:else}

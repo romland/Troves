@@ -1,4 +1,12 @@
 /**
+ * @name Google Search
+ * @description Searches Google for the title of the item
+ * @author Troves Community
+ * @version 0.0.1
+ * @updated 2026-09-18
+ * @github https://github.com/romland/troves
+ */
+/**
  * ============================================================================
  * TROVES PLUGIN: GOOGLE IMAGE SEARCH
  * ============================================================================
