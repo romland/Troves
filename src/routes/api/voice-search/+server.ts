@@ -75,7 +75,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
         // [CORE INTENT ENGINE]
         // Pass the raw text (either transcribed from voice (groq) or typed (local) via debug) into the middleware
-        const { query: finalQuery, spokenReply, route } = await processVoiceQuery(rawTranscription, locals.activeInventoryId);
+        const { query: finalQuery, spokenReply, route } = await processVoiceQuery(rawTranscription, locals.activeInventoryId, locals.user);
         const durationMs = performance.now() - t0;
 
         const provider = textQuery.trim() ? 'local' : (groqData.provider || 'unknown');

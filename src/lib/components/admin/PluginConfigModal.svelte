@@ -20,14 +20,16 @@
             config = {
                 hooks: [...(plugin.hooks || [])],
                 actions: [...(plugin.actions || [])],
-                modifiers: [...(plugin.modifiers || [])]
+                modifiers: [...(plugin.modifiers || [])],
+                voiceIntents: [...(plugin.voiceIntents || [])]
             };
         } else {
             // If it's a legacy wildcard config ['*'], expand it to all capabilities
             config = {
-                hooks: existingConfig.hooks.includes('*') ? [...(plugin.hooks || [])] : [...existingConfig.hooks],
-                actions: existingConfig.actions.includes('*') ? [...(plugin.actions || [])] : [...existingConfig.actions],
-                modifiers: existingConfig.modifiers.includes('*') ? [...(plugin.modifiers || [])] : [...existingConfig.modifiers]
+                hooks: existingConfig.hooks?.includes('*') ? [...(plugin.hooks || [])] : [...(existingConfig.hooks || [])],
+                actions: existingConfig.actions?.includes('*') ? [...(plugin.actions || [])] : [...(existingConfig.actions || [])],
+                modifiers: existingConfig.modifiers?.includes('*') ? [...(plugin.modifiers || [])] : [...(existingConfig.modifiers || [])],
+                voiceIntents: existingConfig.voiceIntents?.includes('*') ? [...(plugin.voiceIntents || [])] : [...(existingConfig.voiceIntents || [])]
             };
         }
         modal.showModal();
@@ -132,7 +134,24 @@
                     </div>
                 {/if}
                 
-                {#if !plugin.hooks?.length && !plugin.actions?.length && !plugin.modifiers?.length}
+                {#if plugin.voiceIntents?.length > 0}
+                    {#if plugin.hooks?.length > 0 || plugin.actions?.length > 0 || plugin.modifiers?.length > 0}<div class="divider my-0 h-[1px]"></div>{/if}
+                    <div>
+                        <span class="text-xs font-bold uppercase tracking-wider text-base-content/60 block mb-2">Voice Commands</span>
+                        <div class="flex flex-col gap-2">
+                            {#each plugin.voiceIntents as intent}
+                                <label class="flex items-start gap-3 cursor-pointer">
+                                    <input type="checkbox" class="checkbox checkbox-sm checkbox-success mt-0.5" checked={config.voiceIntents.includes(intent)} on:change={(e) => config.voiceIntents = toggleArray(config.voiceIntents, intent, e)} />
+                                    <div class="flex flex-col">
+                                        <span class="text-sm font-semibold">{intent}</span>
+                                    </div>
+                                </label>
+                            {/each}
+                        </div>
+                    </div>
+                {/if}
+                
+                {#if !plugin.hooks?.length && !plugin.actions?.length && !plugin.modifiers?.length && !plugin.voiceIntents?.length}
                     <div class="text-xs text-gray-500 italic">This plugin exposes no configurable endpoints.</div>
                 {/if}
             </div>

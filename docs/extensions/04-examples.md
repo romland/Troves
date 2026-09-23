@@ -88,6 +88,38 @@ See [spotify-music-enhancer.js](99-more-examples/spotify-music-enhancer.js)
 See [trollbeads-expert.js](99-more-examples/trollbeads-expert.js)
 
 
+## Recipe: Voice Notebook Dictation
+
+**The Goal:** Intercept voice searches starting with "remind me to buy" or "note to self" and save the transcribed text directly to the Trove's Notebook without performing a search. You can test it without a microphone by typing `/v remind me to buy M3 screws` or `/v note to self that waterfilter was changed today` in the search field (or if you have a microphone, tap the icon and just say it!).  
+
+This is a rather simple implementation but can of course be extended. It's primarily for demonstrating the API. 
+
+**API Concepts Demonstrated:**  
+- `registerVoiceIntent` to intercept NLP voice queries.
+- Using the injected `db` client to create a `timelineNote`.
+- Returning a `spokenReply` for audible text-to-speech confirmation and redirecting the user to `/timeline`.
+
+**Suggested Filename:** `data/plugins/notebook-dictation.js`
+
+**Get the Extension:**  
+See [notebook-dictation.js](99-more-examples/notebook-dictation.js)
+
+
+## Recipe: Horology & Voice Vocabulary Injection
+
+**The Goal:** Provide a specialized workspace for watch collectors. It locks down the taxonomy, adds explicit domain knowledge to the vision prompt, and teaches the NLP Voice Engine watch collector slang (e.g., mapping "Batman" to "GMT Master Blue Black") so voice search resolves correctly against database titles (test with `/v where is my batman?` in the search box. Or simply tap microphone and use voice, of course).
+
+**API Concepts Demonstrated:**  
+- `registerArchetype` with `HUMAN_REQUIRED` fields and `VISION_STRICT` enums.
+- `addModifier('beforeVisionClassification')` to inject specific horological appraisal instructions.
+- `registerVoiceVocabulary` to translate spoken nicknames into literal database terms before searching.
+
+**Suggested Filename:** `data/plugins/horology-expert.js`
+
+**Get the Extension:**  
+See [horology-expert.js](99-more-examples/horology-expert.js)
+
+
 ## Recipe: E-Commerce Sync (WooCommerce)
 
 **The Goal:** Push a Troves item directly to a WooCommerce store, including its dynamic attributes, generated HTML description, and physical images.

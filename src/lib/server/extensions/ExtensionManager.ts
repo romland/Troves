@@ -7,7 +7,7 @@ import fetch from 'node-fetch';
 import { db } from '$lib/server/database';
 import { logActivity } from '$lib/server/logger';
 import { extractPluginMeta } from '$lib/shared/pluginMeta';
-import type { EventName, EventHandler, HookOptions, ItemActionDef, ModifierName, HookRegistration, ModifierRegistration } from './types';
+import type { EventName, EventHandler, HookOptions, ItemActionDef, ModifierName, HookRegistration, ModifierRegistration, VoiceIntentDef, VoiceIntentHandler, VoiceIntentRegistration } from './types';
 import { createItemOpsSandbox } from './itemOps';
 
 
@@ -21,24 +21,27 @@ class ExtensionManager {
 	private itemActions: Map<string, ItemActionDef & { pluginName: string, handler?: EventHandler }> = new Map();
     private modifiers: Map<ModifierName, ModifierRegistration[]> = new Map();
     private archetypes: Map<string, any> = new Map();
-    
+    private voiceIntents: Map<string, VoiceIntentRegistration> = new Map();
+    private voiceVocabularies: Map<string, Record<string, string>> = new Map();
+
     // Reverse lookups used exclusively by the Admin UI to display plugin capabilities
 	private pluginSubscriptions: Map<string, string[]> = new Map();
 	private pluginRegisteredActions: Map<string, string[]> = new Map();
     private pluginRegisteredModifiers: Map<string, string[]> = new Map();
     private pluginRegisteredArchetypes: Map<string, string[]> = new Map();
+    private pluginRegisteredVoiceIntents: Map<string, string[]> = new Map();
 	private loadedPluginNames: Set<string> = new Set();	
     private pluginMetadata: Map<string, Record<string, string>> = new Map();
 	private isLoaded = false;
 	private pluginRateLimits: Map<string, { requests: number, minuteResetTime: number }> = new Map();
 	
-	private parseConfig(enabledPluginsStr: string | null): Record<string, { active: boolean, hooks: string[], actions: string[], modifiers: string[] }> {
+    private parseConfig(enabledPluginsStr: string | null): Record<string, { active: boolean, hooks: string[], actions: string[], modifiers: string[], voiceIntents: string[] }> {
 		if (!enabledPluginsStr) return {};
 		try {
 			const parsed = JSON.parse(enabledPluginsStr);
 			if (Array.isArray(parsed)) {
 				const config: any = {};
-				parsed.forEach(p => { config[p] = { active: true, hooks: ['*'], actions: ['*'], modifiers: ['*'] }; });
+                parsed.forEach(p => { config[p] = { active: true, hooks: ['*'], actions: ['*'], modifiers: ['*'], voiceIntents: ['*'] }; });
 				return config;
 			}
 			return parsed;
@@ -73,6 +76,19 @@ class ExtensionManager {
         this.pluginRegisteredArchetypes.get(pluginName)!.push(def.id);
     }
 
+    private registerVoiceIntent(pluginName: string, def: VoiceIntentDef, handler: VoiceIntentHandler) {
+        this.voiceIntents.set(def.id, { pluginName, def, handler });
+        if (!this.pluginRegisteredVoiceIntents.has(pluginName)) this.pluginRegisteredVoiceIntents.set(pluginName, []);
+        this.pluginRegisteredVoiceIntents.get(pluginName)!.push(def.id);
+    }
+
+    private registerVoiceVocabulary(pluginName: string, replacements: Record<string, string>) {
+        if (!this.voiceVocabularies.has(pluginName)) {
+            this.voiceVocabularies.set(pluginName, {});
+        }
+        Object.assign(this.voiceVocabularies.get(pluginName)!, replacements);
+    }
+
     private addModifier(pluginName: string, name: ModifierName, handler: (value: any, context: any) => any | Promise<any>) {
         if (!this.modifiers.has(name)) this.modifiers.set(name, []);
         this.modifiers.get(name)!.push({ pluginName, handler });
@@ -87,6 +103,28 @@ class ExtensionManager {
 
     getArchetypes() {
         return Array.from(this.archetypes.values());
+    }
+
+    async getEnabledVoiceIntents(inventoryId: number): Promise<VoiceIntentRegistration[]> {
+        const inventory = await db.inventory.findUnique({ where: { id: inventoryId }, select: { enabledPlugins: true } });
+        const config = this.parseConfig(inventory?.enabledPlugins);
+        return Array.from(this.voiceIntents.values()).filter(intent => {
+            const pluginConf = config[intent.pluginName];
+            return pluginConf?.active && (!pluginConf.voiceIntents || pluginConf.voiceIntents.includes('*') || pluginConf.voiceIntents.includes(intent.def.id));
+        });
+    }
+
+    async getEnabledVoiceVocabulary(inventoryId: number): Promise<Record<string, string>> {
+        const inventory = await db.inventory.findUnique({ where: { id: inventoryId }, select: { enabledPlugins: true } });
+        const config = this.parseConfig(inventory?.enabledPlugins);
+        const combined: Record<string, string> = {};
+        
+        for (const [pluginName, replacements] of this.voiceVocabularies.entries()) {
+            if (config[pluginName]?.active) {
+                Object.assign(combined, replacements);
+            }
+        }
+        return combined;
     }
 
     async applyModifiers(name: ModifierName, value: any, context: any = {}): Promise<any> {
@@ -130,6 +168,8 @@ class ExtensionManager {
             hooks: this.pluginSubscriptions.get(name) || [],
             actions: this.pluginRegisteredActions.get(name) || [],
             modifiers: this.pluginRegisteredModifiers.get(name) || [],
+            voiceIntents: this.pluginRegisteredVoiceIntents.get(name) || [],
+            vocabCount: Object.keys(this.voiceVocabularies.get(name) || {}).length,
             archetypes: this.pluginRegisteredArchetypes.get(name) || []
         }));
     }
@@ -341,8 +381,11 @@ class ExtensionManager {
         this.pluginRegisteredActions.clear();
         this.pluginRegisteredModifiers.clear();
         this.pluginRegisteredArchetypes.clear();
+        this.pluginRegisteredVoiceIntents.clear();
         this.loadedPluginNames.clear();
         this.modifiers.clear();
+        this.voiceIntents.clear();
+        this.voiceVocabularies.clear();
         this.pluginMetadata.clear();
         this.archetypes.clear();
         this.isLoaded = false;
@@ -398,6 +441,8 @@ class ExtensionManager {
 							registerItemAction: (def: ItemActionDef, handler?: EventHandler) => this.registerItemAction(file, def, handler),
                             registerArchetype: (def: any) => this.registerArchetype(file, def),
                             addModifier: (name: ModifierName, handler: any) => this.addModifier(file, name, handler),
+                            registerVoiceIntent: (def: VoiceIntentDef, handler: VoiceIntentHandler) => this.registerVoiceIntent(file, def, handler),
+                            registerVoiceVocabulary: (replacements: Record<string, string>) => this.registerVoiceVocabulary(file, replacements),
 							sysLog,
 							logActivity,
 							fetch,
@@ -409,7 +454,13 @@ class ExtensionManager {
 						const actions = this.pluginRegisteredActions.get(file) || [];
                         const mods = this.pluginRegisteredModifiers.get(file) || [];
                         const archs = this.pluginRegisteredArchetypes.get(file) || [];
-                        sysLog.info(`[ExtensionManager] Loaded plugin: ${file} ➔ Hooks: [${subs.length ? subs.join(', ') : 'none'}] | UI Actions: [${actions.length ? actions.join(', ') : 'none'}] | Modifiers: [${mods.length ? mods.join(', ') : 'none'}] | Archetypes: [${archs.length ? archs.join(', ') : 'none'}]`);
+                        const voices = this.pluginRegisteredVoiceIntents.get(file) || [];
+                        sysLog.info(
+                            `[ExtensionManager] Loaded plugin: ${file} ➔ ` +
+                            `Hooks: [${subs.length ? subs.join(', ') : 'none'}]` +
+                            ` | UI Actions: [${actions.length ? actions.join(', ') : 'none'}]` +
+                            ` | Voice: [${voices.length ? voices.join(', ') : 'none'}]`
+                        );
 					} else {
 						sysLog.warn(`[ExtensionManager] Plugin ${file} must export a default function.`);
 					}

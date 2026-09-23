@@ -33,6 +33,8 @@ export const load = (async ({ locals }) => {
     let rawFiles: string[] = [];
     try { if (fs.existsSync(pluginDir)) rawFiles = fs.readdirSync(pluginDir).filter(f => f.endsWith('.js') || f.endsWith('.mjs')); } catch(e){}
     
+    const inventories = await db.inventory.findMany({ select: { name: true, enabledPlugins: true } });
+
     const loadedDetails = extensionManager.getPluginDetails();
     const plugins = rawFiles.map(file => {
         const loaded = loadedDetails.find(d => d.name === file);
@@ -42,11 +44,22 @@ export const load = (async ({ locals }) => {
             content = fs.readFileSync(path.join(pluginDir, file), 'utf-8'); 
             meta = extractPluginMeta(content);
         } catch(e){}
+        
+        let activeIn: string[] = [];
+        for (const inv of inventories) {
+            try {
+                const parsed = JSON.parse(inv.enabledPlugins || '{}');
+                const isEnabled = Array.isArray(parsed) ? parsed.includes(file) : !!parsed[file]?.active;
+                if (isEnabled) activeIn.push(inv.name);
+            } catch (e) {}
+        }
+
         return {
             name: file,
             isLoaded: !!loaded,
             content,
             meta: Object.keys(meta).length > 0 ? meta : (loaded?.meta || {}),
+            activeIn,
             ...loaded
         };
     });

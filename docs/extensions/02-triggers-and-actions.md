@@ -126,6 +126,39 @@ Handlers running in `resolve` mode MUST return a valid `string` URL.
 Basically: A normal link is a dumb signpost. A magic link acts like a concierge that figures out exactly what you need right when you ask for it.
 
 
+## Voice Intents
+Extensions can register custom voice commands to intercept and process speech-to-text input from the user before the built-in search engine attempts to parse it.
+
+### `registerVoiceIntent(definition, handler)`
+**Definition Structure:**  
+- `id` (String): Unique identifier for the intent.
+- `regex` (RegExp): The regular expression used to match the transcribed voice input.
+
+**Handler Context:**  
+- `match` (RegExpMatchArray): The resulting array from the regex match.
+- `context.user` (Object): The user who initiated the command.
+- `context.inventoryId` (Number): The active Trove ID.
+
+**Return Type Requirement:**  
+Voice handlers MUST return a Promise resolving to an object:
+- `query` (String): The text to display in the search bar.
+- `spokenReply` (String | null): Text that will be synthesized and spoken out loud to the user.
+- `route` (String | undefined): Optional. If provided, the UI will redirect the user to this path after processing.
+
+See the `notebook-dictation.js` example in the cookbook to see how to use this to capture notes.
+
+### `registerVoiceVocabulary(replacements)`
+Registers a dictionary of domain-specific slang, nicknames, or acronyms that the Voice Engine should automatically expand *before* performing intent matching or text search.
+
+```javascript
+registerVoiceVocabulary({
+    "pepsi": "gmt master red blue",
+    "batman": "gmt master blue black",
+    "speedy": "speedmaster",
+    "moonwatch": "speedmaster professional"
+});
+```
+
 ## Future Events (To Be Implemented)
 *The engine is designed to scale. As new integrations (like Google Books or Farnell scraping) are needed, we will add hooks here.*
 

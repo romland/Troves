@@ -32,7 +32,9 @@
             {#if plugin.actions?.length}<span class="text-gray-500 font-mono truncate"><b>Actions:</b> {plugin.actions.join(', ')}</span>{/if}
             {#if plugin.modifiers?.length}<span class="text-gray-500 font-mono truncate"><b>Modifiers:</b> {plugin.modifiers.join(', ')}</span>{/if}
             {#if plugin.archetypes?.length}<span class="text-gray-500 font-mono truncate"><b>Archetypes:</b> {plugin.archetypes.join(', ')}</span>{/if}
-            {#if !plugin.hooks?.length && !plugin.actions?.length && !plugin.modifiers?.length && !plugin.archetypes?.length}<span class="text-gray-400 italic">No registered events</span>{/if}
+            {#if plugin.voiceIntents?.length}<span class="text-gray-500 font-mono truncate"><b>Voice:</b> {plugin.voiceIntents.join(', ')}</span>{/if}
+            {#if plugin.vocabCount > 0}<span class="text-gray-500 font-mono truncate"><b>Vocab:</b> {plugin.vocabCount} slang terms</span>{/if}
+            {#if !plugin.hooks?.length && !plugin.actions?.length && !plugin.modifiers?.length && !plugin.archetypes?.length && !plugin.voiceIntents?.length && !plugin.vocabCount}<span class="text-gray-400 italic">No registered events</span>{/if}
         </div>
     </div>
     

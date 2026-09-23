@@ -28,5 +28,11 @@
                 <span class="truncate" title={value as string}>{@html linkify(value as string)}</span>
             </div>
         {/each}
+        {#if plugin.activeIn?.length > 0}
+            <div class="flex flex-col min-w-0">
+                <span class="font-bold uppercase tracking-wider text-[9px] text-gray-500">Active In Troves</span>
+                <span class="truncate text-base-content/90" title={plugin.activeIn.join(', ')}>{plugin.activeIn.join(', ')}</span>
+            </div>
+        {/if}
     </div>
 </div>

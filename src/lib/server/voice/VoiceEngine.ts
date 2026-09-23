@@ -1,5 +1,6 @@
 import { db } from '$lib/server/database';
 import { tokenizeAndStem } from '$lib/server/nlp';
+import { extensionManager } from '$lib/server/extensions/ExtensionManager';
 
 const NUM_WORDS: Record<string, string> = {
     zero: '0', nul: '0',
@@ -419,8 +420,34 @@ const intents: VoiceIntent[] = [
     }
 ];
 
-export const processVoiceQuery = async (transcription: string, inventoryId: number) => {
-    const cleanText = transcription.toLowerCase().replace(/[.?!]+$/, '').trim();
+export const processVoiceQuery = async (transcription: string, inventoryId: number, user: any) => {
+    let cleanText = transcription.toLowerCase().replace(/[.?!]+$/, '').trim();
+
+    // Expand domain-specific slang using plugin vocabulary
+    const customVocab = await extensionManager.getEnabledVoiceVocabulary(inventoryId);
+    for (const [slang, standard] of Object.entries(customVocab)) {
+        const escapedSlang = slang.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(`\\b${escapedSlang}\\b`, 'gi');
+        cleanText = cleanText.replace(regex, standard);
+    }
+
+    // Evaluate Plugin Intents First (Allows overrides)
+    const activeExtIntents = await extensionManager.getEnabledVoiceIntents(inventoryId);
+    for (const extIntent of activeExtIntents) {
+        const match = cleanText.match(extIntent.def.regex);
+        if (match) {
+            try {
+                const result = await extIntent.handler(match, { inventoryId, user });
+                if (result.spokenReply) result.spokenReply = phoneticizeForTTS(result.spokenReply);
+                return { query: result.query || cleanText, spokenReply: result.spokenReply || null, route: result.route };
+            } catch (err) {
+                console.error(`[VoiceEngine] Plugin ${extIntent.pluginName} failed to process voice intent ${extIntent.def.id}:`, err);
+            }
+        }
+    }
+
+
+    // Built-in intents
     for (const intent of intents) {
         const match = intent.match(cleanText);
 		if (match) {
