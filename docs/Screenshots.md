@@ -216,7 +216,12 @@ Inventory management (for at home). There are many like it, but this one is mine
       <br />
       <sub><b>Container Semantic</b></sub>
     </td>
-    <td width="33%"></td>
-    <td width="33%"></td>
+    <td width="33%" width="33%" align="center">
+      <img src="../.github/screenshots/037-extension-meta.webp" alt="" />
+      <br />
+      <sub><b>An extension's meta data</b></sub>
+    </td>
+    <td width="33%" width="33%" align="center">
+    </td>
   </tr>
 </table>

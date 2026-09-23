@@ -5,6 +5,7 @@ import type { PageServerLoad, Actions } from './$types';
 import bcrypt from 'bcryptjs';
 import { getSystemDiagnostics } from '$lib/server/diagnostics';
 import { extensionManager } from '$lib/server/extensions/ExtensionManager';
+import { extractPluginMeta } from '$lib/shared/pluginMeta';
 import fs from 'fs';
 import path from 'path';
 
@@ -36,11 +37,16 @@ export const load = (async ({ locals }) => {
     const plugins = rawFiles.map(file => {
         const loaded = loadedDetails.find(d => d.name === file);
         let content = '';
-        try { content = fs.readFileSync(path.join(pluginDir, file), 'utf-8'); } catch(e){}
+        let meta = {};
+        try { 
+            content = fs.readFileSync(path.join(pluginDir, file), 'utf-8'); 
+            meta = extractPluginMeta(content);
+        } catch(e){}
         return {
             name: file,
             isLoaded: !!loaded,
             content,
+            meta: Object.keys(meta).length > 0 ? meta : (loaded?.meta || {}),
             ...loaded
         };
     });

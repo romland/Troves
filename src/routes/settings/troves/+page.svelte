@@ -208,7 +208,12 @@
                                                                 e.currentTarget.form.requestSubmit();
                                                             }
                                                         }} />
-                                                        <span class="label-text text-xs font-medium truncate max-w-[140px]" title={plugin.name}>{plugin.name}</span>
+                                                        <div class="flex flex-col min-w-0">
+                                                                                        <span class="label-text text-xs font-medium truncate max-w-[140px]" title={plugin.meta?.name || plugin.name}>{plugin.meta?.name || plugin.name}</span>
+                                                            {#if plugin.meta?.description}
+                                                                <span class="text-[9px] text-gray-500 truncate max-w-[140px] leading-tight mt-0.5">{plugin.meta.description}</span>
+                                                            {/if}
+                                                        </div>
                                                     </label>
                                                 </form>
                                                 {#if isActive}

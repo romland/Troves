@@ -3,6 +3,8 @@
     import { enhance } from "$app/forms";
     import { invalidateAll } from '$app/navigation';
     import { notify } from "$lib/client/notifications";
+    import { hookDescriptions, modifierDescriptions } from '$lib/shared/pluginMeta';
+    import PluginMetaDisplay from './PluginMetaDisplay.svelte';
     
     let modal: Modal;
     let plugin: any = null;
@@ -64,11 +66,19 @@
             <div class="flex items-center gap-3 mb-4 text-primary">
                 <i class="bi bi-sliders text-3xl"></i>
                 <div class="flex-1 min-w-0">
-                    <h3 class="font-bold text-xl leading-tight truncate" title={plugin.name}>{plugin.name}</h3>
-                    <p class="text-xs text-base-content/60 truncate">Trove: <strong>{trove.name}</strong></p>
+                    <h3 class="font-bold text-xl leading-tight truncate" title={plugin.name}>{plugin.meta?.name || plugin.name}</h3>
+                    {#if plugin.archetypes?.length > 0}
+                        <p class="text-xs text-base-content/60 truncate">Contributes archetype: <strong>{plugin.archetypes.join(', ')}</strong></p>
+                    {:else}
+                        <p class="text-xs text-base-content/60 truncate">Active in Trove: <strong>{trove.name}</strong></p>
+                    {/if}
                 </div>
             </div>
             
+            <div class="bg-base-200/50 rounded-xl p-4 mb-6 border border-base-200">
+                <PluginMetaDisplay {plugin} showFilename={true} />
+            </div>
+
             <p class="text-sm text-base-content/80 mb-6">Select which capabilities this extension is allowed to use in this Trove.</p>
             
             <div class="flex flex-col gap-4 bg-base-200/50 p-4 rounded-xl border border-base-200 mb-6">
@@ -77,9 +87,12 @@
                         <span class="text-xs font-bold uppercase tracking-wider text-base-content/60 block mb-2">Automated Background Hooks</span>
                         <div class="flex flex-col gap-2">
                             {#each plugin.hooks as hook}
-                                <label class="flex items-center gap-3 cursor-pointer">
-                                    <input type="checkbox" class="checkbox checkbox-sm checkbox-primary" checked={config.hooks.includes(hook)} on:change={(e) => config.hooks = toggleArray(config.hooks, hook, e)} />
-                                    <span class="text-sm font-mono">{hook}</span>
+                                <label class="flex items-start gap-3 cursor-pointer">
+                                    <input type="checkbox" class="checkbox checkbox-sm checkbox-primary mt-0.5" checked={config.hooks.includes(hook)} on:change={(e) => config.hooks = toggleArray(config.hooks, hook, e)} />
+                                    <div class="flex flex-col">
+                                        <span class="text-sm font-semibold">{hookDescriptions[hook] || hook}</span>
+                                        <span class="text-[10px] font-mono text-base-content/50">{hook}</span>
+                                    </div>
                                 </label>
                             {/each}
                         </div>
@@ -107,9 +120,12 @@
                         <span class="text-xs font-bold uppercase tracking-wider text-base-content/60 block mb-2">Prompt Modifiers</span>
                         <div class="flex flex-col gap-2">
                             {#each plugin.modifiers as mod}
-                                <label class="flex items-center gap-3 cursor-pointer">
-                                    <input type="checkbox" class="checkbox checkbox-sm checkbox-warning" checked={config.modifiers.includes(mod)} on:change={(e) => config.modifiers = toggleArray(config.modifiers, mod, e)} />
-                                    <span class="text-sm font-mono">{mod}</span>
+                                <label class="flex items-start gap-3 cursor-pointer">
+                                    <input type="checkbox" class="checkbox checkbox-sm checkbox-warning mt-0.5" checked={config.modifiers.includes(mod)} on:change={(e) => config.modifiers = toggleArray(config.modifiers, mod, e)} />
+                                    <div class="flex flex-col">
+                                        <span class="text-sm font-semibold">{modifierDescriptions[mod] || mod}</span>
+                                        <span class="text-[10px] font-mono text-base-content/50">{mod}</span>
+                                    </div>
                                 </label>
                             {/each}
                         </div>

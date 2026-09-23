@@ -6,6 +6,34 @@ Troves supports a zero-config, drop-in plugin architecture. To add a new integra
 > Extensions execute in the core server context. They have unrestricted access to .env variables, database, and local filesystem. Only install extensions you verified yourself or from sources you trust. Installing a malicious plugin is equivalent to giving your server away. If you use an LLM to write a plugin, verify that it does not expose environment variables to unverified third-party endpoints.
 
 
+## Plugin Metadata (JSDoc)
+
+You can provide beautiful, human-readable metadata for your plugin directly in the file using a JSDoc comment block at the very top. This requires zero configuration, is completely optional, and will be parsed by the system to display in the Plugin Manager UI.
+
+### Formatting Rules
+- **Links:** Any valid `http://` or `https://` URL included in *any* tag will automatically be rendered as a clickable link.
+- **Safety:** All raw HTML tags are stripped on load to prevent rendering issues.
+- **Limits:** The `@description` tag is capped at 300 characters. All other tags are capped at 70 characters. The UI will automatically truncate anything longer.
+- **Tag Count:** On top of the standard name and description tags, there is a cap of 9 that are parsed per plugin. Any tags beyond that are dropped to keep the UI tidy.
+
+You can use any field name you want (it will be formatted automatically), but common ones include:
+
+```javascript
+/**
+ * @name Spotify Album Fetcher
+ * @description Connects to Spotify's API to download high-resolution album art and extract tracklists when a CD is scanned.
+ * @author Troves Community
+ * @coauthors Jane Doe
+ * @version 1.0.4
+ * @updated 2026-10-12
+ * @github https://github.com/romland/troves
+ * @donate https://ko-fi.com/example
+ * @website https://example.com/troves-plugins
+ */
+
+export default function register({ on }) { ... }
+```
+
 ## The Plugin Toolkit
 Plugins must `export default function`. Troves securely injects a toolkit object containing everything the plugin needs to operate, so you never have to worry about internal module resolution or SvelteKit SSR rules.
 

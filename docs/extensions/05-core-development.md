@@ -7,10 +7,10 @@ Because the Extension Engine uses strict TypeScript types, adding a new event re
 ## Step 1: Register the Event Type
 To ensure type safety and prevent typos, all valid event names must be explicitly defined.
 
-Open `src/lib/server/extensions/ExtensionManager.ts` and add your new event string to the `EventName` union type:
+Open `src/lib/server/extensions/types.ts` and add your new event string to the `EventName` union type:
 
 ```typescript
-// src/lib/server/extensions/ExtensionManager.ts
+// src/lib/server/extensions/types.ts
 export type EventName = 
     | 'onContainerCreated' 
     | 'onPrintLabelRequested'
