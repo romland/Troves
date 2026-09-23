@@ -31,7 +31,7 @@ Fires when a user manually requests a label reprint from the UI.
 ### `onItemProcessed`
 **The Late-Stage Hook.** This fires *after* all heavy async background processing (LLM Classification, OCR, background removal, duplicate sweeps) has fully completed for an item. 
 **Use Cases:**
-This is the hook you want for **Data Enrichment** (e.g., fetching book covers, ISBN, etc from Google APIs based, scraping technical PDFs based on the identified model number, or getting album art or checking eBay prices). 
+This is the hook you want for **Data Enrichment** (e.g., fetching book covers, ISBN, etc from Google APIs, scraping technical PDFs based on the identified model number, or getting vinyl album art or checking eBay prices). 
 **Payload Structure:**
 - `entity` (Object): The *fully hydrated* Prisma Item entity (includes the newly extracted `.attributes`, `.photos`, and `.tags` arrays).
 - `context.user` (Object): The user who initiated the save.
