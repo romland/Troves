@@ -15,8 +15,8 @@
  */
 export default function register({ registerArchetype, addModifier, on, sysLog, logActivity, env, fetch, itemOps, db }) {
     
-    // 1. REGISTER THE ARCHETYPE
-    // This injects "Trollbeads" into the UI dropdown when creating a new Trove.
+    // Register the archetype, his injects "Trollbeads" into the UI 
+    // when creating a new Trove.
     registerArchetype({
         id: 'trollbeads',
         name: 'Trollbeads Reseller',
@@ -86,8 +86,8 @@ export default function register({ registerArchetype, addModifier, on, sysLog, l
         ]
     });
 
-    // 2. INJECT VISION EXPERTISE (One-Shot Prompt Interception)
-    // This runs in memory right before the image is sent to the Vision model.
+    // Inject (partial) vision prompt (One-Shot Prompt Interception)
+    // This runs right before the image is sent to the Vision model.
 	addModifier('beforeVisionClassification', (promptObj, context) => {
 		if (context.archetype !== 'trollbeads') return promptObj;
 
@@ -124,7 +124,7 @@ OUTPUT INSTRUCTIONS:
         return promptObj;
     });
 
-    // 3. POST-PROCESSING (SEO Titles & Grounded Web Search)
+    // Post-processing
     on('onItemProcessed', async (payload) => {
         if (!payload.intent?.isNew) return;
         
@@ -137,25 +137,25 @@ OUTPUT INSTRUCTIONS:
 
         const beadName = itemOps.getFuzzyAttribute(item, ['bead_name', 'commercial name']);
         const pattern = itemOps.getFuzzyAttribute(item, ['pattern', 'pattern_family']);
-		const coreSize = itemOps.getFuzzyAttribute(item, ['core_size', 'core']) || '';
-		const isVerified = itemOps.getFuzzyAttribute(item, ['hallmark_verified', 'laa']) === 'true';
+    		const coreSize = itemOps.getFuzzyAttribute(item, ['core_size', 'core']) || '';
+    		const isVerified = itemOps.getFuzzyAttribute(item, ['hallmark_verified', 'laa']) === 'true';
         
         let colors = '';
         try { colors = JSON.parse(item.color_mix || '[]').sort((a,b) => b.pct - a.pct).slice(0, 2).map(c => c.name).join('/'); } catch(e) {}
 
-        // --- A. Generate SEO Resale Title ---
+        // Generate SEO Resale Title
         let seoTitle = "Trollbeads";
-		if (isVerified) seoTitle += " Authentic";
+    		if (isVerified) seoTitle += " Authentic";
 		
         if (beadName && beadName.toUpperCase() !== 'OOAK') {
-			seoTitle += ` ${beadName} ${coreSize} Bead`;
+            seoTitle += ` ${beadName} ${coreSize} Bead`;
         } else {
-			seoTitle += ` Unique OOAK ${colors} ${pattern || 'Glass'} ${coreSize} Bead`;
+    	      seoTitle += ` Unique OOAK ${colors} ${pattern || 'Glass'} ${coreSize} Bead`;
         }
 		
-		// Clean up double spaces if variables were empty
-		seoTitle = seoTitle.replace(/\s+/g, ' ').trim();
-		
-		await db.item.update({ where: { id: item.id }, data: { title: seoTitle } });
+    		// Clean up double spaces if variables were empty
+    		seoTitle = seoTitle.replace(/\s+/g, ' ').trim();
+    		
+    		await db.item.update({ where: { id: item.id }, data: { title: seoTitle } });
     }, { maxRetries: 1, retryDelayMs: 3000, rateLimitRpm: 15 });
 }

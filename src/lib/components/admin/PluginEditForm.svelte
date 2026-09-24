@@ -38,6 +38,15 @@
         dispatch('cancel');
     }
 
+    /**
+     * WHY THIS CUSTOM KEY HANDLER EXISTS:
+     * prism-code-editor is a hyper-lightweight primitive (chosen to avoid bloated 5MB+ IDE 
+     * dependencies like Monaco). Because it's bare-bones, features like undo-safe multiline 
+     * tab/shift+tab indentation, paged vertical scrolling for full-height textareas, and smart 
+     * auto-indenting do not exist natively and must be manually built via low-level DOM manipulation.
+     * 
+     * Well, that motherfucker. An LLM wrote the above, I have yet to verify if what it says is true.
+     */    
     function onEditorKeydown(e: KeyboardEvent) {
         if (!editor || !editor.textarea || !containerEl) return;
         
