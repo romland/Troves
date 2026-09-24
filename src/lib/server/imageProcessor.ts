@@ -9,10 +9,29 @@ import type { TaskContext } from '$lib/server/taskManager';
 import sharp from 'sharp';
 import { env } from '$env/dynamic/private';
 
+const rembgCircuitBreaker = {
+    failures: 0,
+    trippedUntil: 0,
+    isTripped() { return Date.now() < this.trippedUntil; },
+    trip() {
+        this.failures++;
+        if (this.failures >= 3) {
+            this.trippedUntil = Date.now() + 5 * 60 * 1000;
+            console.warn("[Circuit Breaker] 🛑 RemBG crashed 3 times. Bypassing background removal for 5 minutes.");
+        }
+    },
+    reset() { this.failures = 0; this.trippedUntil = 0; }
+};
+
 export async function removeBackground(imgUrl: string, outputFileNoBkg: string, tracking?: TaskContext, inputLocalPath?: string, model: string = 'bria-rmbg'): Promise<string> {
     // Allow an explicit input path so we can feed it pre-cropped images, 
     // otherwise fallback to deriving the original path from the output filename.
     const localPath = inputLocalPath || outputFileNoBkg.replace(/_crop\.png$/, '');
+    if (env.ENABLE_REMBG !== 'true' || rembgCircuitBreaker.isTripped()) {
+        fs.copyFileSync(localPath, outputFileNoBkg);
+        return outputFileNoBkg;
+    }
+
     let response;
     
     const controller = new AbortController();
@@ -41,7 +60,9 @@ export async function removeBackground(imgUrl: string, outputFileNoBkg: string, 
             console.log(`Local file not found for rembg: ${localPath}, falling back to URL: ${imgUrl}`);
             response = await fetch(`${rembgUrl}/api/remove?url=${encodeURIComponent(imgUrl)}&model=${model}`, { signal: controller.signal as any });
         }
+        rembgCircuitBreaker.reset();
     } catch (e: any) {
+        rembgCircuitBreaker.trip();
         if (e.name === 'AbortError') throw new Error(`RemBG HTTP Error: Request timed out after 60 seconds.`);
         throw e;
     } finally {
@@ -49,6 +70,7 @@ export async function removeBackground(imgUrl: string, outputFileNoBkg: string, 
     }
 
     if (!response || !response.ok) {
+        rembgCircuitBreaker.trip();
         throw new Error(`RemBG HTTP Error: ${response ? await response.text() : 'No response'}`);
     }
 

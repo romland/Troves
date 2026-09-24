@@ -139,6 +139,8 @@ ADAPT TO USER INTENT: Adjust your specificity based on the user's description an
         return true;
     } catch (e) {
         console.error(`[Taxonomy Engine] 🔴 Trove schema bootstrap failed for ${domainName}:`, e);
+        // Disable auto-taxonomy so the frontend doesn't hang indefinitely waiting for a schema
+        await db.inventory.update({ where: { id: inventoryId }, data: { allowAutoTaxonomy: false } });
         throw e;
     } finally {
         taskManager.end(taskId);

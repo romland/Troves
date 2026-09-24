@@ -87,7 +87,3 @@ services:
       - ./key.pem:/app/key.pem:ro
     security_opt:
       - seccomp:unconfined
-    depends_on:
-      - rembg
-      - paddleocr
-      - singlefile

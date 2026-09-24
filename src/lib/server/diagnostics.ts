@@ -26,7 +26,7 @@ export async function getSystemDiagnostics() {
     ];
 
     const microservices = [
-        { id: 'rembg', name: 'RemBG', ram: 8, desc: 'Image background removal', port: 7000, running: await checkService(`${env.REMBG_URL || 'http://localhost:7000'}/api/remove`) },
+        { id: 'rembg', name: 'RemBG', ram: 8, desc: 'Image background removal', port: 7000, running: await checkService(`${env.REMBG_URL || 'http://localhost:7000'}/api`) },
         { id: 'paddleocr', name: 'PaddleOCR', ram: 2, desc: 'Local text extraction', port: 8000, running: await checkService(`${env.PADDLE_URL || 'http://localhost:8000'}/`) },
         { id: 'singlefile', name: 'SingleFile', ram: 1, desc: 'Webpage archiver', port: 8001, running: await checkService(`${env.SINGLEFILE_URL || 'http://localhost:8001'}/`) }
     ];
