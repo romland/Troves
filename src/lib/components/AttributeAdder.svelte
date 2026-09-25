@@ -187,7 +187,7 @@
                 })
                 .catch(() => {
                     isParsingLLM = false;
-				notify('error', "Error reaching LLM.");
+                notify('error', "Network error reaching server.");
                 });
                 
                 return;

@@ -31,7 +31,11 @@ async function extractInvoiceDataGroq(ocrData, tracking?: TaskContext)
         const jsonSchema = { "type": "object", "properties": { "supplier": {"type": "string"}, "items": { "type": "array", "items": { "type": "object", "properties": { "description": {"type":"string"}, "quantity": {"type":"number"}, "price": {"type":"number"}, "vat": {"type":"number"} } } }, "total": {"type":"string"}, "totalIncTaxes": {"type":"string"}, "date": {"type":"string"}, "invoiceNo": {"type":"string"}, "paymentMethod": {"type":"string"} } };
             const resText = await generateText('Please try to provide useful, helpful and actionable answers. If user asks for JSON, give only JSON.', prompt + "\n\n" + JSON.stringify(refined), true, jsonSchema, 'Invoice Extraction', tracking, 'PARSER');
         return resText;
-    } catch(ex) {
+    } catch(ex: any) {
+        if (ex?.message?.includes('API Key missing') || ex?.message?.includes('API key')) {
+            console.warn("[LLM] Skipping Invoice Extraction: Text Engine API keys missing.");
+            return null;
+        }
         console.error("Error running Invoice Extraction:", ex);
         return null;
     }
@@ -54,7 +58,11 @@ and other irrelevant (to the product or guide) stuff that you might find on a we
     try {
             const resText = await generateText('You are a helpful assistant. Please provide brief, actionable summaries in plain text.', prompt + "\n\n" + extract.substring(0, 7500), false, undefined, 'Web Summary', tracking, 'SUMMARY');
         return resText;
-    } catch(ex) {
+    } catch(ex: any) {
+        if (ex?.message?.includes('API Key missing') || ex?.message?.includes('API key')) {
+            console.warn("[LLM] Skipping Web Summary: Text Engine API keys missing.");
+            return null;
+        }
         console.error("Error running Web Summary:", ex);
         return null;
     }
@@ -79,7 +87,11 @@ Give me the result as JSON like this (if you cannot find one product, put the ex
             const resText = await generateText('Please try to provide useful, helpful and actionable answers. If user asks for JSON, give only JSON.', prompt + "\n\n" + searchResults, true, jsonSchema, 'Reverse Search LLM Parsing', tracking, 'PARSER');
         return resText;
 
-    } catch(ex) {
+    } catch(ex: any) {
+        if (ex?.message?.includes('API Key missing') || ex?.message?.includes('API key')) {
+            console.warn("[LLM] Skipping Reverse Search parsing: Text Engine API keys missing.");
+            return null;
+        }
         console.error("Error running Reverse Search LLM Parsing:", ex);
         return null;
     }

@@ -333,9 +333,10 @@
                 if (aiData.description) currentDescription = aiData.description;
                 aiDialog.close();
                 userHint = "";
-                dispatch('success', 'Item details enhanced by model!');
+                dispatch('success', 'Item details enhanced!');
             } else {
-				notify('error', "Refinement failed. Check server logs.");
+                const errData = await res.json().catch(() => ({}));
+                notify('error', errData.error || "Refinement failed. Check server logs.");
                 aiDialog.close();
             }
         } catch (e) {
@@ -426,7 +427,7 @@
 
                 <button type="button" class="btn btn-primary btn-circle relative h-28 w-28 shadow-2xl shadow-primary/40 hover:scale-105 transition-all duration-300 overflow-hidden p-0 z-10 border-4 border-base-100 group" aria-label="Quick Take Photo"
                 on:click={triggerCamera}>
-                {#if pendingPhotos.length > 0 && pendingPhotos[pendingPhotos.length - 1].isAnalyzing}
+                {#if pendingPhotos.length > 0 && pendingPhotos[pendingPhotos.length - 1].isAnalyzing && $page.data.capabilities.hasVision}
                     <div class="absolute inset-0 bg-base-100/60 backdrop-blur-sm flex items-center justify-center z-10">
                         <span class="loading loading-spinner loading-lg text-primary"></span>
                     </div>
@@ -529,8 +530,8 @@
                 title="Item Details" subtitle="Title, qty, tags..." icon="bi-pencil-square" iconColorClass="bg-orange-100 text-orange-600"
                 on:click={() => activeView = 'details'}
             >
-                {#if showNudgeTip}
-                    <span role="button" tabindex="0" class="text-primary hover:scale-110 animate-bounce cursor-pointer p-1" title="Refine with AI" 
+                {#if showNudgeTip && $page.data.capabilities.hasVision}
+                    <span role="button" tabindex="0" class="text-primary hover:scale-110 animate-bounce cursor-pointer p-1" title="Smart Refine" 
                           on:click|stopPropagation={(e) => { e.preventDefault(); showNudgeTip = false; aiDialog.showModal(); }} 
                           on:keydown|stopPropagation={(e) => { if (e.key === 'Enter') { e.preventDefault(); showNudgeTip = false; aiDialog.showModal(); } }}>
                         <i class="bi bi-stars text-xl"></i>
@@ -666,13 +667,13 @@
 
         <div class="px-4 sm:px-6 pb-6">
             <div class="flex flex-col gap-5 max-w-lg mx-auto w-full">
-                <FormInput label="Title {isAnalyzing ? '<span class=\'loading loading-spinner loading-xs text-primary ml-2\'></span><span class=\'text-xs text-primary font-normal ml-1\'>Analyzing image...</span>' : ''}" name="title" bind:value={currentTitle} placeholder="Leave blank for auto-fill..." inputClass="pr-12 {isAnalyzing ? 'input-primary' : ''}">
-                    {#if previewImagePath}
+                <FormInput label="Title {isAnalyzing && $page.data.capabilities.hasVision ? '<span class=\'loading loading-spinner loading-xs text-primary ml-2\'></span><span class=\'text-xs text-primary font-normal ml-1\'>Analyzing image...</span>' : ''}" name="title" bind:value={currentTitle} placeholder="Leave blank for auto-fill..." inputClass="pr-12 {isAnalyzing && $page.data.capabilities.hasVision ? 'input-primary' : ''}">
+                    {#if previewImagePath && $page.data.capabilities.hasVision}
                         <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
                             {#if showNudgeTip}
                                 <span class="text-[10px] font-bold text-primary uppercase tracking-wider animate-fade-in pointer-events-none drop-shadow-sm">Not quite right?</span>
                             {/if}
-                            <button type="button" class="text-primary/70 hover:text-primary transition-all {showNudgeTip ? 'animate-bounce' : ''}" title="Refine with AI" on:click={() => { showNudgeTip = false; aiDialog.showModal(); }}>
+                            <button type="button" class="text-primary/70 hover:text-primary transition-all {showNudgeTip ? 'animate-bounce' : ''}" title="Smart Refine" on:click={() => { showNudgeTip = false; aiDialog.showModal(); }}>
                                 <i class="bi bi-stars text-xl"></i>
                             </button>
                         </div>
@@ -691,7 +692,7 @@
                             {@html currentDescription ? marked.parse(currentDescription, { breaks: true, gfm: true }) : '<span class="text-gray-400">Empty</span>'}
                         </div>
                     {:else}
-                        <textarea name="description" bind:value={currentDescription} rows="3" placeholder="Notes (Markdown supported)..." class="textarea textarea-bordered w-full rounded-xl {isAnalyzing ? 'textarea-primary' : ''}"></textarea>
+                        <textarea name="description" bind:value={currentDescription} rows="3" placeholder="Notes (Markdown supported)..." class="textarea textarea-bordered w-full rounded-xl {isAnalyzing && $page.data.capabilities.hasVision ? 'textarea-primary' : ''}"></textarea>
                     {/if}
                 </div>
 
@@ -709,7 +710,7 @@
                             <AttributeAdder values={currentAttributes} on:change={() => isDirty = true} />
                         {/key}
                     </div>
-                    {#if item}
+                        {#if item && $page.data.capabilities.hasVision}
                         <div class="mt-4 pt-3 border-t border-base-200">
                             <ReanalyzeButton {item} {confirmModal} asMenuItem={false} on:queued={() => {
                                 isDirty = false;
@@ -729,9 +730,9 @@
 </form>
 
 <!-- The Bottom Drawer for LLM Refinement -->
-<Modal bind:this={aiDialog} position="top" title="<i class='bi bi-stars text-primary'></i> Refine Guess" titleClass="font-bold text-xl mb-2 flex items-center gap-2" boxClass="w-full max-w-[95vw] sm:max-w-md mx-auto mt-4 sm:mt-0 p-6 bg-base-100/95 backdrop-blur-xl rounded-3xl overflow-hidden shadow-2xl">
+<Modal bind:this={aiDialog} position="top" title="<i class='bi bi-stars text-primary'></i> Smart Refine" titleClass="font-bold text-xl mb-2 flex items-center gap-2" boxClass="w-full max-w-[95vw] sm:max-w-md mx-auto mt-4 sm:mt-0 p-6 bg-base-100/95 backdrop-blur-xl rounded-3xl overflow-hidden shadow-2xl">
     <form on:submit|preventDefault={runAiRefine}>
-    <p class="text-sm text-gray-500 mb-6 mt-[-10px]">Give the AI a nudge with a brand or model name to get a better match.</p>
+    <p class="text-sm text-gray-500 mb-6 mt-[-10px]">Provide a brand or model name to get a better match.</p>
     <FormInput bind:value={userHint} placeholder="e.g. It's actually a MITTZON desk" class="mb-4" />
     <div class="modal-action mt-0 flex gap-2">
         <button type="button" class="btn btn-ghost rounded-xl flex-1" on:click={() => aiDialog.close()}>Cancel</button>

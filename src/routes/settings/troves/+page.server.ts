@@ -304,8 +304,15 @@ export const actions = {
         const inventoryId = Number(data.get('inventoryId'));
         const name = data.get('name') as string;
         if (!inventoryId) return fail(400, { error: true, message: "Invalid ID." });
-        await bootstrapInventorySchema(inventoryId, name);
-        return { success: true, message: `Taxonomy rules regenerated for '${name}'!` };
+        try {
+            await bootstrapInventorySchema(inventoryId, name);
+            return { success: true, message: `Taxonomy rules regenerated for '${name}'!` };
+        } catch (e: any) {
+            if (e?.message?.includes('API Key missing') || e?.message?.includes('API key')) {
+                return fail(503, { error: true, message: "Smart Taxonomy requires Text Engine API keys." });
+            }
+            return fail(500, { error: true, message: "Failed to generate taxonomy." });
+        }
     },
     rebuildDuplicates: async ({ request, locals }) => {
         const data = await request.formData();
@@ -320,8 +327,15 @@ export const actions = {
         const data = await request.formData();
         const inventoryId = Number(data.get('inventoryId'));
         const { beautifyTaxonomyRules } = await import('$lib/server/ontology');
-        await beautifyTaxonomyRules(inventoryId);
-        return { success: true, message: "Taxonomy labels successfully translated to human-readable terms." };
+        try {
+            await beautifyTaxonomyRules(inventoryId);
+            return { success: true, message: "Taxonomy labels successfully translated to human-readable terms." };
+        } catch (e: any) {
+            if (e?.message?.includes('API Key missing') || e?.message?.includes('API key')) {
+                return fail(503, { error: true, message: "Beautifying labels requires Text Engine API keys." });
+            }
+            return fail(500, { error: true, message: "Failed to beautify taxonomy." });
+        }
     },
     updateTaxonomy: async ({ request, locals }) => {
         const data = await request.formData();

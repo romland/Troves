@@ -39,8 +39,12 @@ export const POST: RequestHandler = async ({ request, locals }) => {
         }
         
         return json({ success: false, error: 'LLM failed to parse' });
-    } catch (e) {
+    } catch (e: any) {
         console.error("KVP API parsing error:", e);
+        const errMessage = e?.message || '';
+        if (errMessage.includes('API Key missing') || errMessage.includes('API key')) {
+            return json({ success: false, error: 'Smart Parsing requires Text Engine API keys.' }, { status: 503 });
+        }
         return json({ success: false, error: 'Internal Server Error' }, { status: 500 });
     }
 };

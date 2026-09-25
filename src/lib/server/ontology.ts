@@ -141,6 +141,7 @@ ADAPT TO USER INTENT: Adjust your specificity based on the user's description an
         console.error(`[Taxonomy Engine] 🔴 Trove schema bootstrap failed for ${domainName}:`, e);
         // Disable auto-taxonomy so the frontend doesn't hang indefinitely waiting for a schema
         await db.inventory.update({ where: { id: inventoryId }, data: { allowAutoTaxonomy: false } });
+        if (e?.message?.includes('API Key missing') || e?.message?.includes('API key')) throw e;
         throw e;
     } finally {
         taskManager.end(taskId);
@@ -213,6 +214,7 @@ CRITICAL RULES:
         }
     } catch (e) {
         console.error(`[Taxonomy Engine] 🔴 Category schema bootstrap failed for ${categoryName}:`, e);
+        if (e?.message?.includes('API Key missing') || e?.message?.includes('API key')) throw e;
     } finally {
         taskManager.end(taskId);
     }
@@ -249,6 +251,7 @@ Output exactly the same JSON array structure, preserving the "id" integer, but u
         return true;
     } catch (e) {
         console.error("Beautify failed:", e);
+        if (e?.message?.includes('API Key missing') || e?.message?.includes('API key')) throw e;
     } finally {
         taskManager.end(taskId);
     }

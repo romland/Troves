@@ -64,10 +64,14 @@ export const POST: RequestHandler = async ({ request, locals }) => {
         }
 
         return json({ success: true, draftPath: webPath, noteId: note.id, totalVisibleCount: visionResponse.totalVisibleCount, collectionType: visionResponse.collectionType, items: annotatedScannedItems });
-    } catch (e) {
+    } catch (e: any) {
         console.error("Multi-Scan analysis error:", e);
         const err = e as any;
-        const is503 = err?.status === 503 || err?.message?.includes('503') || err?.message?.includes('demand');
+        const errMessage = err?.message || '';
+        if (errMessage.includes('API Key missing') || errMessage.includes('API key')) {
+            return json({ success: false, error: 'Multi-Scan requires Vision Engine API keys.' }, { status: 503 });
+        }
+        const is503 = err?.status === 503 || errMessage.includes('503') || errMessage.includes('demand');
         const errorMessage = is503 
             ? "Vision service is currently experiencing high demand. Please wait a few moments and try again." 
             : "An unexpected error occurred while analyzing the image. Please try another photo.";

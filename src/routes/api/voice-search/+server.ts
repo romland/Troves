@@ -88,8 +88,13 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     } catch (error: any) {
         console.error('Voice search error:', error);
         const durationMs = performance.now() - t0;
-        recordLLMLog('Voice Search (Failed)', 'system', { fileSize }, { error: error.message }, durationMs, 0, 0);
-        await logActivity(null, 'Voice Search', `Intent processing failed.`, 'error', error.message);
+        const errMessage = error?.message || '';
+        recordLLMLog('Voice Search (Failed)', 'system', { fileSize }, { error: errMessage }, durationMs, 0, 0);
+        await logActivity(null, 'Voice Search', `Intent processing failed.`, 'error', errMessage);
+        
+        if (errMessage.includes('API Key missing') || errMessage.includes('API key')) {
+            return json({ error: 'Voice Search requires Audio Engine API keys.' }, { status: 503 });
+        }
         return json({ error: 'Transcription failed' }, { status: 500 });
     }
 };

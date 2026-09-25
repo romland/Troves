@@ -3,6 +3,7 @@
     import ContentUnavailable from '$lib/components/ContentUnavailable.svelte';
     import { createEventDispatcher, onMount } from 'svelte';
     import { beforeNavigate } from '$app/navigation';
+    import { page } from "$app/stores";
 
     export let containers: any[] = [];
     export let categories: any[] = [];
@@ -110,6 +111,13 @@
             actionLabel="Try Again" 
             actionIcon="bi-arrow-counterclockwise"
             on:click={() => uploadError = ""} 
+        />
+    {:else if !$page.data.capabilities.hasVision}
+        <ContentUnavailable 
+            type="warning"
+            icon="bi-eye-slash"
+            title="Vision Engine Disabled" 
+            message="Comparison mode requires an active Vision Engine to analyze photos against your Trove." 
         />
     {:else if !compareResults}
         <div class="text-center mb-6 animate-fade-in">

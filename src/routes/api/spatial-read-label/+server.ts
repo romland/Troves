@@ -41,6 +41,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
         return json(JSON.parse(resText));
     } catch (e: any) {
         console.error("Label read failed:", e);
+        if (e?.message?.includes('API Key missing') || e?.message?.includes('API key')) {
+            return json({ success: false, error: 'Label reading requires Vision Engine API keys.' }, { status: 503 });
+        }
         return json({ error: e.message }, { status: 500 });
     } finally {
         // Cleanup temp files immediately

@@ -114,8 +114,12 @@ export const POST: RequestHandler = async ({ request, locals }) => {
                 fs.writeFileSync(`${localPath}.json`, JSON.stringify(initialDraftData), 'utf8');
             }
 
-        } catch (aiError) {
+    } catch (aiError: any) {
+        if (aiError?.message?.includes('API Key missing') || aiError?.message?.includes('API key')) {
+            console.warn("[Vision] Skipping Draft Analysis: Vision Engine API keys missing.");
+        } else {
             console.warn("Draft Analysis failed:", aiError);
+        }
         }
         
         // Kick off heavy processing in the background for ALL image types (Fire-and-forget)

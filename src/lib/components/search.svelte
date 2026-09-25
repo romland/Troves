@@ -294,7 +294,7 @@
             <div class="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-0.5 overflow-hidden">
                 <!-- Voice & Lens (Fades & Slides out to the right when typing) -->
                 <div class="flex items-center gap-0 transition-all duration-300 origin-right {q.length > 0 ? 'scale-90 opacity-0 pointer-events-none w-0 -mr-2' : 'scale-100 opacity-100 w-auto mr-0'}">
-                    {#if enableVoiceSearch}
+                    {#if enableVoiceSearch && $page.data.capabilities.hasAudio}
                         <button type="button" class="btn btn-xs btn-ghost btn-circle text-gray-400 hover:text-primary {isListening ? 'text-error animate-pulse' : ''}" on:mousedown|preventDefault on:click|preventDefault={toggleVoiceSearch} disabled={isProcessingAudio} aria-label="Voice Search">
                             {#if isProcessingAudio}
                                 <span class="loading loading-spinner loading-xs text-primary"></span>

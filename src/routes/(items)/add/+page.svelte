@@ -176,7 +176,7 @@ on:processingComplete={(ev) => {
             isDirty = false;
             setMode('single');
         }}>Single</button>
-        <button type="button" class="flex-1 btn btn-sm border-none {mode === 'collection' ? 'bg-base-100 shadow-sm hover:bg-base-100 text-base-content' : 'btn-ghost text-gray-500 hover:text-base-content hover:bg-base-300'}" on:click={async () => {
+        <button type="button" class="flex-1 btn btn-sm border-none {mode === 'collection' ? 'bg-base-100 shadow-sm hover:bg-base-100 text-base-content' : 'btn-ghost text-gray-500 hover:text-base-content hover:bg-base-300'}" disabled={!$page.data.capabilities.hasVision} title={!$page.data.capabilities.hasVision ? 'Requires Vision Engine' : ''} on:click={async () => {
             if (mode !== 'collection' && isDirty) {
                 const res = await confirmModal.ask('Unsaved Changes', 'You have unsaved changes. Switch modes and lose them?', 'Switch Mode', 'Cancel', true);
                 if (!res) return;

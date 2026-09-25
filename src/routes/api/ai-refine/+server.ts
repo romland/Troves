@@ -25,6 +25,10 @@ export async function POST({ request, locals }) {
         return json(result);
     } catch (e: any) {
         console.error("AI Refine Error:", e);
+        const errMessage = e?.message || '';
+        if (errMessage.includes('API Key missing') || errMessage.includes('API key')) {
+            return json({ error: 'Smart Refine requires Vision Engine API keys.' }, { status: 503 });
+        }
         return json({ error: "Failed to process image with LLM." }, { status: 500 });
     }
 }

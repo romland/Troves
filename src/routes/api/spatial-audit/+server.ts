@@ -139,6 +139,10 @@ export const POST = async ({ request, locals }) => {
         return json({ success: true, draftPath, slots, totalVisibleCount: originalPolygons.length, scopeValue: container.name });
     } catch (e) {
         console.error("Spatial Audit failed", e);
+        const errMessage = (e as Error)?.message || '';
+        if (errMessage.includes('API Key missing') || errMessage.includes('API key')) {
+            return json({ success: false, error: 'Spatial Audit requires Vision Engine API keys.' }, { status: 503 });
+        }
         return json({ error: 'Spatial Audit failed due to an internal error' }, { status: 500 });
     } finally {
         taskManager.end(taskId);

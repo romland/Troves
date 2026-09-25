@@ -466,7 +466,7 @@
                                             </button>
                                         </li>
                                         <li>
-                                            <button class="font-medium text-base-content hover:text-secondary" on:click={() => auditFileInput.click()} disabled={isAuditing}>
+                                            <button class="font-medium text-base-content hover:text-secondary" on:click={() => auditFileInput.click()} disabled={isAuditing || !$page.data.capabilities.hasVision} title={!$page.data.capabilities.hasVision ? 'Requires Vision Engine' : ''}>
                                                 <i class="bi bi-camera text-secondary text-lg opacity-80"></i> Verify Contents
                                             </button>
                                         </li>

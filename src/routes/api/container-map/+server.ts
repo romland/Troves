@@ -44,6 +44,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
         }
     } catch (e: any) {
         console.error("[DEBUG-MAPPER] Mapping failed:", e);
+        if (e?.message?.includes('API Key missing') || e?.message?.includes('API key')) {
+            return json({ success: false, error: 'Auto-mapping requires Vision Engine API keys.' }, { status: 503 });
+        }
         return json({ error: e.message }, { status: 500 });
     } finally {
         taskManager.end(taskId);

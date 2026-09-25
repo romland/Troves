@@ -64,16 +64,17 @@ USER QUESTION: ${question}
                     const fileBuffer = fs.readFileSync(localFilePath);
                     const mimeType = getImageMimeType(localFilePath);
 
-                    answer = await analyzeImage(prompt, mimeType, fileBuffer.toString('base64'), false, undefined, 'AI Assistant Q&A', { itemId } as any, 'QNA');
-                } catch (err) {
+                    answer = await analyzeImage(prompt, mimeType, fileBuffer.toString('base64'), false, undefined, 'Assistant Q&A', { itemId } as any, 'QNA');
+                } catch (err: any) {
                     console.error("Failed to load photo for Vision Model context:", err);
+                    if (err?.message?.includes('API Key missing') || err?.message?.includes('API key')) throw err;
                 }
             }
         }
 
     try {
         if (!answer) {
-            answer = await generateText('You are a helpful assistant.', prompt, false, undefined, 'AI Assistant Q&A', { itemId } as any, 'QNA');
+            answer = await generateText('You are a helpful assistant.', prompt, false, undefined, 'Assistant Q&A', { itemId } as any, 'QNA');
         }
 
         // Save to Notebook (Document)
@@ -107,8 +108,12 @@ USER QUESTION: ${question}
 
         await logActivity(item.id, 'AI Assistant', `Generated answer for: "${question}"`, 'success', debugPayload);
         return json({ success: true, answer, document: doc });
-    } catch (e) {
+    } catch (e: any) {
         console.error("AI Question Failed:", e);
+        const errMessage = e?.message || '';
+        if (errMessage.includes('API Key missing') || errMessage.includes('API key')) {
+            return json({ error: 'Ask Troves requires configured API keys.' }, { status: 503 });
+        }
         return json({ error: 'Failed to generate answer' }, { status: 500 });
     }
 };

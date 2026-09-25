@@ -12,6 +12,12 @@
     $: archetype = $page.data.inventories?.find((i: any) => i.id === $page.data.activeInventoryId)?.archetype || 'generic';
     $: exampleQuestion = $page.data.archetypes?.find((a: any) => a.id === archetype)?.askTrovesExample || "What kind of batteries does this take?";
 
+    $: hasTextCap =$page.data.capabilities.hasText;
+    $: hasVisionCap =$page.data.capabilities.hasVision;
+    
+    // Auto-disable photo context if vision is missing
+    $: if (!hasVisionCap) includePhotoContext = false;
+
     async function askAiQuestion() {
         if (!aiQuestion.trim() || !itemId) return;
         isAskingAi = true;
@@ -25,8 +31,11 @@
                 notify('success', 'Answer added to Local Archive!');
                 aiQuestion = "";
                 invalidateAll();
-            } else notify('error', 'Failed to generate answer.');
-        } catch (e) { notify('error', 'Network error.'); } 
+            } else {
+                const errData = await res.json().catch(() => ({}));
+                notify('error', errData.error || 'Failed to generate answer.');
+            }
+        } catch (e) { notify('error', 'Network error reaching server.'); } 
         finally { isAskingAi = false; }
     }
 </script>
@@ -38,15 +47,15 @@
     <p class="text-xs text-gray-500 mb-3">Ask questions about this item based on its photos, OCR text, and downloaded manuals.</p>
     <div class="flex gap-2 relative">
         <div class="relative w-full flex items-center">
-            <input type="text" bind:value={aiQuestion} placeholder="e.g. {exampleQuestion}" class="input input-sm input-bordered w-full rounded-xl pr-20 {hasPhotos ? 'pl-24' : 'pl-4'}" on:keydown={(e) => e.key === 'Enter' && askAiQuestion()} disabled={isAskingAi} />
+            <input type="text" bind:value={aiQuestion} placeholder={hasTextCap ? `e.g. ${exampleQuestion}` : "Text Engine API keys required"} class="input input-sm input-bordered w-full rounded-xl pr-20 {hasPhotos && hasVisionCap ? 'pl-24' : 'pl-4'}" on:keydown={(e) => e.key === 'Enter' && askAiQuestion()} disabled={isAskingAi || !hasTextCap} />
             
-            {#if hasPhotos}
+            {#if hasPhotos && hasVisionCap}
                 <button type="button" class="absolute left-2 top-1/2 -translate-y-1/2 badge badge-sm gap-1.5 transition-all cursor-pointer font-medium {includePhotoContext ? 'badge-primary shadow-sm' : 'badge-ghost text-gray-400 border-base-300'}" on:click={() => includePhotoContext = !includePhotoContext} title={includePhotoContext ? "Click to exclude photo context" : "Click to include photo context"}>
                     <i class="bi bi-image"></i> <span>Photo</span>
                 </button>
             {/if}
         </div>
-        <button type="button" class="btn btn-sm btn-primary absolute right-0 top-0 rounded-l-none rounded-r-xl" on:click={askAiQuestion} disabled={isAskingAi || !aiQuestion.trim()}>
+        <button type="button" class="btn btn-sm btn-primary absolute right-0 top-0 rounded-l-none rounded-r-xl" on:click={askAiQuestion} disabled={isAskingAi || !aiQuestion.trim() || !hasTextCap}>
             {#if isAskingAi}<span class="loading loading-spinner loading-xs"></span>{:else}Ask{/if}
         </button>
     </div>
