@@ -47,6 +47,15 @@ export const load = (async ({ locals }) => {
     return { allInventories, accessMap, allUsers, availablePlugins };
 }) satisfies PageServerLoad;
 
+const requireOwner = async (locals: any, inventoryId: number) => {
+    if (locals.user?.isAdmin) return;
+    const access = await db.userInventoryAccess.findUnique({ 
+        where: { inventoryId_userId: { inventoryId, userId: locals.user.id } } 
+    });
+    if (access?.role !== 'OWNER') throw new Error("Forbidden. Owners only.");
+};
+
+
 export const actions = {
     createInventory: async ({ request, locals }) => {
         if (!locals.user) return fail(401, { error: true, message: "Unauthorized" });
@@ -159,6 +168,7 @@ export const actions = {
     toggleAutoCategories: async ({ request, locals }) => {
         const data = await request.formData();
         const id = Number(data.get('id'));
+		try { await requireOwner(locals, id); } catch(e: any) { return fail(403, { error: true, message: e.message }); }
         const allow = data.get('allowNewCategories') === 'true';
         await db.inventory.update({ where: { id }, data: { allowNewCategories: allow } });
         return { success: true, message: "Category generation settings updated." };
@@ -166,13 +176,15 @@ export const actions = {
     toggleAutoTaxonomy: async ({ request, locals }) => {
         const data = await request.formData();
         const id = Number(data.get('id'));
+		try { await requireOwner(locals, id); } catch(e: any) { return fail(403, { error: true, message: e.message }); }
         const allow = data.get('allowAutoTaxonomy') === 'true';
         await db.inventory.update({ where: { id }, data: { allowAutoTaxonomy: allow } as any });
-        return { success: true, message: "AI Taxonomy settings updated." };
+        return { success: true, message: "Smart Taxonomy settings updated." };
     },
     toggleExtractExif: async ({ request, locals }) => {
         const data = await request.formData();
         const id = Number(data.get('id'));
+		try { await requireOwner(locals, id); } catch(e: any) { return fail(403, { error: true, message: e.message }); }
         const allow = data.get('extractExif') === 'true';
         await db.inventory.update({ where: { id }, data: { extractExif: allow } });
         return { success: true, message: "EXIF extraction settings updated." };
@@ -180,6 +192,7 @@ export const actions = {
     toggleDeepScan: async ({ request, locals }) => {
         const data = await request.formData();
         const id = Number(data.get('id'));
+		try { await requireOwner(locals, id); } catch(e: any) { return fail(403, { error: true, message: e.message }); }
         const allow = data.get('deepScan') === 'true';
         await db.inventory.update({ where: { id }, data: { deepScanCollections: allow } });
         return { success: true, message: "MultiScan scanning settings updated." };
@@ -187,6 +200,7 @@ export const actions = {
     toggleBgRemoval: async ({ request, locals }) => {
         const data = await request.formData();
         const id = Number(data.get('id'));
+		try { await requireOwner(locals, id); } catch(e: any) { return fail(403, { error: true, message: e.message }); }
         const allow = data.get('bgRemovalEnabled') === 'true';
         await db.inventory.update({ where: { id }, data: { bgRemovalEnabled: allow } });
         return { success: true, message: "Background removal settings updated." };
@@ -194,6 +208,7 @@ export const actions = {
     toggleBgRemovalModel: async ({ request, locals }) => {
         const data = await request.formData();
         const id = Number(data.get('id'));
+		try { await requireOwner(locals, id); } catch(e: any) { return fail(403, { error: true, message: e.message }); }
         const model = data.get('bgRemovalModel') as string;
         await db.inventory.update({ where: { id }, data: { bgRemovalModel: model } });
         return { success: true, message: "Background removal model updated." };
@@ -201,6 +216,7 @@ export const actions = {
     toggleBgPreCrop: async ({ request, locals }) => {
         const data = await request.formData();
         const id = Number(data.get('id'));
+		try { await requireOwner(locals, id); } catch(e: any) { return fail(403, { error: true, message: e.message }); }
         const allow = data.get('bgRemovalPreCrop') === 'true';
         await db.inventory.update({ where: { id }, data: { bgRemovalPreCrop: allow } });
         return { success: true, message: "Pre-crop settings updated." };
@@ -208,6 +224,7 @@ export const actions = {
     togglePaddleOCR: async ({ request, locals }) => {
         const data = await request.formData();
         const id = Number(data.get('id'));
+		try { await requireOwner(locals, id); } catch(e: any) { return fail(403, { error: true, message: e.message }); }
         const allow = data.get('enablePaddleOCR') === 'true';
         await db.inventory.update({ where: { id }, data: { enablePaddleOCR: allow } });
         return { success: true, message: "OCR settings updated." };
@@ -215,6 +232,7 @@ export const actions = {
     updateInventoryStrategy: async ({ request, locals }) => {
         const data = await request.formData();
         const id = Number(data.get('id'));
+		try { await requireOwner(locals, id); } catch(e: any) { return fail(403, { error: true, message: e.message }); }
         const strategy = data.get('strategy')?.toString();
         if (id && strategy) await db.inventory.update({ where: { id }, data: { duplicateStrategy: strategy } });
         return { success: true, message: "Default duplicate strategy updated." };
@@ -222,6 +240,7 @@ export const actions = {
     updateContainerMode: async ({ request, locals }) => {
         const data = await request.formData();
         const id = Number(data.get('id'));
+		try { await requireOwner(locals, id); } catch(e: any) { return fail(403, { error: true, message: e.message }); }
         const containerMode = data.get('containerMode') as string;
         await db.inventory.update({ where: { id }, data: { containerMode } });
         return { success: true, message: "Container mode updated." };
@@ -229,6 +248,7 @@ export const actions = {
     updateDefaultView: async ({ request, locals }) => {
         const data = await request.formData();
         const id = Number(data.get('id'));
+		try { await requireOwner(locals, id); } catch(e: any) { return fail(403, { error: true, message: e.message }); }
         const defaultView = data.get('defaultView') as string;
         await db.inventory.update({ where: { id }, data: { defaultView } });
         return { success: true, message: "Default view updated." };
@@ -236,6 +256,7 @@ export const actions = {
     toggleArchiveSingle: async ({ request, locals }) => {
         const data = await request.formData();
         const id = Number(data.get('id'));
+		try { await requireOwner(locals, id); } catch(e: any) { return fail(403, { error: true, message: e.message }); }
         const allow = data.get('archiveSingleScans') === 'true';
         await db.inventory.update({ where: { id }, data: { archiveSingleScans: allow } });
         return { success: true, message: "Archive setting updated." };
@@ -243,6 +264,7 @@ export const actions = {
     toggleTrackQuantity: async ({ request, locals }) => {
         const data = await request.formData();
         const id = Number(data.get('id'));
+		try { await requireOwner(locals, id); } catch(e: any) { return fail(403, { error: true, message: e.message }); }
         const allow = data.get('trackQuantity') === 'true';
         await db.inventory.update({ where: { id }, data: { trackQuantity: allow } });
         return { success: true, message: "Quantity tracking updated." };
@@ -250,6 +272,7 @@ export const actions = {
     toggleUiFlag: async ({ request, locals }) => {
         const data = await request.formData();
         const id = Number(data.get('id'));
+		try { await requireOwner(locals, id); } catch(e: any) { return fail(403, { error: true, message: e.message }); }
         const field = data.get('field') as string;
         const value = data.get('value') === 'true';
         if (['showExif', 'showColors', 'lightboxGradient', 'lightboxPhotoGradient', 'showOcr', 'enableAskAi', 'enableNotebook', 'enableDocuments', 'enableFuzzySearch', 'showNoteContextUrl', 'showRelatedItems'].includes(field)) {
@@ -260,6 +283,7 @@ export const actions = {
     updateNotebookCategories: async ({ request, locals }) => {
         const data = await request.formData();
         const id = Number(data.get('id'));
+		try { await requireOwner(locals, id); } catch(e: any) { return fail(403, { error: true, message: e.message }); }
         const csv = data.get('notebookCategories') as string;
         const cats = csv.split(',').map(s => s.trim().toLowerCase()).filter(s => s.length > 0);
         if (!cats.includes('archive')) cats.push('archive');
@@ -269,6 +293,7 @@ export const actions = {
     updateEnabledPlugins: async ({ request, locals }) => {
         const data = await request.formData();
         const id = Number(data.get('id'));
+		try { await requireOwner(locals, id); } catch(e: any) { return fail(403, { error: true, message: e.message }); }
         const plugins = data.getAll('plugins') as string[];
         await db.inventory.update({ where: { id }, data: { enabledPlugins: JSON.stringify(plugins) } });
         return { success: true, message: "Plugin whitelist updated." };
@@ -302,6 +327,7 @@ export const actions = {
     retrySchemaBootstrap: async ({ request, locals }) => {
         const data = await request.formData();
         const inventoryId = Number(data.get('inventoryId'));
+		try { await requireOwner(locals, inventoryId); } catch(e: any) { return fail(403, { error: true, message: e.message }); }
         const name = data.get('name') as string;
         if (!inventoryId) return fail(400, { error: true, message: "Invalid ID." });
         try {
@@ -317,6 +343,7 @@ export const actions = {
     rebuildDuplicates: async ({ request, locals }) => {
         const data = await request.formData();
         const inventoryId = Number(data.get('inventoryId'));
+		try { await requireOwner(locals, inventoryId); } catch(e: any) { return fail(403, { error: true, message: e.message }); }
         if (!inventoryId) return fail(400, { error: true, message: "Invalid ID." });
         const { ioQueue } = await import('$lib/server/queue/index');
         const { retroactiveDuplicateSweep } = await import('$lib/server/matcher');
@@ -326,6 +353,7 @@ export const actions = {
     beautifyTaxonomy: async ({ request, locals }) => {
         const data = await request.formData();
         const inventoryId = Number(data.get('inventoryId'));
+		try { await requireOwner(locals, inventoryId); } catch(e: any) { return fail(403, { error: true, message: e.message }); }
         const { beautifyTaxonomyRules } = await import('$lib/server/ontology');
         try {
             await beautifyTaxonomyRules(inventoryId);
@@ -340,6 +368,7 @@ export const actions = {
     updateTaxonomy: async ({ request, locals }) => {
         const data = await request.formData();
         const id = Number(data.get('id'));
+		try { await requireOwner(locals, id); } catch(e: any) { return fail(403, { error: true, message: e.message }); }
         const taxonomyJson = data.get('taxonomyJson') as string;
         try {
             const fields = JSON.parse(taxonomyJson);
