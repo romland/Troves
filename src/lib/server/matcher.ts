@@ -697,9 +697,9 @@ export function findBestMatchesForBatch(
     idfMap?: Map<string, number>,
     archetype: string = 'generic'
 ) {
-    console.log(`\n[MATCH-DEBUG] 🚀 ========================================================`);
-    console.log(`[MATCH-DEBUG] 🚀 findBestMatchesForBatch STARTED`);
-    console.log(`[MATCH-DEBUG] 🚀 SCANNED ITEMS: ${scannedItems.length} | DB ITEMS: ${dbItems.length}`);
+    // console.log(`\n[MATCH-DEBUG] 🚀 ========================================================`);
+    // console.log(`[MATCH-DEBUG] 🚀 findBestMatchesForBatch STARTED`);
+    // console.log(`[MATCH-DEBUG] 🚀 SCANNED ITEMS: ${scannedItems.length} | DB ITEMS: ${dbItems.length}`);
 
     const actualIdfMap = idfMap || computeIdfMap(dbItems);
     const idUsage = new Map<number, number>();
@@ -708,8 +708,8 @@ export function findBestMatchesForBatch(
     const annotatedScannedItems: any[] = [];
 
     for (const item of scannedItems) {
-        console.log(`[MATCH-DEBUG] ------------------------------------------------`);
-        console.log(`[MATCH-DEBUG] 🔎 SCANNING: "${item.title}"`);
+        // console.log(`[MATCH-DEBUG] ------------------------------------------------`);
+        // console.log(`[MATCH-DEBUG] 🔎 SCANNING: "${item.title}"`);
 
         let parsedTokens: string[] = [];
         if (Array.isArray(item.tokens)) {
@@ -737,7 +737,7 @@ export function findBestMatchesForBatch(
             archetype
         };
         
-        console.log(`[MATCH-DEBUG] 🧩 CONTEXT BUILT:`, JSON.stringify(scanCtx, null, 2));
+        // console.log(`[MATCH-DEBUG] 🧩 CONTEXT BUILT:`, JSON.stringify(scanCtx, null, 2));
 
         let bestMatch = null;
         let highestScore = -999;
@@ -747,10 +747,10 @@ export function findBestMatchesForBatch(
             const used = idUsage.get(dbItem.id) || 0;
             const available = dbItem.amount || 1;
             
-            console.log(`[MATCH-DEBUG]   🆚 Checking DB Item ID ${dbItem.id} ("${dbItem.title}") | Used: ${used} | Available: ${available}`);
+            // console.log(`[MATCH-DEBUG]   🆚 Checking DB Item ID ${dbItem.id} ("${dbItem.title}") | Used: ${used} | Available: ${available}`);
 
             if (used >= available) {
-                console.log(`[MATCH-DEBUG]   ⏩ SKIPPING ID ${dbItem.id}: Stock fully consumed.`);
+                // console.log(`[MATCH-DEBUG]   ⏩ SKIPPING ID ${dbItem.id}: Stock fully consumed.`);
                 continue; // Respect stock quantities!
             }
 
@@ -763,10 +763,10 @@ export function findBestMatchesForBatch(
                 item._debugComparisons.push({ dbTitle: dbItem.title, score: match.score, trace: match.debugTrace });
             }
 
-            console.log(`[MATCH-DEBUG]   🧮 Score: ${match.score} | isMatch: ${match.isMatch}`);
-            if (!match.isMatch) {
-                 console.log(`[MATCH-DEBUG]   ❌ Trace:\n      ${match.debugTrace?.join('\n      ')}`);
-            }
+            // console.log(`[MATCH-DEBUG]   🧮 Score: ${match.score} | isMatch: ${match.isMatch}`);
+            // if (!match.isMatch) {
+            //      console.log(`[MATCH-DEBUG]   ❌ Trace:\n      ${match.debugTrace?.join('\n      ')}`);
+            // }
 
             if (match.isMatch && match.score > highestScore) {
                 highestScore = match.score;
@@ -784,7 +784,7 @@ export function findBestMatchesForBatch(
             item.isDuplicate = true;
             item.duplicateItemDetails = buildDuplicateDetails(dbItem, match);
             
-            console.log(`[MATCH-DEBUG] ✅ WINNER: Linked "${item.title}" to DB Item ID ${dbItem.id} ("${dbItem.title}") with Score ${match.score}`);
+            // console.log(`[MATCH-DEBUG] ✅ WINNER: Linked "${item.title}" to DB Item ID ${dbItem.id} ("${dbItem.title}") with Score ${match.score}`);
 
             inCollection.push({
                 ...item,
@@ -793,16 +793,16 @@ export function findBestMatchesForBatch(
         } else {
             item.isDuplicate = false;
             item.duplicateItemDetails = null;
-            console.log(`[MATCH-DEBUG] ⚠️ NO MATCH. "${item.title}" is New to You.`);
+            // console.log(`[MATCH-DEBUG] ⚠️ NO MATCH. "${item.title}" is New to You.`);
             newToYou.push(item);
         }
         
         annotatedScannedItems.push(item);
     }
     
-    console.log(`[MATCH-DEBUG] 🏁 findBestMatchesForBatch COMPLETED`);
-    console.log(`[MATCH-DEBUG] 🏁 In Trove: ${inCollection.length} | New: ${newToYou.length}`);
-    console.log(`[MATCH-DEBUG] 🚀 ========================================================\n`);
+    // console.log(`[MATCH-DEBUG] 🏁 findBestMatchesForBatch COMPLETED`);
+    // console.log(`[MATCH-DEBUG] 🏁 In Trove: ${inCollection.length} | New: ${newToYou.length}`);
+    // console.log(`[MATCH-DEBUG] 🚀 ========================================================\n`);
 
     return { inCollection, newToYou, annotatedScannedItems, idUsage };
 }

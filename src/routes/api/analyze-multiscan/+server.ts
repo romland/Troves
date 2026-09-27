@@ -52,7 +52,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
         const { annotatedScannedItems } = findBestMatchesForBatch(visionResponse.items, dbItems, undefined, archetype);
         
-        console.log(`[MATCH-DEBUG] analyze-multi-scan API: annotatedScannedItems length: ${annotatedScannedItems.length}`);
+        // console.log(`[MATCH-DEBUG] analyze-multi-scan API: annotatedScannedItems length: ${annotatedScannedItems.length}`);
 
         for (const item of annotatedScannedItems) {
             item.duplicateStrategy = defaultStrategy;
@@ -60,7 +60,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
                 const cat = categories.find((c: any) => c.name.toLowerCase() === item.category.toLowerCase());
                 if (cat && cat.duplicateStrategy) item.duplicateStrategy = cat.duplicateStrategy;
             }
-            console.log(`[MATCH-DEBUG] Returning to UI -> Item: "${item.title}" | isDuplicate: ${item.isDuplicate}`);
+            // console.log(`[MATCH-DEBUG] Returning to UI -> Item: "${item.title}" | isDuplicate: ${item.isDuplicate}`);
         }
 
         return json({ success: true, draftPath: webPath, noteId: note.id, totalVisibleCount: visionResponse.totalVisibleCount, collectionType: visionResponse.collectionType, items: annotatedScannedItems });
