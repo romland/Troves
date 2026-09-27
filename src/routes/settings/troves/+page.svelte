@@ -144,7 +144,7 @@
 
                             <form method="POST" action="?/toggleBgRemovalModel" use:enhance={createEnhancer} class="mt-2 flex flex-col sm:flex-row sm:items-center items-start gap-1 sm:gap-2">
                                 <input type="hidden" name="id" value={v.id}>
-                                <select name="bgRemovalModel" class="select select-bordered select-xs font-medium w-full sm:w-auto bg-base-100" disabled={!v.bgRemovalEnabled} on:change={(e) => e.currentTarget.form?.requestSubmit()} value={v.bgRemovalModel || 'bria-rmbg'}>
+                                <select name="bgRemovalModel" class="select select-bordered select-xs font-medium w-full sm:w-auto bg-base-100" disabled={!v.bgRemovalEnabled} on:change={(e) => e.currentTarget.form?.requestSubmit()} value={v.bgRemovalModel || 'u2net'}>
                                     <option value="bria-rmbg">BRIA v2.0 (Slow / Best Quality)</option>
                                     <option value="isnet-general-use">ISNet (Balanced)</option>
                                     <option value="u2net">U2Net (Fast / Moderate)</option>

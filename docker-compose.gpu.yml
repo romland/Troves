@@ -1,0 +1,15 @@
+services:
+  rembg:
+    build:
+      context: ./services/rembg
+      dockerfile: Dockerfile.gpu
+    environment:
+      - OMP_NUM_THREADS=1
+    shm_size: '2gb'
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]

@@ -1,0 +1,5 @@
+services/singlefile/chrome-data
+services/rembg-data
+services/paddleocr/downloads
+services/paddleocr/paddlex_cache
+data/

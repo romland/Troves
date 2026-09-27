@@ -36,6 +36,7 @@ cp package.json package-lock.json .env.example server.js dist/
 # Use the dedicated production Dockerfile to ensure a clean runner environment
 [ -f Dockerfile.prod ] && cp Dockerfile.prod dist/Dockerfile
 [ -f docker-compose.yml ] && cp docker-compose.yml dist/
+[ -f docker-compose.gpu.yml ] && cp docker-compose.gpu.yml dist/
 
 echo "🧩 Copying scripts and example extensions..."
 mkdir -p dist/scripts dist/docs/extensions

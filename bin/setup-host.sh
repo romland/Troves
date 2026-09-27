@@ -357,6 +357,15 @@ if [ "$SKIP_PROMPT" = false ]; then
     read -p "Enable Background Removal (RemBG)? (Y/n): " -n 1 -r; echo ""
     [[ $REPLY =~ ^[Nn]$ ]] && ENABLE_REMBG=false || ENABLE_REMBG=true
 
+    REMBG_MODE="cpu"
+    if [ "$ENABLE_REMBG" = true ]; then
+        if command -v nvidia-smi &> /dev/null && nvidia-smi > /dev/null 2>&1 && docker info 2>/dev/null | grep -iq "nvidia"; then
+            GPU_LIST=$(nvidia-smi --query-gpu=name --format=csv,noheader | paste -sd "," - | sed 's/,/, /g')
+            read -p "NVIDIA GPU(s) detected ($GPU_LIST). Enable GPU acceleration for RemBG? (Y/n): " -n 1 -r; echo ""
+            [[ $REPLY =~ ^[Nn]$ ]] || REMBG_MODE="gpu"
+        fi
+    fi
+
     read -p "Enable local text extraction (PaddleOCR)? (Y/n): " -n 1 -r; echo ""
     [[ $REPLY =~ ^[Nn]$ ]] && ENABLE_PADDLEOCR=false || ENABLE_PADDLEOCR=true
 
@@ -365,6 +374,7 @@ if [ "$SKIP_PROMPT" = false ]; then
 else
     USER_PORT=3000
     ENABLE_REMBG=true
+    REMBG_MODE="cpu"
     ENABLE_PADDLEOCR=true
     ENABLE_SINGLEFILE=true
 fi
@@ -387,6 +397,17 @@ fi
 grep -q "^PORT=" .env && sed -i "s/^PORT=.*/PORT=$USER_PORT/" .env || echo "PORT=$USER_PORT" >> .env
 grep -q "^TROVES_PORT=" .env && sed -i "s/^TROVES_PORT=.*/TROVES_PORT=$USER_PORT/" .env || echo "TROVES_PORT=$USER_PORT" >> .env
 grep -q "^ENABLE_REMBG=" .env && sed -i "s/^ENABLE_REMBG=.*/ENABLE_REMBG=$ENABLE_REMBG/" .env || echo "ENABLE_REMBG=$ENABLE_REMBG" >> .env
+grep -q "^REMBG_MODE=" .env && sed -i "s/^REMBG_MODE=.*/REMBG_MODE=$REMBG_MODE/" .env || echo "REMBG_MODE=$REMBG_MODE" >> .env
+
+OVERRIDE=""
+[ -f docker-compose.override.yml ] && OVERRIDE=":docker-compose.override.yml"
+
+if [ "$REMBG_MODE" = "gpu" ]; then
+    grep -q "^COMPOSE_FILE=" .env && sed -i "s/^COMPOSE_FILE=.*/COMPOSE_FILE=docker-compose.yml:docker-compose.gpu.yml$OVERRIDE/" .env || echo "COMPOSE_FILE=docker-compose.yml:docker-compose.gpu.yml$OVERRIDE" >> .env
+else
+    grep -q "^COMPOSE_FILE=" .env && sed -i "s/^COMPOSE_FILE=.*/COMPOSE_FILE=docker-compose.yml$OVERRIDE/" .env || echo "COMPOSE_FILE=docker-compose.yml$OVERRIDE" >> .env
+fi
+
 grep -q "^ENABLE_PADDLEOCR=" .env && sed -i "s/^ENABLE_PADDLEOCR=.*/ENABLE_PADDLEOCR=$ENABLE_PADDLEOCR/" .env || echo "ENABLE_PADDLEOCR=$ENABLE_PADDLEOCR" >> .env
 grep -q "^ENABLE_SINGLEFILE=" .env && sed -i "s/^ENABLE_SINGLEFILE=.*/ENABLE_SINGLEFILE=$ENABLE_SINGLEFILE/" .env || echo "ENABLE_SINGLEFILE=$ENABLE_SINGLEFILE" >> .env
 

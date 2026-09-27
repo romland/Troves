@@ -6,9 +6,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgomp1 \
  && rm -rf /var/lib/apt/lists/*
 
-RUN pip install --no-cache-dir "rembg[cpu,cli]"
+RUN pip install --no-cache-dir "rembg[cpu]" fastapi uvicorn python-multipart
+
+WORKDIR /app
+COPY server.py /app/server.py
 
 EXPOSE 7000
 
-ENTRYPOINT ["rembg"]
-CMD ["s", "--no-ui"]
+CMD ["python3", "server.py"]

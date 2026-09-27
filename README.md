@@ -237,6 +237,21 @@ mkdir troves && \
 **⚠️ Hardware Heads-Up (Memory & SBCs)**  
 If you are planning to run this on a cheaper Single Board Computer (like a Raspberry Pi): the background removal microservice needs RAM. It really wants around 8GB of it to run comfortably. If you try to spin Troves up on a 2GB or 4GB board, it will likely bring the system to its knees. If you are tight on hardware memory, you can simply turn off background removal in settings.
 
+**NVIDIA GPU Acceleration**  
+If you have an NVIDIA GPU, you can speed up background removal using `./troves.sh rembg --gpu`. 
+For this to work, Docker must be able to see the hardware. If `nvidia-smi` works on your host but the script throws an error, you need the NVIDIA Container Toolkit to bridge them.
+
+Install and configure the toolkit (Debian/Ubuntu):
+```bash
+curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+sudo apt-get update
+sudo apt-get install -y nvidia-container-toolkit
+sudo nvidia-ctk runtime configure --set-as-default
+sudo systemctl restart docker
+```
+
+
 **Host Dependencies (Optional)**  
 All external dependencies gracefully fall back if a tool isn't installed.
 
@@ -303,6 +318,8 @@ You can control the Troves service using the included `troves.sh` utility wrappe
 ./troves.sh restart       # Restart the stack
 ./troves.sh update        # Pull latest updates and restart
 ./troves.sh update-ytdlp  # Hot-patch video downloader (if video archiving fails, do this)
+./troves.sh rembg --gpu   # Rebuild the RemBG container to use NVIDIA GPU acceleration
+./troves.sh rembg --cpu   # Revert RemBG back to standard CPU mode
 ./troves.sh logs          # Tail live application logs
 ```
 

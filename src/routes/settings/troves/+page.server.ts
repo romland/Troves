@@ -74,7 +74,7 @@ export const actions = {
             extractExif: true,
             deepScanCollections: false,
             bgRemovalEnabled: true,
-            bgRemovalModel: 'bria-rmbg',
+            bgRemovalModel: 'u2net',
             bgRemovalPreCrop: false,
             enablePaddleOCR: false,
             duplicateStrategy: 'PROMPT',

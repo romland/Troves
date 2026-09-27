@@ -4,12 +4,12 @@ services:
     container_name: troves-rembg
     build: ./services/rembg
     image: ghcr.io/romland/troves-rembg:latest
-    command: s --no-ui
     environment:
-      - OMP_NUM_THREADS=2
+      - OMP_NUM_THREADS=4
       - MALLOC_ARENA_MAX=2
-    mem_limit: 8g
-    cpus: 2.0
+    mem_limit: 16g
+    shm_size: '2gb'
+    cpus: 4.0
     expose:
       - "7000"
     volumes:

@@ -82,7 +82,7 @@ model Inventory {
   extractExif         Boolean @default(true) // Whether to extract EXIF data from uploaded photos in this inventory
   deepScanCollections Boolean @default(false) // Whether to run individual LLM/vision analysis on items imported via multi-scan
   bgRemovalEnabled    Boolean @default(true) // Whether to run background removal
-  bgRemovalModel      String  @default("bria-rmbg") // Which model to use: "bria-rmbg", "u2net", etc
+  bgRemovalModel      String  @default("u2net") // Which model to use: "bria-rmbg", "u2net", etc
   bgRemovalPreCrop    Boolean @default(false) // Whether to crop to foreground box BEFORE background removal
   enablePaddleOCR     Boolean @default(false) // Whether to extract text from images using local PaddleOCR container
   duplicateStrategy   String  @default("PROMPT") // "PROMPT", "AUTO_BUMP", "AUTO_IGNORE"
