@@ -82,9 +82,15 @@ export function getCropStyles(boxRaw: any, padding: number = 25) {
     const maxDim = Math.max(1, Math.max(metrics.w, metrics.h));
     const zoomFactor = 1000 / maxDim;
 
-    const wrapper = `position: relative; overflow: hidden; width: 100%; height: 100%; min-width: 100%; min-height: 100%; flex-shrink: 0; border-radius: inherit;`;
+    const wrapper = `position: relative; overflow: hidden; width: 100%; height: 100%; min-width: 100%; min-height: 100%; flex-shrink: 0; border-radius: inherit; display: flex; align-items: center; justify-content: center;`;
 
-    const image = `position: absolute; width: ${zoomFactor * 100}%; height: auto; max-width: none; max-height: none; top: 50%; left: 50%; transform: translate3d(-${cx}%, -${cy}%, 0);`;
+    // Use CSS clip-path mathematically bound to the original image proportions to completely cut away background clutter.
+    const clipX1 = metrics.xmin / 10;
+    const clipY1 = metrics.ymin / 10;
+    const clipX2 = metrics.xmax / 10;
+    const clipY2 = metrics.ymax / 10;
+
+    const image = `position: absolute; width: ${zoomFactor * 100}%; height: auto; max-width: none; max-height: none; top: 50%; left: 50%; transform: translate3d(-${cx}%, -${cy}%, 0); clip-path: polygon(${clipX1}% ${clipY1}%, ${clipX2}% ${clipY1}%, ${clipX2}% ${clipY2}%, ${clipX1}% ${clipY2}%);`;
     return { wrapper, image };
 }
 
