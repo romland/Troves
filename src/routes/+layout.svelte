@@ -505,7 +505,7 @@
             <div class="tooltip tooltip-bottom sm:tooltip-left mr-2" data-tip={sysHealth.reason || ''}>
                 <div class="flex items-center gap-1.5 px-3 py-1 bg-base-200/50 rounded-full border border-base-300 text-warning shadow-sm animate-fade-in cursor-help">
                     <i class="bi bi-pause-circle-fill"></i>
-                    <span class="text-[10px] font-bold uppercase tracking-wider hidden sm:inline">Server Degration</span>
+                    <span class="text-[10px] font-bold uppercase tracking-wider hidden sm:inline">Server Degradation</span>
                 </div>
             </div>
         {/if}

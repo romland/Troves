@@ -35,13 +35,14 @@ export function parseBoundingBox(boxRaw: any): [number, number][] | null {
                 ];
             }
             
-            // If we got exactly 4 numbers, assume legacy flat format [ymin, xmin, ymax, xmax]
+            // If we got exactly 4 numbers [ymin, xmin, ymax, xmax], convert to 4-point polygon
             if (nums.length === 4) {
+                const [ymin, xmin, ymax, xmax] = nums;
                 return [
-                    [nums[1], nums[0]], // Top-Left
-                    [nums[3], nums[0]], // Top-Right
-                    [nums[3], nums[2]], // Bottom-Right
-                    [nums[1], nums[2]]  // Bottom-Left
+                    [xmin, ymin], // Top-Left
+                    [xmax, ymin], // Top-Right
+                    [xmax, ymax], // Bottom-Right
+                    [xmin, ymax]  // Bottom-Left
                 ];
             }
         }

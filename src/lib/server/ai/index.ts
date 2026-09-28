@@ -13,6 +13,7 @@ export interface AIConfig {
     model: string;
     baseURL: string | undefined;
     apiKey: string | undefined;
+	temperature: number;
 }
 
 export function getAIConfig(modality: AIModality, subTask?: string): AIConfig {
@@ -23,6 +24,7 @@ export function getAIConfig(modality: AIModality, subTask?: string): AIConfig {
     const model = (subTask && env[`${prefixSpecific}_MODEL`]) ? env[`${prefixSpecific}_MODEL`] : env[`${prefixDefault}_MODEL`];
     const baseURL = (subTask && env[`${prefixSpecific}_BASE_URL`]) ? env[`${prefixSpecific}_BASE_URL`] : env[`${prefixDefault}_BASE_URL`];
     let apiKey = (subTask && env[`${prefixSpecific}_API_KEY`]) ? env[`${prefixSpecific}_API_KEY`] : env[`${prefixDefault}_API_KEY`];
+	const tempStr = (subTask && env[`${prefixSpecific}_TEMPERATURE`]) ? env[`${prefixSpecific}_TEMPERATURE`] : env[`${prefixDefault}_TEMPERATURE`];
 
     // Global fallback for base keys
     if (!apiKey) {
@@ -37,6 +39,7 @@ export function getAIConfig(modality: AIModality, subTask?: string): AIConfig {
         model: model || '',
         baseURL: baseURL || undefined,
         apiKey: apiKey || undefined,
+		temperature: tempStr !== undefined && tempStr !== '' ? parseFloat(tempStr) : 0.0,
     };
 }
 
@@ -73,6 +76,49 @@ export function getGeminiClient(config: AIConfig): GoogleGenAI {
     return _gemini;
 }
 
+export function prepareOpenAISchema(schema: any): any {
+    if (!schema || typeof schema !== 'object') return schema;
+    const copy = JSON.parse(JSON.stringify(schema));
+
+    function transform(obj: any) {
+        if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return;
+
+        // OpenAI Strict Mode forbids these length/value constraints
+        delete obj.minItems;
+        delete obj.maxItems;
+        delete obj.minimum;
+        delete obj.maximum;
+
+        if (obj.type === 'object') {
+            obj.additionalProperties = false;
+            if (obj.properties) {
+                const keys = Object.keys(obj.properties);
+                if (!obj.required) obj.required = [];
+                for (const key of keys) {
+                    const prop = obj.properties[key];
+                    const isRequired = obj.required.includes(key);
+                    if (!isRequired) obj.required.push(key);
+                    if (prop) {
+                        if (prop.nullable || !isRequired) {
+                            delete prop.nullable;
+                            if (typeof prop.type === 'string' && prop.type !== 'null') prop.type = [prop.type, 'null'];
+                            else if (Array.isArray(prop.type) && !prop.type.includes('null')) prop.type.push('null');
+                        }
+                        transform(prop);
+                    }
+                }
+            } else {
+                obj.properties = {};
+                obj.required = [];
+            }
+        } else if (obj.type === 'array' && obj.items) {
+            transform(obj.items);
+        }
+    }
+    transform(copy);
+    return copy;
+}
+
 /**
  * Universal Text/JSON Generation Router (Queued, Retried, Logged)
  */
@@ -96,7 +142,7 @@ export async function generateText(
                     { role: 'user', parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }
                 ],
                 config: {
-                    temperature: 0.0,
+					temperature: config.temperature,
                     responseMimeType: jsonMode ? 'application/json' : 'text/plain',
                     ...(jsonSchema ? { responseSchema: jsonSchema } : {})
                 }
@@ -122,7 +168,7 @@ export async function generateText(
                         { role: 'system', content: systemPrompt },
                         { role: 'user', content: userPrompt }
                     ],
-                    temperature: 0.0,
+					temperature: config.temperature,
                     response_format: jsonMode ? { type: 'json_object' } : undefined
                 }), 3, 2000, taskName, { prompt: systemPrompt + '\n\n' + userPrompt, provider: 'groq', ...tracking });
                 
@@ -143,8 +189,8 @@ export async function generateText(
                 { role: 'system', content: systemPrompt },
                 { role: 'user', content: userPrompt }
             ],
-            temperature: 0.0,
-            response_format: jsonMode ? (jsonSchema ? { type: 'json_schema', json_schema: { name: 'response', schema: jsonSchema, strict: true } } : { type: 'json_object' }) : undefined
+			temperature: config.temperature,
+            response_format: jsonMode ? (jsonSchema ? { type: 'json_schema', json_schema: { name: 'response', schema: prepareOpenAISchema(jsonSchema), strict: true } } : { type: 'json_object' }) : undefined
         }), 3, 2000, taskName, { prompt: systemPrompt + '\n\n' + userPrompt, provider: 'openai', ...tracking });
 
         return res.choices[0]?.message?.content || '';
@@ -180,8 +226,8 @@ export async function analyzeImage(
                         ]
                     }
                 ],
-                temperature: 0.0,
-                response_format: jsonMode ? (jsonSchema ? { type: 'json_schema', json_schema: { name: 'response', schema: jsonSchema, strict: true } } : { type: 'json_object' }) : undefined
+				temperature: config.temperature,
+                response_format: jsonMode ? (jsonSchema ? { type: 'json_schema', json_schema: { name: 'response', schema: prepareOpenAISchema(jsonSchema), strict: true } } : { type: 'json_object' }) : undefined
             }), 3, 2000, taskName, { prompt: promptText, provider: 'openai', ...tracking });
             
             return res.choices[0]?.message?.content || '';
@@ -202,7 +248,7 @@ export async function analyzeImage(
                 }
             ],
             config: {
-                temperature: 0.0,
+				temperature: config.temperature,
                 responseMimeType: jsonMode ? 'application/json' : 'text/plain',
                 ...(jsonSchema ? { responseSchema: jsonSchema } : {})
             }
