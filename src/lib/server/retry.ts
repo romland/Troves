@@ -96,7 +96,7 @@ export async function withRetry<T>(
 
                 await logActivity(targetItemId, 'LLM Retry', `${service} ${logReason.toLowerCase()}. Retrying ${taskName} in ${Math.ceil(waitTime/1000)}s.`, 'warning');
                 if (context?.taskId) taskManager.update(String(context.taskId), `API Busy. Waiting ${Math.ceil(waitTime/1000)}s...`);
-                systemHealth.setDegraded(`${service} API is rate-limited. Pausing queue for ${Math.ceil(waitTime/1000)}s...`, waitTime);
+                systemHealth.setDegraded(`${service} API is ${isOverloaded ? "overloaded" : "rate-limited"}. Pausing queue for ${Math.ceil(waitTime/1000)}s...`, waitTime);
                 
                 await new Promise(resolve => setTimeout(resolve, waitTime));
                 systemHealth.clearDegraded();
