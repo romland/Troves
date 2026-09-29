@@ -381,12 +381,14 @@ model SystemMetric {
   id          Int      @id @unique @default(autoincrement())
   category    String   // e.g., 'MODEL_USAGE', 'SYSTEM_IO'
   provider    String   // e.g., 'gemini', 'groq', 'openai'
+  model       String   @default("unknown")
   operation   String?  // e.g., 'analyzePhoto', 'guessProductDetails'
   count1      Int      @default(0) // Generic counter 1 (e.g., Tokens In)
   count2      Int      @default(0) // Generic counter 2 (e.g., Tokens Out)
   durationMs  Int      @default(0) // Execution time
+  modelSettings String? // JSON metadata (temperature, modality, imageTokens, etc.)
   createdAt   DateTime @default(now())
 
   @@index([createdAt])
-  @@index([category, provider])
+  @@index([category, provider, model])
 }

@@ -4,6 +4,8 @@ export interface LLMLogEntry {
     timestamp: number;
     taskName: string;
     service: string;
+    model: string;
+    modelSettings: any;
     input: any;
     output: any;
     durationMs: number;
@@ -18,9 +20,9 @@ const MAX_LLM_LOGS = 50;
 
 export const llmUsageStats: Record<string, { requests: number, tokensIn: number, tokensOut: number }> = {};
 
-export function recordLLMLog(taskName: string, service: string, input: any, output: any, durationMs: number, tokensIn: number = 0, tokensOut: number = 0, itemId?: number, path?: string) {
+export function recordLLMLog(taskName: string, service: string, model: string, modelSettings: any, input: any, output: any, durationMs: number, tokensIn: number = 0, tokensOut: number = 0, itemId?: number, path?: string) {
     // Keep the last 50 in memory (newest first)
-    llmLogs.unshift({ timestamp: Date.now(), taskName, service, input, output, durationMs, tokensIn, tokensOut, itemId, path });
+    llmLogs.unshift({ timestamp: Date.now(), taskName, service, model, modelSettings, input, output, durationMs, tokensIn, tokensOut, itemId, path });
 
     if (llmLogs.length > MAX_LLM_LOGS) llmLogs.pop();
     
@@ -37,10 +39,12 @@ export function recordLLMLog(taskName: string, service: string, input: any, outp
         data: {
             category: 'MODEL_USAGE',
             provider: service,
+            model: model,
             operation: taskName,
             count1: tokensIn || 0,
             count2: tokensOut || 0,
-            durationMs: durationMs || 0
+            durationMs: durationMs || 0,
+            modelSettings: JSON.stringify(modelSettings || {})
         }
     }).catch(e => console.error("[Telemetry] Failed to record metric:", e));
 

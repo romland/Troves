@@ -252,16 +252,18 @@
                         <tbody>
                             {#each data.metrics as m}
                                 <tr class="hover:bg-base-50/50 transition-colors">
-                                    <td class="pl-5 font-bold capitalize">{m.provider}</td>
+                                    <td class="pl-5 font-bold capitalize">
+                                        {m.provider}
+                                        <div class="text-[10px] font-normal text-gray-500 lowercase mt-0.5">{m.model}</div>
+                                    </td>
                                     <td class="text-right font-mono text-xs">{m._count.id}</td>
 									<td class="text-right font-mono text-xs text-info hidden sm:table-cell">{fmt(m._sum.count1 || 0)}</td>
 									<td class="text-right font-mono text-xs text-success hidden sm:table-cell">{fmt(m._sum.count2 || 0)}</td>
                                     <td class="text-right font-mono text-xs pr-5">{((m._sum.durationMs || 0) / 1000).toFixed(1)}s</td>
 
-									<td class="text-right font-mono text-xs text-warning hidden sm:table-cell">{data.rpm1m[m.provider] || 0}</td>
-									<td class="text-right font-mono text-xs text-warning hidden sm:table-cell">{data.rpm5m[m.provider] || 0}</td>
-                                    <!--td class="text-right font-mono text-xs text-warning">{data.rpm10m[m.provider] || 0}</td-->
-									<td class="text-right font-mono text-xs text-warning hidden sm:table-cell">{data.rpm15m[m.provider] || 0}</td>
+                                    <td class="text-right font-mono text-xs text-warning hidden sm:table-cell">{data.rpm1m[`${m.provider}:${m.model}`] || 0}</td>
+                                    <td class="text-right font-mono text-xs text-warning hidden sm:table-cell">{data.rpm5m[`${m.provider}:${m.model}`] || 0}</td>
+                                    <td class="text-right font-mono text-xs text-warning hidden sm:table-cell">{data.rpm15m[`${m.provider}:${m.model}`] || 0}</td>
                                     <!--td class="text-right font-mono text-xs text-warning">{data.rpm30m[m.provider] || 0}</td-->
                                 </tr>
                             {/each}
@@ -285,23 +287,38 @@
                 <div class="flex flex-col gap-4">
                     {#each data.llmLogs as log}
                         <div class="bg-base-100 border border-base-200 rounded-3xl shadow-sm overflow-hidden flex flex-col">
-                            <div class="bg-base-200/50 px-6 py-3 border-b border-base-200 flex justify-between items-center">
-                                <div class="flex items-center gap-3">
-                                    <span class="font-bold text-info tracking-tight">{log.taskName}</span>
-                                    <Badge size="sm" class="font-bold uppercase">{log.service}</Badge>
+                            <div class="bg-base-200/50 px-4 sm:px-6 py-3 border-b border-base-200 flex flex-col gap-2">
+                                <div class="flex justify-between items-start gap-3 w-full">
+                                    <div class="flex items-center gap-2 flex-wrap min-w-0">
+                                        <span class="font-bold text-info tracking-tight truncate max-w-[200px] sm:max-w-xs">{log.taskName}</span>
+                                        <Badge size="sm" class="font-bold uppercase text-[9px] shrink-0">{log.service}</Badge>
                                     {#if log.itemId}
-                                        <Badge color="ghost" size="sm" icon="bi-box" class="border-base-300 shadow-sm">Item #{log.itemId}</Badge>
+                                        <Badge color="ghost" size="sm" icon="bi-box" class="border-base-300 shadow-sm shrink-0">Item #{log.itemId}</Badge>
                                     {/if}
                                     {#if log.path}
-                                        <Badge color="ghost" size="sm" icon="bi-file-image" class="border-base-300 shadow-sm max-w-[150px] truncate hover:border-primary cursor-zoom-in transition-colors" title="View {log.path}" on:click={() => lightbox.open({ orgPath: log.path.replace(/^(static|data)/, ''), showOriginal: true })}>{log.path.split('/').pop()}</Badge>
+                                        <Badge color="ghost" size="sm" icon="bi-file-image" class="border-base-300 shadow-sm max-w-[150px] truncate hover:border-primary cursor-zoom-in transition-colors shrink-0" title="View {log.path}" on:click={() => lightbox.open({ orgPath: log.path.replace(/^(static|data)/, ''), showOriginal: true })}>{log.path.split('/').pop()}</Badge>
                                     {/if}
-                                    <span class="text-xs text-gray-500">{new Date(log.timestamp).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
                                 </div>
-                                <Badge color="ghost" size="sm" class="font-mono border-base-300">{log.durationMs}ms</Badge>
-                                <div class="flex items-center gap-2">
-                                    <Badge color="ghost" size="sm" class="font-mono border-base-300">{log.durationMs}ms | {log.tokensIn} in / {log.tokensOut} out</Badge>
-                                    <button type="button" class="btn btn-xs btn-ghost hover:text-primary gap-1" on:click={() => { navigator.clipboard.writeText(`PROMPT:\n${typeof log.input === 'string' ? log.input : JSON.stringify(log.input, null, 2)}\n\nRESPONSE:\n${typeof log.output === 'string' ? log.output : JSON.stringify(log.output, null, 2)}`); notify('success', 'Copied to clipboard!'); }}><i class="bi bi-copy"></i> Copy</button>
+                                    <div class="flex items-center gap-2 shrink-0">
+                                        <span class="text-xs text-gray-500 hidden sm:inline">{new Date(log.timestamp).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+                                        <button type="button" class="btn btn-xs btn-ghost hover:text-primary gap-1 shrink-0" on:click={() => { navigator.clipboard.writeText(`PROMPT:\n${typeof log.input === 'string' ? log.input : JSON.stringify(log.input, null, 2)}\n\nRESPONSE:\n${typeof log.output === 'string' ? log.output : JSON.stringify(log.output, null, 2)}`); notify('success', 'Copied to clipboard!'); }}><i class="bi bi-copy"></i> Copy</button>
+                                    </div>
                                 </div>
+                                <div class="flex justify-between items-center gap-3 w-full border-t border-base-300/30 pt-1.5 mt-0.5">
+                                    <div class="text-[10px] text-gray-500 font-mono truncate max-w-full">
+                                        {log.modelSettings?.modality || 'UNKNOWN'} &bull; {log.model} &bull; T:{log.modelSettings?.temperature ?? '?'}
+                                    </div>
+                                    <div class="text-[10px] font-mono whitespace-nowrap flex items-center gap-2 shrink-0">
+                                        <span class="font-bold text-base-content/80">{log.durationMs}ms</span>
+                                        <span class="text-gray-300">|</span>
+                                        <span class="text-info">{log.tokensIn} in</span>
+                                        {#if log.modelSettings?.imageTokens}
+                                            <span class="text-gray-400 text-[9px]">(<i class="bi bi-image"></i> ~{log.modelSettings.imageTokens})</span>
+                                        {/if}
+                                        <span class="text-gray-300">/</span>
+                                        <span class="text-success">{log.tokensOut} out</span>
+                                    </div>
+                            </div>
                             </div>
                             <div class="p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                                 <div class="flex flex-col min-w-0">

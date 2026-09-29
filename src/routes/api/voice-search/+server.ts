@@ -24,7 +24,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
         if ((!audioFile || audioFile.size === 0) && !textQuery.trim()) {
             await logActivity(null, 'Voice Search', 'Received empty payload from browser.', 'error');
-            recordLLMLog('Voice Search (Failed)', 'system', { error: 'Empty payload' }, { error: 'No audio or text data' }, performance.now() - t0, 0, 0);
+            recordLLMLog('Voice Search (Failed)', 'system', 'local', {}, { error: 'Empty payload' }, { error: 'No audio or text data' }, performance.now() - t0, 0, 0);
             return json({ error: 'No audio or text provided' }, { status: 400 });
         }
 
@@ -80,8 +80,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
         const provider = textQuery.trim() ? 'local' : (groqData.provider || 'unknown');
         const logTitle = textQuery.trim() ? 'Voice Intent (Text Test)' : 'Voice Search';
+        const model = textQuery.trim() ? 'local-intent-parser' : (groqData.model || 'unknown');
 
-		recordLLMLog(logTitle, provider, { prompt: contextPrompt, textQuery, fileSize }, { text: rawTranscription, finalQuery, spokenReply, usage: groqData?.usage }, durationMs, tokensIn, tokensOut);
+        recordLLMLog(logTitle, provider, model, { modality: textQuery.trim() ? 'TEXT' : 'AUDIO' }, { prompt: contextPrompt, textQuery, fileSize }, { text: rawTranscription, finalQuery, spokenReply, usage: groqData?.usage }, durationMs, tokensIn, tokensOut);
         await logActivity(null, logTitle, `Parsed intent to query: "${finalQuery}"`, 'info');
 
         return json({ success: true, text: finalQuery, spokenReply, route });
@@ -89,7 +90,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
         console.error('Voice search error:', error);
         const durationMs = performance.now() - t0;
         const errMessage = error?.message || '';
-        recordLLMLog('Voice Search (Failed)', 'system', { fileSize }, { error: errMessage }, durationMs, 0, 0);
+        recordLLMLog('Voice Search (Failed)', 'system', 'local', { modality: 'AUDIO' }, { fileSize }, { error: errMessage }, durationMs, 0, 0);
         await logActivity(null, 'Voice Search', `Intent processing failed.`, 'error', errMessage);
         
         if (errMessage.includes('API Key missing') || errMessage.includes('API key')) {

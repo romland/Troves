@@ -17,7 +17,7 @@ export async function withRetry<T>(
     maxRetries = 3, 
     delayMs = 1500, 
     taskName = 'LLM Operation',
-    context?: { itemId?: number, targetType?: string, targetId?: number, taskId?: string | number, prompt?: any, path?: string, provider?: string }
+    context?: { itemId?: number, targetType?: string, targetId?: number, taskId?: string | number, prompt?: any, path?: string, provider?: string, model?: string, modelSettings?: any }
 ): Promise<T> {
     let attempt = 0;
 
@@ -64,7 +64,9 @@ export async function withRetry<T>(
                 // Dynamically extract tokens based on SDK response structures
                 const tokensIn = (result as any)?.usageMetadata?.promptTokenCount || (result as any)?.usage?.prompt_tokens || 0;
                 const tokensOut = (result as any)?.usageMetadata?.candidatesTokenCount || (result as any)?.usage?.completion_tokens || 0;
-                recordLLMLog(taskName, service, context.prompt, (result as any)?.text || (result as any)?.choices || result, durationMs, tokensIn, tokensOut, targetItemId || undefined, context.path);
+                const model = context.model || 'unknown';
+                const modelSettings = context.modelSettings || {};
+                recordLLMLog(taskName, service, model, modelSettings, context.prompt, (result as any)?.text || (result as any)?.choices || result, durationMs, tokensIn, tokensOut, targetItemId || undefined, context.path);
                 
                 if (dev) {
                     const payload = JSON.stringify({ prompt: context.prompt, response: (result as any)?.text || (result as any)?.choices || result }, null, 2);

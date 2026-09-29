@@ -34,12 +34,17 @@ export function getAIConfig(modality: AIModality, subTask?: string): AIConfig {
         else if (provider === 'replicate') apiKey = env.REPLICATE_API_KEY;
     }
 
+    let temperature = tempStr !== undefined && tempStr !== '' ? parseFloat(tempStr) : undefined;
+    if (temperature === undefined) {
+        temperature = provider === 'openai' ? 0.7 : 0.0;
+    }
+
     return {
         provider,
         model: model || '',
         baseURL: baseURL || undefined,
         apiKey: apiKey || undefined,
-		temperature: tempStr !== undefined && tempStr !== '' ? parseFloat(tempStr) : 0.0,
+        temperature
     };
 }
 
@@ -132,6 +137,7 @@ export async function generateText(
     subTask?: string
 ): Promise<string> {
     const config = getAIConfig('TEXT', subTask);
+    const modelSettings = { temperature: config.temperature, modality: 'TEXT' };
 
     return apiQueue.add(async () => {
         if (config.provider === 'gemini') {
@@ -146,7 +152,7 @@ export async function generateText(
                     responseMimeType: jsonMode ? 'application/json' : 'text/plain',
                     ...(jsonSchema ? { responseSchema: jsonSchema } : {})
                 }
-            }), 3, 2000, taskName, { prompt: systemPrompt + '\n\n' + userPrompt, provider: 'gemini', ...tracking });
+            }), 3, 2000, taskName, { prompt: systemPrompt + '\n\n' + userPrompt, provider: 'gemini', model: config.model || 'gemini-3.1-flash-lite', modelSettings, ...tracking });
             
             return res.text || '';
         } 
@@ -170,7 +176,7 @@ export async function generateText(
                     ],
 					temperature: config.temperature,
                     response_format: jsonMode ? { type: 'json_object' } : undefined
-                }), 3, 2000, taskName, { prompt: systemPrompt + '\n\n' + userPrompt, provider: 'groq', ...tracking });
+                }), 3, 2000, taskName, { prompt: systemPrompt + '\n\n' + userPrompt, provider: 'groq', model: config.model || 'llama-3.3-70b-versatile', modelSettings, ...tracking });
                 
                 return res.choices[0]?.message?.content || '';
             } catch (err: any) {
@@ -191,7 +197,7 @@ export async function generateText(
             ],
 			temperature: config.temperature,
             response_format: jsonMode ? (jsonSchema ? { type: 'json_schema', json_schema: { name: 'response', schema: prepareOpenAISchema(jsonSchema), strict: true } } : { type: 'json_object' }) : undefined
-        }), 3, 2000, taskName, { prompt: systemPrompt + '\n\n' + userPrompt, provider: 'openai', ...tracking });
+        }), 3, 2000, taskName, { prompt: systemPrompt + '\n\n' + userPrompt, provider: 'openai', model: config.model || 'gpt-4o-mini', modelSettings, ...tracking });
 
         return res.choices[0]?.message?.content || '';
     }, tracking ? { ...tracking, description: taskName } : undefined);
@@ -211,6 +217,8 @@ export async function analyzeImage(
     subTask?: string
 ): Promise<string> {
     const config = getAIConfig('VISION', subTask);
+    const imageTokens = config.provider === 'gemini' ? 258 : 85;
+    const modelSettings = { temperature: config.temperature, modality: 'VISION', imageTokens };
 
     return apiQueue.add(async () => {
         if (config.provider === 'openai') {
@@ -228,7 +236,7 @@ export async function analyzeImage(
                 ],
 				temperature: config.temperature,
                 response_format: jsonMode ? (jsonSchema ? { type: 'json_schema', json_schema: { name: 'response', schema: prepareOpenAISchema(jsonSchema), strict: true } } : { type: 'json_object' }) : undefined
-            }), 3, 2000, taskName, { prompt: promptText, provider: 'openai', ...tracking });
+            }), 3, 2000, taskName, { prompt: promptText, provider: 'openai', model: config.model || 'gpt-4o-mini', modelSettings, ...tracking });
             
             return res.choices[0]?.message?.content || '';
         }
@@ -252,7 +260,7 @@ export async function analyzeImage(
                 responseMimeType: jsonMode ? 'application/json' : 'text/plain',
                 ...(jsonSchema ? { responseSchema: jsonSchema } : {})
             }
-        }), 3, 2000, taskName, { prompt: promptText, provider: 'gemini', ...tracking });
+        }), 3, 2000, taskName, { prompt: promptText, provider: 'gemini', model: config.model || 'gemini-3.1-flash-lite', modelSettings, ...tracking });
 
         rawText = res.text || '';
         if (rawText.length > 10000) {
@@ -271,6 +279,8 @@ export async function transcribeAudio(
     subTask?: string
 ): Promise<{ text: string, usage: any, provider: string }> {
     const config = getAIConfig('AUDIO', subTask);
+    const modelSettings = { temperature: config.temperature, modality: 'AUDIO' };
+    const startTime = Date.now();
 
     if (config.provider === 'groq') {
         const groq = getGroqClient(config);
@@ -280,6 +290,8 @@ export async function transcribeAudio(
             prompt: contextPrompt,
             response_format: 'verbose_json'
         });
+        const durationMs = Date.now() - startTime;
+        import('../llmLogger').then(m => m.recordLLMLog('Audio Transcription', 'groq', config.model || 'whisper-large-v3-turbo', modelSettings, contextPrompt, transcription.text, durationMs));
         return {
             text: transcription.text,
             usage: (transcription as any).x_groq?.usage || {},
@@ -295,6 +307,8 @@ export async function transcribeAudio(
         response_format: 'verbose_json'
     });
     
+    const durationMs = Date.now() - startTime;
+    import('../llmLogger').then(m => m.recordLLMLog('Audio Transcription', 'openai', config.model || 'whisper-1', modelSettings, contextPrompt, transcription.text, durationMs));
     return {
         text: transcription.text,
         usage: {}, 

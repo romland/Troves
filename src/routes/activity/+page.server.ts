@@ -21,20 +21,21 @@ export const load = (async ({ url }) => {
     const rpm15m: Record<string, number> = { gemini: 0, groq: 0, openai: 0, replicate: 0 };
     const rpm30m: Record<string, number> = { gemini: 0, groq: 0, openai: 0, replicate: 0 };
     for (const log of llmLogs) {
-        if (log.timestamp > oneMinuteAgo && rpm1m[log.service] !== undefined) {
-            rpm1m[log.service]++;
+        const key = `${log.service}:${log.model}`;
+        if (log.timestamp > oneMinuteAgo) {
+            rpm1m[key] = (rpm1m[key] || 0) + 1;
         }
-        if (log.timestamp > fiveMinutesAgo && rpm5m[log.service] !== undefined) {
-            rpm5m[log.service]++;
+        if (log.timestamp > fiveMinutesAgo) {
+            rpm5m[key] = (rpm5m[key] || 0) + 1;
         }
-        if (log.timestamp > tenMinutesAgo && rpm10m[log.service] !== undefined) {
-            rpm10m[log.service]++;
+        if (log.timestamp > tenMinutesAgo) {
+            rpm10m[key] = (rpm10m[key] || 0) + 1;
         }
-        if (log.timestamp > fifteenMinutesAgo && rpm15m[log.service] !== undefined) {
-            rpm15m[log.service]++;
+        if (log.timestamp > fifteenMinutesAgo) {
+            rpm15m[key] = (rpm15m[key] || 0) + 1;
         }
-        if (log.timestamp > thirtyMinutesAgo && rpm30m[log.service] !== undefined) {
-            rpm30m[log.service]++;
+        if (log.timestamp > thirtyMinutesAgo) {
+            rpm30m[key] = (rpm30m[key] || 0) + 1;
         }
     }
     
@@ -55,7 +56,7 @@ export const load = (async ({ url }) => {
 
     // Aggregate Model Usage
     const metrics = await db.systemMetric.groupBy({
-        by: ['provider'],
+        by: ['provider', 'model'],
         where: { category: 'MODEL_USAGE', createdAt: { gte: since } },
         _sum: {
             count1: true, // Tokens In
@@ -63,7 +64,7 @@ export const load = (async ({ url }) => {
             durationMs: true
         },
         _count: { id: true }, // Total API Requests
-        orderBy: { provider: 'asc' }
+        orderBy: [{ provider: 'asc' }, { model: 'asc' }]
     });
 
     return {
