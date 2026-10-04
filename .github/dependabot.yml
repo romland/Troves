@@ -3,7 +3,7 @@ updates:
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "fucking never"
     ignore:
       - dependency-name: "tailwindcss"
         update-types: ["version-update:semver-major"]
