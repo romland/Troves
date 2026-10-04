@@ -90,7 +90,7 @@
 		"jszip": "^3.10.1",
 		"natural": "^8.1.1",
 		"node-fetch": "^3.3.2",
-		"openai": "^4.28.0",
+		"openai": "^7.25.0",
 		"pdf-parse": "^2.4.5",
 		"prism-code-editor": "^5.4.0",
 		"prismjs": "^1.30.0",
