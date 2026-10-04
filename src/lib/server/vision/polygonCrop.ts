@@ -46,9 +46,11 @@ export async function cropPolygon(
         const filename = getSafeFilename(filenamePrefix, 'crop') + '.webp';
         const outputPath = `${uploadsDiskFolder}/${filename}`;
 
-        let pipeline = sharp(sourceLocalPath).rotate(); // Auto-orient first based on EXIF
         
         if (straighten) {
+        // ProtoNote 12: Must fully realize rotation into a raw buffer BEFORE calling extract()
+        const autoOrientedBuffer = await sharp(sourceLocalPath).rotate().toBuffer();
+        let pipeline = sharp(autoOrientedBuffer);
             // Determine target dimensions based on longest bounding edges
             const wTop = Math.hypot(pixelPolygon[1][0] - pixelPolygon[0][0], pixelPolygon[1][1] - pixelPolygon[0][1]);
             const wBot = Math.hypot(pixelPolygon[2][0] - pixelPolygon[3][0], pixelPolygon[2][1] - pixelPolygon[3][1]);
